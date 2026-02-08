@@ -476,7 +476,7 @@
         <div class="user-profile-sidebar">
             {% if request.user.is_authenticated %}
             <div class="user-avatar-container">
-                {% if request.user.profil.photo %}
+                {% if request.user.profil and request.user.profil.photo and request.user.profil.photo.name %}
                     <img src="{{ request.user.profil.photo.url }}" alt="{{ request.user.get_full_name() }}" class="user-avatar-img">
                 {% else %}
                     <div class="user-avatar-initials">{{ request.user.profil.get_initiales() }}</div>

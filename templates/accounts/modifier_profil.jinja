@@ -80,7 +80,7 @@
                             <label class="form-label-modern"><i class="bi bi-image"></i>Photo de profil</label>
                             <div class="photo-upload-container">
                                 {# Afficher la photo actuelle OU les initiales #}
-                                {% if profil.photo %}
+                                {% if profil and profil.photo and profil.photo.name %}
                                     <div class="current-photo">
                                         <img src="{{ profil.photo.url }}" alt="Photo actuelle">
                                     </div>

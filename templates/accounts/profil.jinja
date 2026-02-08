@@ -11,7 +11,7 @@
         <div class="profile-info-container">
             <div class="profile-avatar-wrapper">
                 <div class="profile-avatar">
-                    {% if profil.photo %}
+                    {% if profil and profil.photo and profil.photo.name %}
                         <img src="{{ profil.photo.url }}" alt="{{ user.get_full_name }}">
                     {% else %}
                         <div class="avatar-initials">{{ profil.get_initiales() }}</div>
