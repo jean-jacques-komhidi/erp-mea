@@ -1,0 +1,1382 @@
+<!-- templates/base/details_fournisseur.jinja - Version FINALE CORRIGÉE -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}{{ fournisseur.nom }}{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb-modern">
+            <li class="breadcrumb-item">
+                <a href="/"><i class="bi bi-house-door"></i> Accueil</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="/fournisseurs/">Fournisseurs</a>
+            </li>
+            <li class="breadcrumb-item active">{{ fournisseur.nom }}</li>
+        </ol>
+    </nav>
+
+    <!-- Profile header -->
+    <div class="profile-header-card">
+        <div class="profile-content-wrapper">
+            <div class="profile-main">
+                <div class="profile-avatar-wrapper">
+                    <div class="profile-avatar">
+                        {{ fournisseur.nom[0]|upper if fournisseur.nom else 'F' }}
+                    </div>
+                    <div class="profile-status {% if fournisseur.est_actif %}status-active{% else %}status-inactive{% endif %}">
+                        <i class="bi bi-circle-fill"></i>
+                    </div>
+                </div>
+                
+                <div class="profile-info">
+                    <h1 class="profile-name">{{ fournisseur.nom }}</h1>
+                    <div class="profile-meta">
+                        <span class="profile-code code-cyan">
+                            <i class="bi bi-hash"></i>{{ fournisseur.code }}
+                        </span>
+                        {% if fournisseur.type_fournisseur == 'INTERNATIONAL' %}
+                        <span class="profile-type type-international">
+                            <i class="bi bi-globe"></i> International
+                        </span>
+                        {% elif fournisseur.type_fournisseur == 'LOCAL' %}
+                        <span class="profile-type type-local">
+                            <i class="bi bi-geo-alt"></i> Local
+                        </span>
+                        {% else %}
+                        <span class="profile-type type-default">
+                            <i class="bi bi-building"></i> Fournisseur
+                        </span>
+                        {% endif %}
+                        <span class="profile-badge {% if fournisseur.est_actif %}badge-active{% else %}badge-inactive{% endif %}">
+                            {% if fournisseur.est_actif %}
+                                <i class="bi bi-check-circle-fill"></i> Actif
+                            {% else %}
+                                <i class="bi bi-x-circle-fill"></i> Inactif
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="profile-actions">
+                <a href="/achats/nouvelle/?fournisseur={{ fournisseur.pk }}" class="btn-action btn-primary">
+                    <i class="bi bi-cart-plus"></i>
+                    <span>Nouvelle commande</span>
+                </a>
+                <a href="/fournisseurs/{{ fournisseur.pk }}/modifier/" class="btn-action btn-secondary">
+                    <i class="bi bi-pencil"></i>
+                    <span>Modifier</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations de contact -->
+    <div class="contact-grid">
+        <div class="contact-card">
+            <div class="contact-card-icon bg-primary">
+                <i class="bi bi-envelope-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">EMAIL</div>
+                {% if fournisseur.email %}
+                <a href="mailto:{{ fournisseur.email }}" class="contact-card-value">{{ fournisseur.email }}</a>
+                {% else %}
+                <div class="contact-card-value text-muted">Non renseigné</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="contact-card">
+            <div class="contact-card-icon bg-success">
+                <i class="bi bi-telephone-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">TÉLÉPHONE</div>
+                {% if fournisseur.telephone %}
+                <a href="tel:{{ fournisseur.telephone }}" class="contact-card-value">{{ fournisseur.telephone }}</a>
+                {% else %}
+                <div class="contact-card-value text-muted">Non renseigné</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="contact-card">
+            <div class="contact-card-icon bg-info">
+                <i class="bi bi-geo-alt-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">LOCALISATION</div>
+                <div class="contact-card-value">
+                    {{ fournisseur.ville or 'N/A' }}{% if fournisseur.pays %}, {{ fournisseur.pays }}{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deuxième ligne d'informations -->
+    <div class="contact-grid">
+        <div class="contact-card">
+            <div class="contact-card-icon bg-warning">
+                <i class="bi bi-calendar-check-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">DÉLAI PAIEMENT</div>
+                <div class="contact-card-value credit-amount">
+                    {{ fournisseur.delai_paiement or 0 }} jours
+                </div>
+                {% if fournisseur.conditions_paiement %}
+                <div class="contact-card-sublabel">{{ fournisseur.conditions_paiement }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if fournisseur.numero_fiscal %}
+        <div class="contact-card">
+            <div class="contact-card-icon bg-secondary">
+                <i class="bi bi-file-text-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">NINEA</div>
+                <div class="contact-card-value">{{ fournisseur.numero_fiscal }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if fournisseur.evaluation %}
+        <div class="contact-card">
+            <div class="contact-card-icon bg-purple">
+                <i class="bi bi-star-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">ÉVALUATION</div>
+                <div class="contact-card-value">{{ fournisseur.evaluation }}/5</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Adresse complète -->
+    {% if fournisseur.adresse %}
+    <div class="address-card">
+        <div class="address-icon">
+            <i class="bi bi-map-fill"></i>
+        </div>
+        <div class="address-content">
+            <div class="address-label">Adresse complète</div>
+            <div class="address-text">{{ fournisseur.adresse }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Site web -->
+    {% if fournisseur.site_web %}
+    <div class="web-card">
+        <div class="web-icon">
+            <i class="bi bi-globe"></i>
+        </div>
+        <div class="web-content">
+            <div class="web-label">Site web</div>
+            <a href="{{ fournisseur.site_web }}" target="_blank" class="web-link">{{ fournisseur.site_web }}</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Statistiques -->
+    <div class="stats-grid">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon">
+                <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ "{:,.0f}".format(total_achats|default(0)) }}</div>
+                <div class="stat-label">Achats totaux</div>
+                <div class="stat-currency">FCFA</div>
+            </div>
+        </div>
+
+        <div class="stat-card stat-success">
+            <div class="stat-icon">
+                <i class="bi bi-cart-check-fill"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ commandes|length }}</div>
+                <div class="stat-label">Commandes</div>
+                <div class="stat-badge">
+                    <span class="badge badge-info-soft">
+                        <i class="bi bi-calendar"></i> {{ commandes_ce_mois|default(0) }} ce mois
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card stat-warning">
+            <div class="stat-icon">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ fournisseur.delai_paiement or 0 }}</div>
+                <div class="stat-label">Délai moyen</div>
+                <div class="stat-currency">jours</div>
+            </div>
+        </div>
+
+        <div class="stat-card stat-info">
+            <div class="stat-icon">
+                <i class="bi bi-graph-up"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">+8%</div>
+                <div class="stat-label">Croissance</div>
+                <div class="stat-currency">vs période précédente</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Système d'onglets -->
+    <div class="tabs-container">
+        <div class="tabs-header">
+            <button class="tab-btn active" data-tab="commandes">
+                <i class="bi bi-cart-check"></i>
+                <span>Commandes</span>
+                <span class="tab-count">{{ commandes|length }}</span>
+            </button>
+            <button class="tab-btn" data-tab="factures">
+                <i class="bi bi-receipt"></i>
+                <span>Factures</span>
+                <span class="tab-count">{{ factures|length|default(0) }}</span>
+            </button>
+            {% if fournisseur.notes %}
+            <button class="tab-btn" data-tab="notes">
+                <i class="bi bi-sticky"></i>
+                <span>Notes</span>
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Onglet Commandes -->
+        <div class="tab-content active" id="tab-commandes">
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h3 class="table-card-title">
+                        <i class="bi bi-cart-check"></i>
+                        Commandes d'achat
+                    </h3>
+                    <a href="/achats/nouvelle/?fournisseur={{ fournisseur.pk }}" class="btn-add">
+                        <i class="bi bi-plus-circle"></i>
+                        Nouvelle commande
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>N° Commande</th>
+                                <th>Date</th>
+                                <th>Livraison prévue</th>
+                                <th>Montant</th>
+                                <th>Statut</th>
+                                <th>Délai</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for commande in commandes %}
+                            <tr>
+                                <td>
+                                    <span class="badge-code badge-cyan">{{ commande.numero_commande }}</span>
+                                </td>
+                                <td>{{ commande.date_commande.strftime('%d/%m/%Y') if commande.date_commande else '-' }}</td>
+                                <td>
+                                    {% if commande.date_livraison_prevue %}
+                                    {{ commande.date_livraison_prevue.strftime('%d/%m/%Y') }}
+                                    {% else %}
+                                    <span class="text-muted-modern">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="amount">{{ "{:,.0f}".format(commande.total) }}</span>
+                                    <span class="currency">FCFA</span>
+                                </td>
+                                <td>
+                                    {% if commande.statut == 'CONFIRMEE' %}
+                                        <span class="status-badge status-success">
+                                            <span class="status-dot"></span>Confirmée
+                                        </span>
+                                    {% elif commande.statut == 'BROUILLON' %}
+                                        <span class="status-badge status-warning">
+                                            <span class="status-dot"></span>Brouillon
+                                        </span>
+                                    {% elif commande.statut == 'RECUE' %}
+                                        <span class="status-badge status-success">
+                                            <span class="status-dot"></span>Reçue
+                                        </span>
+                                    {% elif commande.statut == 'ENVOYEE' %}
+                                        <span class="status-badge status-info">
+                                            <span class="status-dot"></span>Envoyée
+                                        </span>
+                                    {% elif commande.statut == 'ANNULEE' %}
+                                        <span class="status-badge status-danger">
+                                            <span class="status-dot"></span>Annulée
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge status-secondary">
+                                            <span class="status-dot"></span>{{ commande.get_statut_display() }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if commande.delai_statut == 'late' %}
+                                        <span class="delay-badge delay-late">
+                                            <i class="bi bi-clock-history"></i> En retard
+                                        </span>
+                                    {% elif commande.delai_statut == 'soon' %}
+                                        <span class="delay-badge delay-soon">
+                                            <i class="bi bi-clock"></i> {{ commande.jours_restants }}j
+                                        </span>
+                                    {% elif commande.delai_statut == 'ok' %}
+                                        <span class="delay-badge delay-ok">
+                                            <i class="bi bi-calendar-check"></i> {{ commande.jours_restants }}j
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted-modern">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="action-buttons-inline">
+                                        <a href="/achats/{{ commande.pk }}/" class="btn-icon-sm" title="Voir les détails">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="/achats/{{ commande.pk }}/modifier/" class="btn-icon-sm" title="Modifier">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7">
+                                    <div class="empty-state-sm">
+                                        <i class="bi bi-cart-x"></i>
+                                        <p>Aucune commande d'achat</p>
+                                        <a href="/achats/nouvelle/?fournisseur={{ fournisseur.pk }}" class="btn-primary-modern">
+                                            <i class="bi bi-plus-circle"></i>
+                                            <span>Créer une commande</span>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onglet Factures -->
+        <div class="tab-content" id="tab-factures">
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h3 class="table-card-title">
+                        <i class="bi bi-receipt"></i>
+                        Factures récentes
+                    </h3>
+                    <a href="/comptabilite/factures/nouvelle/?fournisseur={{ fournisseur.pk }}" class="btn-add">
+                        <i class="bi bi-plus-circle"></i>
+                        Nouvelle facture
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>N° Facture</th>
+                                <th>Date</th>
+                                <th>Échéance</th>
+                                <th>Total</th>
+                                <th>Payé</th>
+                                <th>Solde</th>
+                                <th>Statut</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if factures %}
+                                {% for facture in factures %}
+                                <tr>
+                                    <td>
+                                        <span class="badge-code badge-info">{{ facture.numero_facture }}</span>
+                                    </td>
+                                    <td>{{ facture.date_facture.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ facture.date_echeance.strftime('%d/%m/%Y') if facture.date_echeance else '-' }}</td>
+                                    <td>
+                                        <span class="amount">{{ "{:,.0f}".format(facture.total) }}</span>
+                                        <span class="currency">FCFA</span>
+                                    </td>
+                                    <td>
+                                        <span class="amount text-success">{{ "{:,.0f}".format(facture.montant_paye|default(0)) }}</span>
+                                        <span class="currency">FCFA</span>
+                                    </td>
+                                    <td>
+                                        <span class="amount {% if facture.solde > 0 %}text-warning{% else %}text-success{% endif %}">
+                                            {{ "{:,.0f}".format(facture.solde|default(0)) }}
+                                        </span>
+                                        <span class="currency">FCFA</span>
+                                    </td>
+                                    <td>
+                                        {% if facture.statut == 'PAYEE' %}
+                                            <span class="status-badge status-success">
+                                                <span class="status-dot"></span>Payée
+                                            </span>
+                                        {% elif facture.statut == 'EN_RETARD' %}
+                                            <span class="status-badge status-danger">
+                                                <span class="status-dot"></span>En retard
+                                            </span>
+                                        {% else %}
+                                            <span class="status-badge status-secondary">
+                                                <span class="status-dot"></span>{{ facture.get_statut_display() }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="action-buttons-inline">
+                                            <a href="/comptabilite/factures/{{ facture.pk }}/" class="btn-icon-sm" title="Voir">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="/comptabilite/factures/{{ facture.pk }}/paiement/" class="btn-icon-sm" title="Paiement">
+                                                <i class="bi bi-cash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="8">
+                                    <div class="empty-state-sm">
+                                        <i class="bi bi-receipt-cutoff"></i>
+                                        <p>Aucune facture</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onglet Notes -->
+        {% if fournisseur.notes %}
+        <div class="tab-content" id="tab-notes">
+            <div class="notes-card">
+                <div class="notes-header">
+                    <i class="bi bi-sticky-fill"></i>
+                    Notes internes
+                </div>
+                <div class="notes-body">
+                    {{ fournisseur.notes }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestion des onglets
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            this.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        });
+    });
+});
+</script>
+
+<style>
+/* ==================== BASE ==================== */
+.container-fluid {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ==================== BREADCRUMB ==================== */
+.breadcrumb-modern {
+    display: flex;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-size: 13px;
+}
+
+.breadcrumb-modern li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+}
+
+.breadcrumb-modern li::after {
+    content: '/';
+    color: #cbd5e1;
+}
+
+.breadcrumb-modern li:last-child::after {
+    display: none;
+}
+
+.breadcrumb-modern a {
+    color: #64748b;
+    text-decoration: none;
+}
+
+.breadcrumb-modern a:hover {
+    color: #0ea5e9;
+}
+
+.breadcrumb-item.active {
+    color: #0ea5e9;
+    font-weight: 600;
+}
+
+/* ==================== PROFILE HEADER ==================== */
+.profile-header-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.profile-content-wrapper {
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.profile-main {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-avatar-wrapper {
+    position: relative;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-status {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.profile-status i {
+    font-size: 10px;
+}
+
+.profile-status.status-active i {
+    color: #10b981;
+}
+
+.profile-status.status-inactive i {
+    color: #94a3b8;
+}
+
+.profile-info {
+}
+
+.profile-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 10px 0;
+}
+
+.profile-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.profile-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.profile-code.code-cyan {
+    background: #e0f2fe;
+    color: #0ea5e9;
+}
+
+.profile-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.profile-type.type-international {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.profile-type.type-local {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.profile-type.type-default {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.profile-badge.badge-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.profile-badge.badge-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-action {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-action.btn-primary {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    color: white;
+}
+
+.btn-action.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
+
+.btn-action.btn-secondary {
+    background: white;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+}
+
+.btn-action.btn-secondary:hover {
+    background: #f8fafc;
+}
+
+/* ==================== CONTACT GRID ==================== */
+.contact-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 1200px) {
+    .contact-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.contact-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.2s;
+}
+
+.contact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.contact-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.contact-card-icon.bg-primary { background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%); }
+.contact-card-icon.bg-success { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
+.contact-card-icon.bg-info { background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%); }
+.contact-card-icon.bg-warning { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); }
+.contact-card-icon.bg-secondary { background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%); }
+.contact-card-icon.bg-purple { background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); }
+
+.contact-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.contact-card-label {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.contact-card-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    word-break: break-word;
+    text-decoration: none;
+    display: block;
+}
+
+.contact-card-value:hover {
+    color: #0ea5e9;
+}
+
+.contact-card-sublabel {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+.credit-amount {
+    color: #0ea5e9;
+    font-size: 14px;
+}
+
+/* ==================== ADDRESS CARD ==================== */
+.address-card {
+    background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 14px;
+}
+
+.address-icon {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #0ea5e9;
+    flex-shrink: 0;
+}
+
+.address-content {
+    flex: 1;
+}
+
+.address-label {
+    font-size: 10px;
+    color: #0c4a6e;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.address-text {
+    font-size: 13px;
+    color: #0ea5e9;
+    line-height: 1.5;
+}
+
+/* ==================== WEB CARD ==================== */
+.web-card {
+    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 14px;
+}
+
+.web-icon {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #14b8a6;
+    flex-shrink: 0;
+}
+
+.web-content {
+    flex: 1;
+}
+
+.web-label {
+    font-size: 10px;
+    color: #134e4a;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.web-link {
+    font-size: 13px;
+    color: #14b8a6;
+    text-decoration: none;
+}
+
+.web-link:hover {
+    text-decoration: underline;
+}
+
+/* ==================== STATS GRID ==================== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+}
+
+.stat-card.stat-primary::before { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%); }
+.stat-card.stat-danger::before { background: linear-gradient(90deg, #ef4444 0%, #f87171 100%); }
+.stat-card.stat-success::before { background: linear-gradient(90deg, #10b981 0%, #34d399 100%); }
+.stat-card.stat-warning::before { background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); }
+.stat-card.stat-info::before { background: linear-gradient(90deg, #06b6d4 0%, #22d3ee 100%); }
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 16px;
+}
+
+.stat-primary .stat-icon {
+    background: #e0f2fe;
+    color: #0ea5e9;
+}
+
+.stat-danger .stat-icon {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.stat-success .stat-icon {
+    background: #dcfce7;
+    color: #10b981;
+}
+
+.stat-warning .stat-icon {
+    background: #fef3c7;
+    color: #f59e0b;
+}
+
+.stat-info .stat-icon {
+    background: #cffafe;
+    color: #06b6d4;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.stat-currency {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+.stat-badge {
+    margin-top: 8px;
+}
+
+.badge-info-soft {
+    background: #e0f2fe;
+    color: #0c4a6e;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ==================== TABS ==================== */
+.tabs-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.tabs-header {
+    display: flex;
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 6px;
+    gap: 6px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background: white;
+    color: #0ea5e9;
+}
+
+.tab-btn.active {
+    background: #0ea5e9;
+    color: white;
+}
+
+.tab-count {
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    font-size: 10px;
+}
+
+.tab-btn.active .tab-count {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.tab-content {
+    display: none;
+    padding: 24px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ==================== TABLE ==================== */
+.table-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.table-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.btn-add {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    color: white;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    color: white;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: #f8fafc;
+}
+
+.modern-table th {
+    padding: 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.modern-table td {
+    padding: 12px;
+    font-size: 13px;
+}
+
+.badge-code {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #dbeafe;
+    color: #0ea5e9;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-code.badge-cyan {
+    background: #e0f2fe;
+    color: #0ea5e9;
+}
+
+.badge-code.badge-info {
+    background: #e0e7ff;
+    color: #4f46e5;
+}
+
+.amount {
+    font-weight: 700;
+}
+
+.currency {
+    font-size: 10px;
+    color: #94a3b8;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.status-badge.status-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.status-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.status-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.status-secondary {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status-badge.status-info {
+    background: #e0f2fe;
+    color: #0c4a6e;
+}
+
+.delay-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.delay-badge.delay-late {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.delay-badge.delay-soon {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.delay-badge.delay-ok {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.action-buttons-inline {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.btn-icon-sm {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-icon-sm:hover {
+    background: #0ea5e9;
+    color: white;
+}
+
+.empty-state-sm {
+    padding: 40px 20px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.empty-state-sm i {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.empty-state-sm p {
+    margin: 0 0 16px 0;
+    font-size: 13px;
+}
+
+.btn-primary-modern {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+    color: white;
+}
+
+/* ==================== NOTES CARD ==================== */
+.notes-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.notes-header {
+    padding: 16px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);
+    color: #92400e;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notes-body {
+    padding: 24px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #475569;
+}
+
+.text-muted-modern {
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .profile-content-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .profile-actions {
+        width: 100%;
+    }
+    
+    .btn-action {
+        flex: 1;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}

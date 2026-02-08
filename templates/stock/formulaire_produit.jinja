@@ -1,0 +1,1193 @@
+<!-- templates/stock/formulaire_produit.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}{{ action }} un produit{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête de page -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/stock/produits/" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">{{ action }} un produit</h4>
+                <p class="page-subtitle">
+                    {% if action == "Modifier" %}
+                    Modification du produit #{{ formulaire.instance.code|default('') }}
+                    {% else %}
+                    Ajouter un nouveau produit à votre catalogue
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <form method="post" enctype="multipart/form-data" id="productForm">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                
+                <div class="row g-4">
+                    <!-- Colonne principale (gauche) -->
+                    <div class="col-lg-8">
+                        <!-- Informations générales -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-primary">
+                                    <i class="bi bi-info-circle"></i>
+                                </div>
+                                <h6>Informations générales</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-tag"></i>
+                                                Code produit
+                                                <span class="required">*</span>
+                                            </label>
+                                            {{ formulaire.code }}
+                                            {% if formulaire.code.errors %}
+                                            <div class="error-message">{{ formulaire.code.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Identifiant unique du produit</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-box"></i>
+                                                Nom du produit
+                                                <span class="required">*</span>
+                                            </label>
+                                            {{ formulaire.nom }}
+                                            {% if formulaire.nom.errors %}
+                                            <div class="error-message">{{ formulaire.nom.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Désignation commerciale</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-text-paragraph"></i>
+                                                Description
+                                            </label>
+                                            {{ formulaire.description }}
+                                            {% if formulaire.description.errors %}
+                                            <div class="error-message">{{ formulaire.description.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Description détaillée du produit (facultatif)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Classification -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-info">
+                                    <i class="bi bi-grid"></i>
+                                </div>
+                                <h6>Classification</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-folder"></i>
+                                                Catégorie
+                                            </label>
+                                            {{ formulaire.categorie }}
+                                            {% if formulaire.categorie.errors %}
+                                            <div class="error-message">{{ formulaire.categorie.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Catégorie d'appartenance</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-rulers"></i>
+                                                Unité de mesure
+                                            </label>
+                                            {{ formulaire.unite }}
+                                            {% if formulaire.unite.errors %}
+                                            <div class="error-message">{{ formulaire.unite.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="form-help">kg, L, pièce, carton, etc.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prix et taxes -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-success">
+                                    <i class="bi bi-currency-dollar"></i>
+                                </div>
+                                <h6>Prix et taxes</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-cart-dash"></i>
+                                                Prix d'achat
+                                            </label>
+                                            <div class="input-with-addon">
+                                                {{ formulaire.prix_achat }}
+                                                <div class="input-addon">FCFA</div>
+                                            </div>
+                                            {% if formulaire.prix_achat.errors %}
+                                            <div class="error-message">{{ formulaire.prix_achat.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Coût d'achat unitaire</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-cart-plus"></i>
+                                                Prix de vente
+                                            </label>
+                                            <div class="input-with-addon">
+                                                {{ formulaire.prix_vente }}
+                                                <div class="input-addon">FCFA</div>
+                                            </div>
+                                            {% if formulaire.prix_vente.errors %}
+                                            <div class="error-message">{{ formulaire.prix_vente.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Prix de vente unitaire</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-percent"></i>
+                                                Taux TVA
+                                            </label>
+                                            <div class="input-with-addon">
+                                                {{ formulaire.taux_tva }}
+                                                <div class="input-addon">%</div>
+                                            </div>
+                                            {% if formulaire.taux_tva.errors %}
+                                            <div class="error-message">{{ formulaire.taux_tva.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Taux TVA applicable</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Calculs automatiques -->
+                                <div class="calculations-card">
+                                    <div class="calc-grid">
+                                        <div class="calc-item calc-success">
+                                            <div class="calc-icon">
+                                                <i class="bi bi-graph-up-arrow"></i>
+                                            </div>
+                                            <div class="calc-content">
+                                                <div class="calc-label">Marge brute</div>
+                                                <div class="calc-value" id="marge-brute">0 FCFA</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="calc-item calc-primary">
+                                            <div class="calc-icon">
+                                                <i class="bi bi-percent"></i>
+                                            </div>
+                                            <div class="calc-content">
+                                                <div class="calc-label">Marge %</div>
+                                                <div class="calc-value" id="marge-pourcentage">0%</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="calc-item calc-info">
+                                            <div class="calc-icon">
+                                                <i class="bi bi-cash-stack"></i>
+                                            </div>
+                                            <div class="calc-content">
+                                                <div class="calc-label">Prix TTC</div>
+                                                <div class="calc-value" id="prix-ttc">0 FCFA</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gestion des stocks -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-warning">
+                                    <i class="bi bi-clipboard-data"></i>
+                                </div>
+                                <h6>Gestion des stocks</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-exclamation-triangle"></i>
+                                                Stock minimum
+                                            </label>
+                                            {{ formulaire.stock_min }}
+                                            {% if formulaire.stock_min.errors %}
+                                            <div class="error-message">{{ formulaire.stock_min.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Niveau d'alerte stock bas</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-check-circle"></i>
+                                                Stock maximum
+                                            </label>
+                                            {{ formulaire.stock_max }}
+                                            {% if formulaire.stock_max.errors %}
+                                            <div class="error-message">{{ formulaire.stock_max.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Capacité maximale</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-bell"></i>
+                                                Seuil réappro.
+                                            </label>
+                                            {{ formulaire.seuil_reapprovisionnement }}
+                                            {% if formulaire.seuil_reapprovisionnement.errors %}
+                                            <div class="error-message">{{ formulaire.seuil_reapprovisionnement.errors.0 }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Seuil commande urgente</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Colonne latérale (droite) -->
+                    <div class="col-lg-4">
+                        <!-- Image produit -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-primary">
+                                    <i class="bi bi-image"></i>
+                                </div>
+                                <h6>Image du produit</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="image-upload-zone" id="imageUploadZone">
+                                    {% if formulaire.instance.image %}
+                                    <img src="{{ formulaire.instance.image.url }}" id="preview-image" class="preview-image">
+                                    <div class="image-overlay">
+                                        <button type="button" class="btn-change-image" id="changeImageBtn">
+                                            <i class="bi bi-camera"></i>
+                                            Changer l'image
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                    <div class="upload-placeholder" id="uploadPlaceholder">
+                                        <i class="bi bi-cloud-upload"></i>
+                                        <p>Cliquez pour ajouter une image</p>
+                                        <span>JPG, PNG, GIF (max 2MB)</span>
+                                    </div>
+                                    <img src="" id="preview-image" class="preview-image" style="display: none;">
+                                    {% endif %}
+                                    {{ formulaire.image }}
+                                </div>
+                                {% if formulaire.image.errors %}
+                                <div class="error-message">{{ formulaire.image.errors.0 }}</div>
+                                {% endif %}
+                                
+                                <div class="image-actions" id="imageActions" style="{% if not formulaire.instance.image %}display: none;{% endif %}">
+                                    <button type="button" class="btn-remove-image" id="removeImageBtn">
+                                        <i class="bi bi-trash"></i>
+                                        Supprimer l'image
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statut -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-secondary">
+                                    <i class="bi bi-toggle-on"></i>
+                                </div>
+                                <h6>Statut du produit</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="switch-container">
+                                    {{ formulaire.est_actif }}
+                                    <label for="{{ formulaire.est_actif.id_for_label }}" class="switch-label">
+                                        <span class="switch-text">Produit actif</span>
+                                        <span class="switch-button"></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="info-box">
+                                    <i class="bi bi-info-circle"></i>
+                                    <p>Un produit inactif n'apparaît pas dans les ventes ni dans les recherches. Il reste visible dans l'historique.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conseils -->
+                        <div class="tips-card">
+                            <div class="tips-header">
+                                <i class="bi bi-lightbulb"></i>
+                                <span>Conseils de gestion</span>
+                            </div>
+                            <div class="tips-list">
+                                <div class="tip-item">
+                                    <i class="bi bi-check2-circle"></i>
+                                    <p><strong>Codes produits :</strong> Utilisez un système cohérent (ex: CAT-001)</p>
+                                </div>
+                                <div class="tip-item">
+                                    <i class="bi bi-check2-circle"></i>
+                                    <p><strong>Seuils de stock :</strong> Définissez des seuils réalistes pour éviter les ruptures</p>
+                                </div>
+                                <div class="tip-item">
+                                    <i class="bi bi-check2-circle"></i>
+                                    <p><strong>Images :</strong> Les visuels améliorent l'expérience utilisateur</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions du formulaire -->
+                <div class="form-actions-bar">
+                    <div class="actions-left">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span>Les champs marqués d'un * sont obligatoires</span>
+                    </div>
+                    <div class="actions-right">
+                        <a href="/stock/produits/" class="btn-cancel">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annuler</span>
+                        </a>
+                        <button type="submit" class="btn-submit">
+                            <i class="bi bi-check-circle"></i>
+                            <span>Enregistrer le produit</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestion de l'upload d'image
+    const imageInput = document.querySelector('input[type="file"]');
+    const previewImage = document.getElementById('preview-image');
+    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+    const imageUploadZone = document.getElementById('imageUploadZone');
+    const imageActions = document.getElementById('imageActions');
+    const removeImageBtn = document.getElementById('removeImageBtn');
+    const changeImageBtn = document.getElementById('changeImageBtn');
+    
+    if (imageInput) {
+        // Click sur la zone d'upload
+        imageUploadZone.addEventListener('click', function(e) {
+            if (e.target !== removeImageBtn && e.target !== changeImageBtn) {
+                imageInput.click();
+            }
+        });
+        
+        // Changement de fichier
+        imageInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                    if (uploadPlaceholder) uploadPlaceholder.style.display = 'none';
+                    if (imageActions) imageActions.style.display = 'flex';
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+        
+        // Supprimer l'image
+        if (removeImageBtn) {
+            removeImageBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                imageInput.value = '';
+                previewImage.src = '';
+                previewImage.style.display = 'none';
+                if (uploadPlaceholder) uploadPlaceholder.style.display = 'flex';
+                if (imageActions) imageActions.style.display = 'none';
+            });
+        }
+        
+        // Changer l'image
+        if (changeImageBtn) {
+            changeImageBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                imageInput.click();
+            });
+        }
+    }
+    
+    // Calcul automatique des marges
+    const prixAchatInput = document.getElementById('{{ formulaire.prix_achat.id_for_label }}');
+    const prixVenteInput = document.getElementById('{{ formulaire.prix_vente.id_for_label }}');
+    const tauxTVAInput = document.getElementById('{{ formulaire.taux_tva.id_for_label }}');
+    const margeBrute = document.getElementById('marge-brute');
+    const margePourcentage = document.getElementById('marge-pourcentage');
+    const prixTTC = document.getElementById('prix-ttc');
+    
+    function calculerMarges() {
+        const prixAchat = parseFloat(prixAchatInput.value) || 0;
+        const prixVente = parseFloat(prixVenteInput.value) || 0;
+        const tauxTVA = parseFloat(tauxTVAInput.value) || 0;
+        
+        // Marge brute
+        const marge = prixVente - prixAchat;
+        margeBrute.textContent = marge.toLocaleString('fr-FR', {minimumFractionDigits: 0}) + ' FCFA';
+        
+        // Marge en pourcentage
+        const pourcentage = prixAchat > 0 ? (marge / prixAchat) * 100 : 0;
+        margePourcentage.textContent = pourcentage.toFixed(1) + '%';
+        
+        // Prix TTC
+        const prixTTCValue = prixVente * (1 + (tauxTVA / 100));
+        prixTTC.textContent = prixTTCValue.toLocaleString('fr-FR', {minimumFractionDigits: 0}) + ' FCFA';
+        
+        // Couleurs selon la marge
+        const calcItems = document.querySelectorAll('.calc-item');
+        if (marge > 0) {
+            calcItems[0].classList.add('positive');
+            calcItems[1].classList.add('positive');
+        } else {
+            calcItems[0].classList.remove('positive');
+            calcItems[1].classList.remove('positive');
+        }
+    }
+    
+    if (prixAchatInput && prixVenteInput && tauxTVAInput) {
+        [prixAchatInput, prixVenteInput, tauxTVAInput].forEach(input => {
+            input.addEventListener('input', calculerMarges);
+            input.addEventListener('change', calculerMarges);
+        });
+        
+        // Calcul initial
+        calculerMarges();
+    }
+    
+    // Validation du formulaire
+    const form = document.getElementById('productForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const requiredFields = form.querySelectorAll('[required]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('error');
+                } else {
+                    field.classList.remove('error');
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('⚠️ Veuillez remplir tous les champs obligatoires');
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* ========== STYLES FORMULAIRE PRODUIT MODERNE ========== */
+
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+/* Form Card */
+.form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.form-card-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.header-icon.bg-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.header-icon.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.header-icon.bg-info {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+}
+
+.header-icon.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.header-icon.bg-secondary {
+    background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+}
+
+.form-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.form-card-body {
+    padding: 24px;
+}
+
+/* Form Groups */
+.form-group-modern {
+    margin-bottom: 0;
+}
+
+.form-label-modern {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+.form-label-modern i {
+    color: #6366f1;
+    font-size: 16px;
+}
+
+.required {
+    color: #dc2626;
+    margin-left: 4px;
+}
+
+.form-group-modern input[type="text"],
+.form-group-modern input[type="number"],
+.form-group-modern select,
+.form-group-modern textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: white;
+}
+
+.form-group-modern input:focus,
+.form-group-modern select:focus,
+.form-group-modern textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-group-modern input.error {
+    border-color: #dc2626;
+}
+
+.form-group-modern textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Input with Addon */
+.input-with-addon {
+    display: flex;
+    align-items: stretch;
+}
+
+.input-with-addon input {
+    flex: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+}
+
+.input-addon {
+    padding: 12px 16px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-left: none;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    font-weight: 600;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.input-with-addon input:focus + .input-addon {
+    border-color: #6366f1;
+}
+
+.form-help {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.error-message {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #dc2626;
+    font-weight: 500;
+}
+
+/* Calculations Card */
+.calculations-card {
+    margin-top: 24px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+}
+
+.calc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.calc-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s;
+}
+
+.calc-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.calc-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.calc-success .calc-icon {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.calc-primary .calc-icon {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.calc-info .calc-icon {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+}
+
+.calc-content {
+    flex: 1;
+}
+
+.calc-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.calc-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.calc-item.positive .calc-value {
+    color: #10b981;
+}
+
+/* Image Upload Zone */
+.image-upload-zone {
+    width: 100%;
+    height: 300px;
+    border: 3px dashed #e2e8f0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    background: #f8fafc;
+}
+
+.image-upload-zone:hover {
+    border-color: #6366f1;
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+}
+
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: #94a3b8;
+    text-align: center;
+}
+
+.upload-placeholder i {
+    font-size: 48px;
+    color: #cbd5e1;
+}
+
+.upload-placeholder p {
+    font-size: 16px;
+    font-weight: 600;
+    color: #64748b;
+    margin: 0;
+}
+
+.upload-placeholder span {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.image-upload-zone:hover .image-overlay {
+    opacity: 1;
+}
+
+.btn-change-image {
+    padding: 10px 20px;
+    background: white;
+    border: none;
+    border-radius: 8px;
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-change-image:hover {
+    background: #f1f5f9;
+}
+
+.image-upload-zone input[type="file"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.image-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.btn-remove-image {
+    padding: 10px 20px;
+    background: white;
+    border: 2px solid #fee2e2;
+    border-radius: 8px;
+    color: #dc2626;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-remove-image:hover {
+    background: #fef2f2;
+    border-color: #dc2626;
+}
+
+/* Switch Container */
+.switch-container {
+    margin-bottom: 20px;
+}
+
+.switch-container input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.switch-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.switch-label:hover {
+    background: #f1f5f9;
+}
+
+.switch-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.switch-button {
+    width: 52px;
+    height: 28px;
+    background: #e2e8f0;
+    border-radius: 14px;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.switch-button::before {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: all 0.3s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+input[type="checkbox"]:checked + .switch-label .switch-button {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+input[type="checkbox"]:checked + .switch-label .switch-button::before {
+    transform: translateX(24px);
+}
+
+/* Info Box */
+.info-box {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    border-radius: 10px;
+    border-left: 4px solid #6366f1;
+}
+
+.info-box i {
+    font-size: 20px;
+    color: #6366f1;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.info-box p {
+    font-size: 13px;
+    color: #1e40af;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* Tips Card */
+.tips-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tips-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    color: #92400e;
+}
+
+.tips-header i {
+    font-size: 24px;
+}
+
+.tips-header span {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tip-item {
+    display: flex;
+    gap: 10px;
+}
+
+.tip-item i {
+    font-size: 18px;
+    color: #10b981;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.tip-item p {
+    font-size: 13px;
+    color: #78350f;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.tip-item strong {
+    color: #92400e;
+}
+
+/* Form Actions Bar */
+.form-actions-bar {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 20px 24px;
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.actions-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.actions-left i {
+    color: #f59e0b;
+    font-size: 18px;
+}
+
+.actions-right {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-cancel {
+    padding: 12px 24px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.btn-cancel:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+.btn-submit {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .calc-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 992px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header-left {
+        width: 100%;
+    }
+    
+    .form-card-body {
+        padding: 20px 16px;
+    }
+    
+    .form-actions-bar {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .actions-right {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .btn-cancel,
+    .btn-submit {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .image-upload-zone {
+        height: 250px;
+    }
+}
+</style>
+
+{% endblock %}

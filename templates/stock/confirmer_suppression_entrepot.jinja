@@ -1,0 +1,950 @@
+<!-- templates/stock/confirmer_suppression_entrepot.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Désactiver un entrepôt{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <!-- Carte principale de confirmation -->
+            <div class="confirm-card">
+                <!-- En-tête avec icône d'alerte animée -->
+                <div class="confirm-header confirm-header-warning">
+                    <div class="alert-icon-wrapper">
+                        <div class="alert-icon alert-icon-warning">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div class="alert-ring alert-ring-warning"></div>
+                        <div class="alert-ring alert-ring-warning ring-delay"></div>
+                    </div>
+                    
+                    <h2 class="confirm-title">Confirmer la désactivation</h2>
+                    <p class="confirm-subtitle">
+                        Vous êtes sur le point de <strong>désactiver</strong> cet entrepôt. Il ne sera plus disponible pour les nouveaux mouvements de stock mais <strong>l'historique sera conservé</strong>.
+                    </p>
+                </div>
+                
+                <!-- Informations de l'entrepôt -->
+                <div class="warehouse-info-card">
+                    <div class="warehouse-header">
+                        <div class="warehouse-icon">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <div class="warehouse-details">
+                            <h5 class="warehouse-name">{{ entrepot.nom }}</h5>
+                            <span class="warehouse-code">{{ entrepot.code }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="warehouse-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Adresse</span>
+                            <span class="stat-value stat-small">
+                                {{ entrepot.adresse|truncate(30) if entrepot.adresse else 'Non renseignée' }}
+                            </span>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-label">Responsable</span>
+                            <span class="stat-value stat-small">
+                                {% if entrepot.responsable %}
+                                    {{ entrepot.responsable.get_full_name() if entrepot.responsable.get_full_name() else entrepot.responsable.username }}
+                                {% else %}
+                                    Non assigné
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-label">Produits différents</span>
+                            <span class="stat-value {% if nombre_produits > 0 %}stat-warning{% else %}stat-success{% endif %}">
+                                {{ nombre_produits }}
+                            </span>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-label">Stock total</span>
+                            <span class="stat-value {% if stock_total > 0 %}stat-danger{% else %}stat-success{% endif %}">
+                                {{ stock_total }} unités
+                            </span>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-label">Total mouvements</span>
+                            <span class="stat-value">
+                                {{ total_mouvements }}
+                            </span>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-label">Mouvements récents (30j)</span>
+                            <span class="stat-value {% if mouvements_recents > 0 %}stat-warning{% endif %}">
+                                {{ mouvements_recents }}
+                            </span>
+                        </div>
+                        
+                        <div class="stat-item stat-full">
+                            <span class="stat-label">Statut actuel</span>
+                            <span class="stat-value">
+                                {% if entrepot.est_actif %}
+                                    <span class="badge-status badge-active">Actif</span>
+                                {% else %}
+                                    <span class="badge-status badge-inactive">Inactif</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Avertissement si stock présent -->
+                {% if stock_total > 0 %}
+                <div class="alert-box alert-danger">
+                    <div class="alert-icon-small">
+                        <i class="bi bi-exclamation-octagon-fill"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h6 class="alert-title">Impossible de désactiver !</h6>
+                        <p class="alert-text">
+                            Cet entrepôt contient encore <strong>{{ stock_total }} unité(s)</strong> de stock réparties sur <strong>{{ nombre_produits }} produit(s)</strong>. 
+                            Vous devez d'abord transférer ou ajuster le stock avant de pouvoir désactiver l'entrepôt.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Liste des produits en stock -->
+                {% if stock_produits %}
+                <div class="items-list-card">
+                    <h6 class="items-list-title">
+                        <i class="bi bi-box-seam"></i>
+                        Produits en stock (aperçu)
+                    </h6>
+                    <div class="items-list">
+                        {% for item in stock_produits %}
+                        <div class="item-row">
+                            <div class="item-icon">
+                                <i class="bi bi-box"></i>
+                            </div>
+                            <div class="item-details">
+                                <span class="item-name">{{ item.produit__nom }}</span>
+                                <span class="item-code">{{ item.produit__code }}</span>
+                            </div>
+                            <span class="item-quantity">{{ item.quantite_totale }} unités</span>
+                        </div>
+                        {% endfor %}
+                        {% if nombre_produits > 10 %}
+                        <div class="item-row item-more">
+                            <span class="item-more-text">... et {{ nombre_produits - 10 }} autre(s) produit(s)</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="action-buttons">
+                    <a href="{{ url('stock:details_entrepot', pk=entrepot.pk) }}" class="btn-cancel btn-full">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Retour aux détails de l'entrepôt</span>
+                    </a>
+                </div>
+                
+                {% elif mouvements_recents > 0 %}
+                <div class="alert-box alert-warning">
+                    <div class="alert-icon-small">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h6 class="alert-title">Activité récente détectée</h6>
+                        <p class="alert-text">
+                            Cet entrepôt a enregistré <strong>{{ mouvements_recents }} mouvement(s)</strong> au cours des 30 derniers jours. 
+                            Assurez-vous que cette désactivation n'affectera pas vos opérations en cours.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Informations sur la désactivation -->
+                <div class="alert-box alert-info">
+                    <div class="alert-icon-small">
+                        <i class="bi bi-info-circle-fill"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h6 class="alert-title">Qu'est-ce que la désactivation ?</h6>
+                        <p class="alert-text">
+                            L'entrepôt sera désactivé mais toutes les données (historique des mouvements, statistiques) seront conservées. 
+                            Vous pourrez le réactiver à tout moment depuis la liste des entrepôts.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Formulaire de confirmation -->
+                <form method="post" id="deactivateForm">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    
+                    <div class="action-buttons">
+                        <button type="submit" class="btn-deactivate">
+                            <i class="bi bi-pause-circle"></i>
+                            <span>Oui, désactiver l'entrepôt</span>
+                        </button>
+                        <a href="{{ url('stock:liste_entrepots') }}" class="btn-cancel">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annuler et retourner</span>
+                        </a>
+                    </div>
+                </form>
+                
+                <!-- Impact de la désactivation -->
+                <div class="impact-section">
+                    <h6 class="impact-title">Impact de la désactivation :</h6>
+                    <div class="impact-grid impact-grid-4">
+                        <div class="impact-item">
+                            <div class="impact-icon impact-blocked">
+                                <i class="bi bi-arrow-left-right"></i>
+                            </div>
+                            <div class="impact-label">Nouveaux mouvements</div>
+                            <div class="impact-value">Bloqués</div>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-icon impact-preserved">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="impact-label">Historique</div>
+                            <div class="impact-value">Conservé</div>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-icon impact-reversible">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </div>
+                            <div class="impact-label">Réactivation</div>
+                            <div class="impact-value">Possible</div>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-icon impact-safe">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <div class="impact-label">Données</div>
+                            <div class="impact-value">Sécurisées</div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% else %}
+                <!-- Informations sur la désactivation -->
+                <div class="alert-box alert-info">
+                    <div class="alert-icon-small">
+                        <i class="bi bi-info-circle-fill"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h6 class="alert-title">Qu'est-ce que la désactivation ?</h6>
+                        <p class="alert-text">
+                            L'entrepôt sera désactivé mais toutes les données (historique des mouvements, statistiques) seront conservées. 
+                            Vous pourrez le réactiver à tout moment depuis la liste des entrepôts.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Formulaire de confirmation -->
+                <form method="post" id="deactivateForm">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    
+                    <div class="action-buttons">
+                        <button type="submit" class="btn-deactivate">
+                            <i class="bi bi-pause-circle"></i>
+                            <span>Oui, désactiver l'entrepôt</span>
+                        </button>
+                        <a href="{{ url('stock:liste_entrepots') }}" class="btn-cancel">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annuler et retourner</span>
+                        </a>
+                    </div>
+                </form>
+                
+                <!-- Impact de la désactivation -->
+                <div class="impact-section">
+                    <h6 class="impact-title">Impact de la désactivation :</h6>
+                    <div class="impact-grid impact-grid-4">
+                        <div class="impact-item">
+                            <div class="impact-icon impact-blocked">
+                                <i class="bi bi-arrow-left-right"></i>
+                            </div>
+                            <div class="impact-label">Nouveaux mouvements</div>
+                            <div class="impact-value">Bloqués</div>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-icon impact-preserved">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="impact-label">Historique</div>
+                            <div class="impact-value">Conservé</div>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-icon impact-reversible">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </div>
+                            <div class="impact-label">Réactivation</div>
+                            <div class="impact-value">Possible</div>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-icon impact-safe">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <div class="impact-label">Données</div>
+                            <div class="impact-value">Sécurisées</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Conseils de sécurité -->
+            <div class="recommendations-card">
+                <h6 class="recommendations-title">
+                    <i class="bi bi-shield-check"></i>
+                    Recommandations avant désactivation
+                </h6>
+                <div class="recommendations-grid">
+                    <div class="recommendation-item">
+                        <i class="bi bi-check-circle"></i>
+                        <div>
+                            <div class="recommendation-title">Vérifier le stock</div>
+                            <div class="recommendation-text">Transférez tout le stock vers un autre entrepôt</div>
+                        </div>
+                    </div>
+                    <div class="recommendation-item">
+                        <i class="bi bi-check-circle"></i>
+                        <div>
+                            <div class="recommendation-title">Informer les équipes</div>
+                            <div class="recommendation-text">Prévenez le responsable et les utilisateurs</div>
+                        </div>
+                    </div>
+                    <div class="recommendation-item">
+                        <i class="bi bi-check-circle"></i>
+                        <div>
+                            <div class="recommendation-title">Vérifier les commandes</div>
+                            <div class="recommendation-text">Assurez-vous qu'aucune commande n'est en cours</div>
+                        </div>
+                    </div>
+                    <div class="recommendation-item">
+                        <i class="bi bi-check-circle"></i>
+                        <div>
+                            <div class="recommendation-title">Exporter les données</div>
+                            <div class="recommendation-text">Sauvegardez l'historique si nécessaire</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('deactivateForm');
+    
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            {% if stock_total > 0 %}
+            // Si du stock est présent, bloquer la soumission
+            event.preventDefault();
+            alert('❌ Impossible de désactiver cet entrepôt.\n\nIl contient encore {{ stock_total }} unité(s) de stock !\n\nVeuillez d\'abord transférer ou ajuster le stock.');
+            return false;
+            {% else %}
+            event.preventDefault();
+            
+            // Confirmation simple
+            if (!confirm('⚠️ Êtes-vous certain de vouloir désactiver cet entrepôt ?\n\nIl ne sera plus disponible pour les nouveaux mouvements de stock.')) {
+                return false;
+            }
+            
+            form.submit();
+            {% endif %}
+        });
+    }
+});
+</script>
+
+<style>
+/* ==================== CONFIRM CARD ==================== */
+.confirm-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    margin-bottom: 32px;
+}
+
+/* ==================== CONFIRM HEADER (WARNING VERSION) ==================== */
+.confirm-header-warning {
+    text-align: center;
+    padding: 48px 32px;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border-bottom: 1px solid #fde68a;
+}
+
+.alert-icon-wrapper {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 24px;
+}
+
+.alert-icon-warning {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    color: white;
+    position: relative;
+    z-index: 2;
+    animation: pulse-icon 2s infinite;
+}
+
+.alert-ring-warning {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid #f59e0b;
+    animation: pulse-ring 2s infinite;
+    opacity: 0;
+}
+
+.ring-delay {
+    animation-delay: 1s;
+}
+
+@keyframes pulse-icon {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+    100% {
+        transform: scale(1.4);
+        opacity: 0;
+    }
+}
+
+.confirm-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 16px 0;
+}
+
+.confirm-subtitle {
+    font-size: 15px;
+    color: #64748b;
+    margin: 0;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.confirm-subtitle strong {
+    color: #f59e0b;
+    font-weight: 700;
+}
+
+/* ==================== WAREHOUSE INFO CARD ==================== */
+.warehouse-info-card {
+    padding: 32px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.warehouse-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.warehouse-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.warehouse-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 6px 0;
+}
+
+.warehouse-code {
+    display: inline-block;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.warehouse-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.stat-full {
+    grid-column: 1 / -1;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.stat-small {
+    font-size: 14px;
+    font-weight: 600;
+    text-align: right;
+}
+
+.stat-warning {
+    color: #f59e0b;
+}
+
+.stat-success {
+    color: #10b981;
+}
+
+.stat-danger {
+    color: #dc2626;
+}
+
+.badge-status {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge-inactive {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* ==================== ALERT BOXES ==================== */
+.alert-box {
+    margin: 32px;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    gap: 16px;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-left: 4px solid #dc2626;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-left: 4px solid #f59e0b;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-left: 4px solid #0ea5e9;
+}
+
+.alert-icon-small {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.alert-danger .alert-icon-small {
+    color: #dc2626;
+}
+
+.alert-warning .alert-icon-small {
+    color: #f59e0b;
+}
+
+.alert-info .alert-icon-small {
+    color: #0ea5e9;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px 0;
+}
+
+.alert-text {
+    font-size: 14px;
+    color: #475569;
+    margin: 0;
+}
+
+.alert-text strong {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* ==================== ITEMS LIST CARD ==================== */
+.items-list-card {
+    margin: 0 32px 32px;
+    padding: 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+}
+
+.items-list-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.item-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.item-row:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.item-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.item-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 14px;
+}
+
+.item-code {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.item-quantity {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.item-more {
+    justify-content: center;
+    background: transparent;
+    border: 2px dashed #e2e8f0;
+}
+
+.item-more:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.item-more-text {
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* ==================== ACTION BUTTONS ==================== */
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 32px;
+}
+
+.btn-deactivate,
+.btn-cancel,
+.btn-full {
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-deactivate {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: #000;
+}
+
+.btn-deactivate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+}
+
+.btn-cancel {
+    background: white;
+    border: 2px solid #e2e8f0;
+    color: #64748b;
+}
+
+.btn-cancel:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+.btn-full {
+    grid-column: 1 / -1;
+}
+
+/* ==================== IMPACT SECTION ==================== */
+.impact-section {
+    padding: 32px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.impact-title {
+    font-size: 15px;
+    color: #64748b;
+    margin: 0 0 20px 0;
+    font-weight: 600;
+}
+
+.impact-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.impact-item {
+    text-align: center;
+}
+
+.impact-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 12px;
+}
+
+.impact-blocked {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #dc2626;
+}
+
+.impact-preserved {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #0ea5e9;
+}
+
+.impact-reversible {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #10b981;
+}
+
+.impact-safe {
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+}
+
+.impact-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.impact-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* ==================== RECOMMENDATIONS CARD ==================== */
+.recommendations-card {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.recommendations-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.recommendations-title i {
+    font-size: 24px;
+    color: #10b981;
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.recommendation-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.recommendation-item > i {
+    font-size: 20px;
+    color: #10b981;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.recommendation-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.recommendation-text {
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .confirm-header-warning {
+        padding: 32px 24px;
+    }
+    
+    .alert-icon-wrapper {
+        width: 96px;
+        height: 96px;
+    }
+    
+    .alert-icon-warning,
+    .alert-ring-warning {
+        width: 96px;
+        height: 96px;
+    }
+    
+    .alert-icon-warning {
+        font-size: 48px;
+    }
+    
+    .confirm-title {
+        font-size: 24px;
+    }
+    
+    .warehouse-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .btn-full {
+        grid-column: 1;
+    }
+    
+    .impact-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .recommendations-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+{% endblock %}

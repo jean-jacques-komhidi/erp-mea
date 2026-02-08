@@ -1,0 +1,1200 @@
+<!-- templates/achats/confirmer_commande.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Confirmer la commande {{ commande.numero_commande }}{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête moderne avec retour -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/achats/{{ commande.pk }}/" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">Confirmation de la commande</h4>
+                <p class="page-subtitle">Vérifiez les détails avant de confirmer {{ commande.numero_commande }}</p>
+            </div>
+        </div>
+        <div class="page-header-right">
+            <span class="status-indicator status-pending">
+                <i class="bi bi-clock-history"></i> En attente de validation
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Colonne principale (gauche) -->
+        <div class="col-lg-8">
+            <!-- Alerte d'information -->
+            <div class="info-alert">
+                <div class="info-alert-icon">
+                    <i class="bi bi-info-circle"></i>
+                </div>
+                <div class="info-alert-content">
+                    <h6 class="info-alert-title">Vous êtes sur le point de confirmer cette commande</h6>
+                    <p class="info-alert-text">Une fois confirmée, la commande sera validée et prête à être envoyée au fournisseur. Veuillez vérifier attentivement tous les détails avant de confirmer.</p>
+                </div>
+            </div>
+
+            <!-- Récapitulatif de la commande -->
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-item-icon bg-primary">
+                        <i class="bi bi-hash"></i>
+                    </div>
+                    <div class="summary-item-content">
+                        <div class="summary-item-label">N° Commande</div>
+                        <div class="summary-item-value">{{ commande.numero_commande }}</div>
+                    </div>
+                </div>
+
+                <div class="summary-item">
+                    <div class="summary-item-icon bg-info">
+                        <i class="bi bi-building"></i>
+                    </div>
+                    <div class="summary-item-content">
+                        <div class="summary-item-label">Fournisseur</div>
+                        <div class="summary-item-value">{{ commande.fournisseur.nom }}</div>
+                    </div>
+                </div>
+
+                <div class="summary-item">
+                    <div class="summary-item-icon bg-warning">
+                        <i class="bi bi-calendar3"></i>
+                    </div>
+                    <div class="summary-item-content">
+                        <div class="summary-item-label">Date commande</div>
+                        <div class="summary-item-value">{{ commande.date_commande.strftime('%d/%m/%Y') }}</div>
+                    </div>
+                </div>
+
+                <div class="summary-item">
+                    <div class="summary-item-icon bg-success">
+                        <i class="bi bi-currency-dollar"></i>
+                    </div>
+                    <div class="summary-item-content">
+                        <div class="summary-item-label">Montant total</div>
+                        <div class="summary-item-value summary-item-amount">{{ "{:,.0f}".format(commande.total) }} FCFA</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informations complémentaires -->
+            <div class="details-card">
+                <div class="details-row">
+                    <div class="details-icon">
+                        <i class="bi bi-house-door"></i>
+                    </div>
+                    <div class="details-content">
+                        <div class="details-label">Entrepôt de réception</div>
+                        <div class="details-value">{{ commande.entrepot.nom }}</div>
+                    </div>
+                </div>
+
+                <div class="details-row">
+                    <div class="details-icon">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <div class="details-content">
+                        <div class="details-label">Livraison prévue</div>
+                        <div class="details-value">
+                            {% if commande.date_livraison_prevue %}
+                            {{ commande.date_livraison_prevue.strftime('%d/%m/%Y') }}
+                            {% else %}
+                            <span class="text-muted">Non définie</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lignes de commande -->
+            <div class="lines-card">
+                <div class="lines-card-header">
+                    <div class="lines-icon">
+                        <i class="bi bi-list-check"></i>
+                    </div>
+                    <h6>Produits commandés</h6>
+                    <div class="badge-count">{{ lignes|length }}</div>
+                </div>
+                <div class="lines-card-body">
+                    <div class="table-container">
+                        <table class="lines-table">
+                            <thead>
+                                <tr>
+                                    <th>Produit</th>
+                                    <th class="text-center" style="width: 100px;">Quantité</th>
+                                    <th class="text-end" style="width: 130px;">Prix HT</th>
+                                    <th class="text-center" style="width: 80px;">TVA</th>
+                                    <th class="text-end" style="width: 130px;">Total TTC</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ligne in lignes %}
+                                <tr>
+                                    <td>
+                                        <div class="product-display">
+                                            <div class="product-avatar">
+                                                {{ ligne.produit.nom[0]|upper if ligne.produit and ligne.produit.nom else 'P' }}
+                                            </div>
+                                            <div>
+                                                <div class="product-name">{{ ligne.produit.nom if ligne.produit else 'Produit supprimé' }}</div>
+                                                {% if ligne.produit and ligne.produit.code %}
+                                                <div class="product-code">{{ ligne.produit.code }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="quantity-badge">{{ ligne.quantite }}</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="price-display">{{ "{:,.0f}".format(ligne.prix_unitaire) }}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="tax-badge">{{ ligne.taux_tva|default(0) }}%</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="total-display">{{ "{:,.0f}".format(ligne.total) }}</div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Résumé financier -->
+            <div class="financial-summary">
+                <div class="financial-summary-header">
+                    <i class="bi bi-calculator"></i>
+                    <h6>Résumé financier</h6>
+                </div>
+                <div class="financial-summary-body">
+                    <div class="financial-row">
+                        <span class="financial-label">Sous-total HT</span>
+                        <span class="financial-value">{{ "{:,.0f}".format(commande.sous_total) }} FCFA</span>
+                    </div>
+                    <div class="financial-row">
+                        <span class="financial-label">TVA</span>
+                        <span class="financial-value">{{ "{:,.0f}".format(commande.montant_tva) }} FCFA</span>
+                    </div>
+                    <div class="financial-divider"></div>
+                    <div class="financial-row financial-total">
+                        <span class="financial-label">Total TTC</span>
+                        <span class="financial-amount">{{ "{:,.0f}".format(commande.total) }} FCFA</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes (si présentes) -->
+            {% if commande.notes %}
+            <div class="notes-card">
+                <div class="notes-header">
+                    <i class="bi bi-chat-left-text"></i>
+                    <span>Notes de la commande</span>
+                </div>
+                <div class="notes-body">
+                    <i class="bi bi-info-circle notes-icon"></i>
+                    <p>{{ commande.notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Colonne latérale (droite) -->
+        <div class="col-lg-4">
+            <div class="sticky-sidebar">
+                <!-- Formulaire de confirmation -->
+                <form method="post" id="confirmForm">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    
+                    <div class="checklist-card">
+                        <div class="checklist-header">
+                            <i class="bi bi-clipboard-check"></i>
+                            <h6>Vérifications requises</h6>
+                        </div>
+                        <div class="checklist-body">
+                            <div class="checklist-item">
+                                <div class="custom-checkbox-modern">
+                                    <input type="checkbox" id="check1" required>
+                                    <label for="check1">
+                                        <span class="checkbox-icon"></span>
+                                        <div class="checkbox-content">
+                                            <div class="checkbox-title">Informations fournisseur</div>
+                                            <div class="checkbox-desc">Nom, coordonnées et conditions vérifiées</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="checklist-item">
+                                <div class="custom-checkbox-modern">
+                                    <input type="checkbox" id="check2" required>
+                                    <label for="check2">
+                                        <span class="checkbox-icon"></span>
+                                        <div class="checkbox-content">
+                                            <div class="checkbox-title">Produits et quantités</div>
+                                            <div class="checkbox-desc">Références et quantités vérifiées</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="checklist-item">
+                                <div class="custom-checkbox-modern">
+                                    <input type="checkbox" id="check3" required>
+                                    <label for="check3">
+                                        <span class="checkbox-icon"></span>
+                                        <div class="checkbox-content">
+                                            <div class="checkbox-title">Prix et tarifs</div>
+                                            <div class="checkbox-desc">Prix conformes aux tarifs négociés</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="checklist-item">
+                                <div class="custom-checkbox-modern">
+                                    <input type="checkbox" id="check4" required>
+                                    <label for="check4">
+                                        <span class="checkbox-icon"></span>
+                                        <div class="checkbox-content">
+                                            <div class="checkbox-title">Entrepôt de réception</div>
+                                            <div class="checkbox-desc">Capacité et disponibilité vérifiées</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Confirmation finale -->
+                    <div class="final-confirm-card">
+                        <div class="final-confirm-content">
+                            <div class="custom-checkbox-final">
+                                <input type="checkbox" id="confirmFinal" required>
+                                <label for="confirmFinal">
+                                    <span class="checkbox-icon"></span>
+                                    <span class="checkbox-text">Je confirme avoir vérifié tous les détails et je valide cette commande</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Boutons d'action -->
+                    <div class="action-buttons">
+                        <button type="submit" class="btn-primary-gradient" id="btnConfirmer" disabled>
+                            <i class="bi bi-check-circle"></i>
+                            <span>Confirmer la commande</span>
+                        </button>
+                        <a href="/achats/{{ commande.pk }}/" class="btn-secondary-outline">
+                            <i class="bi bi-arrow-left"></i>
+                            <span>Retour</span>
+                        </a>
+                    </div>
+                </form>
+
+                <!-- Prochaines étapes -->
+                <div class="steps-card">
+                    <div class="steps-header">
+                        <i class="bi bi-signpost"></i>
+                        <h6>Prochaines étapes</h6>
+                    </div>
+                    <div class="steps-body">
+                        <div class="step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <div class="step-title">Envoyer au fournisseur</div>
+                                <div class="step-desc">Transmettre la commande</div>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <div class="step-title">Attendre la livraison</div>
+                                <div class="step-desc">Suivi de la commande</div>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <div class="step-title">Réceptionner</div>
+                                <div class="step-desc">Vérifier et enregistrer</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('confirmForm');
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const btnConfirmer = document.getElementById('btnConfirmer');
+    
+    // Mettre à jour l'état du bouton
+    function updateButtonState() {
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        btnConfirmer.disabled = !allChecked;
+        
+        if (allChecked) {
+            btnConfirmer.classList.add('active');
+        } else {
+            btnConfirmer.classList.remove('active');
+        }
+    }
+    
+    // Écouter les changements de checkbox
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateButtonState);
+    });
+    
+    // État initial
+    updateButtonState();
+    
+    // Validation du formulaire
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            
+            if (!allChecked) {
+                event.preventDefault();
+                alert('Veuillez cocher toutes les cases de vérification avant de confirmer.');
+                return;
+            }
+            
+            // Confirmation finale
+            if (!confirm('Êtes-vous sûr de vouloir confirmer cette commande ?\n\nAprès confirmation, la commande sera validée et prête à être envoyée au fournisseur.')) {
+                event.preventDefault();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* ==================== PAGE HEADER ==================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* ==================== INFO ALERT ==================== */
+.info-alert {
+    display: flex;
+    gap: 16px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-radius: 16px;
+    margin-bottom: 24px;
+}
+
+.info-alert-icon {
+    width: 48px;
+    height: 48px;
+    background: #3b82f6;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.info-alert-content {
+    flex: 1;
+}
+
+.info-alert-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 0 0 8px 0;
+}
+
+.info-alert-text {
+    font-size: 14px;
+    color: #1e3a8a;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ==================== SUMMARY GRID ==================== */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-item {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.summary-item-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.summary-item-icon.bg-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.summary-item-icon.bg-info {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+}
+
+.summary-item-icon.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.summary-item-icon.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.summary-item-content {
+    flex: 1;
+}
+
+.summary-item-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.summary-item-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.summary-item-amount {
+    color: #6366f1;
+}
+
+/* ==================== DETAILS CARD ==================== */
+.details-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.details-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.details-row:last-child {
+    margin-bottom: 0;
+}
+
+.details-icon {
+    width: 40px;
+    height: 40px;
+    background: #e0e7ff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6366f1;
+    font-size: 20px;
+}
+
+.details-content {
+    flex: 1;
+}
+
+.details-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.details-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* ==================== LINES CARD ==================== */
+.lines-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.lines-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lines-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.lines-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    flex: 1;
+}
+
+.badge-count {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #6366f1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.lines-card-body {
+    padding: 0;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.lines-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.lines-table thead {
+    background: #f8fafc;
+}
+
+.lines-table th {
+    padding: 16px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.lines-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.lines-table td {
+    padding: 20px;
+    vertical-align: middle;
+}
+
+.product-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.product-avatar {
+    width: 40px;
+    height: 40px;
+    background: #e0e7ff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.product-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.product-code {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.quantity-badge {
+    display: inline-flex;
+    padding: 6px 16px;
+    background: #dbeafe;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.price-display {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.price-display::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+.tax-badge {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.total-display {
+    font-size: 16px;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.total-display::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+/* ==================== FINANCIAL SUMMARY ==================== */
+.financial-summary {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.financial-summary-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.financial-summary-header i {
+    font-size: 20px;
+    color: #6366f1;
+}
+
+.financial-summary-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.financial-summary-body {
+    padding: 24px;
+    background: #f8fafc;
+}
+
+.financial-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.financial-label {
+    font-size: 14px;
+    color: #64748b;
+}
+
+.financial-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.financial-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 20px 0;
+}
+
+.financial-total .financial-label {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.financial-amount {
+    font-size: 28px;
+    font-weight: 700;
+    color: #6366f1;
+}
+
+/* ==================== NOTES CARD ==================== */
+.notes-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.notes-header {
+    padding: 16px 20px;
+    background: rgba(245, 158, 11, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #92400e;
+}
+
+.notes-body {
+    padding: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.notes-icon {
+    font-size: 20px;
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+.notes-body p {
+    font-size: 14px;
+    color: #78350f;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ==================== SIDEBAR ==================== */
+.sticky-sidebar {
+    position: sticky;
+    top: 24px;
+}
+
+/* ==================== CHECKLIST CARD ==================== */
+.checklist-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 16px;
+}
+
+.checklist-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.checklist-header i {
+    font-size: 20px;
+    color: #6366f1;
+}
+
+.checklist-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.checklist-body {
+    padding: 16px;
+}
+
+.checklist-item {
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+}
+
+.checklist-item:last-child {
+    margin-bottom: 0;
+}
+
+.checklist-item:has(input:checked) {
+    background: #dcfce7;
+    border-left: 3px solid #10b981;
+}
+
+.custom-checkbox-modern {
+    position: relative;
+}
+
+.custom-checkbox-modern input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.custom-checkbox-modern label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.checkbox-icon {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #cbd5e1;
+    border-radius: 6px;
+    background: white;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.custom-checkbox-modern input:checked + label .checkbox-icon {
+    background: #10b981;
+    border-color: #10b981;
+}
+
+.custom-checkbox-modern input:checked + label .checkbox-icon::after {
+    content: '\f26b';
+    font-family: 'bootstrap-icons';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+}
+
+.checkbox-content {
+    flex: 1;
+}
+
+.checkbox-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.checkbox-desc {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* ==================== FINAL CONFIRM ==================== */
+.final-confirm-card {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.custom-checkbox-final {
+    position: relative;
+}
+
+.custom-checkbox-final input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.custom-checkbox-final label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.custom-checkbox-final .checkbox-icon {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #6366f1;
+    border-radius: 6px;
+    background: white;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.custom-checkbox-final input:checked + label .checkbox-icon {
+    background: #6366f1;
+    border-color: #6366f1;
+}
+
+.custom-checkbox-final input:checked + label .checkbox-icon::after {
+    content: '\f26b';
+    font-family: 'bootstrap-icons';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+}
+
+.checkbox-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4338ca;
+    line-height: 1.5;
+}
+
+/* ==================== ACTION BUTTONS ==================== */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.btn-primary-gradient {
+    width: 100%;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    opacity: 0.5;
+}
+
+.btn-primary-gradient:disabled {
+    cursor: not-allowed;
+}
+
+.btn-primary-gradient.active {
+    opacity: 1;
+}
+
+.btn-primary-gradient.active:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+}
+
+.btn-secondary-outline {
+    width: 100%;
+    padding: 12px 24px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.btn-secondary-outline:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+/* ==================== STEPS CARD ==================== */
+.steps-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.steps-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.steps-header i {
+    font-size: 20px;
+    color: #10b981;
+}
+
+.steps-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.steps-body {
+    padding: 20px;
+}
+
+.step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.step-item:last-child {
+    margin-bottom: 0;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.step-desc {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 992px) {
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .sticky-sidebar {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+}
+</style>
+
+{% endblock %}

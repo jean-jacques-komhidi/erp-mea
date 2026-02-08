@@ -1,0 +1,997 @@
+<!-- templates/stock/liste_mouvements.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Mouvements de stock{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête de page -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <h4 class="page-title">📦 Mouvements de Stock</h4>
+            <p class="page-subtitle">Historique des entrées, sorties et ajustements</p>
+        </div>
+        <div class="page-header-right">
+            <a href="/stock/mouvements/nouveau/" class="btn-primary">
+                <i class="bi bi-plus-circle"></i>
+                <span>Nouveau mouvement</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Cartes de statistiques -->
+    <div class="stats-grid">
+        <div class="stat-card stat-success">
+            <div class="stat-icon">
+                <i class="bi bi-box-arrow-in-right"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ mouvements|selectattr('type_mouvement', 'equalto', 'ENTREE')|list|length|default(0) }}</div>
+                <div class="stat-label">Total entrées</div>
+                <div class="stat-badge">Stock reçu</div>
+            </div>
+        </div>
+
+        <div class="stat-card stat-danger">
+            <div class="stat-icon">
+                <i class="bi bi-box-arrow-left"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ mouvements|selectattr('type_mouvement', 'equalto', 'SORTIE')|list|length|default(0) }}</div>
+                <div class="stat-label">Total sorties</div>
+                <div class="stat-badge">Stock expédié</div>
+            </div>
+        </div>
+
+        <div class="stat-card stat-info">
+            <div class="stat-icon">
+                <i class="bi bi-arrow-left-right"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ mouvements|selectattr('type_mouvement', 'equalto', 'TRANSFERT')|list|length|default(0) }}</div>
+                <div class="stat-label">Total transferts</div>
+                <div class="stat-badge">Entre entrepôts</div>
+            </div>
+        </div>
+
+        <div class="stat-card stat-primary">
+            <div class="stat-icon">
+                <i class="bi bi-list-check"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ mouvements|length|default(0) }}</div>
+                <div class="stat-label">Total mouvements</div>
+                <div class="stat-badge">Tous types</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carte principale -->
+    <div class="main-card">
+        <!-- Barre de filtres -->
+        <div class="filters-bar">
+            <form method="get" class="filters-form">
+                <select name="type" class="filter-select" onchange="this.form.submit()">
+                    <option value="">Tous types</option>
+                    <option value="ENTREE" {% if type_selectionne == 'ENTREE' %}selected{% endif %}>Entrée</option>
+                    <option value="SORTIE" {% if type_selectionne == 'SORTIE' %}selected{% endif %}>Sortie</option>
+                    <option value="AJUSTEMENT" {% if type_selectionne == 'AJUSTEMENT' %}selected{% endif %}>Ajustement</option>
+                    <option value="TRANSFERT" {% if type_selectionne == 'TRANSFERT' %}selected{% endif %}>Transfert</option>
+                </select>
+                
+                <select name="entrepot" class="filter-select" onchange="this.form.submit()">
+                    <option value="">Tous entrepôts</option>
+                    {% for entrepot in entrepots %}
+                    <option value="{{ entrepot.id }}" {% if entrepot_selectionne == entrepot.id|string %}selected{% endif %}>
+                        {{ entrepot.nom|truncate(20) }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                {% if type_selectionne or entrepot_selectionne %}
+                <a href="?" class="btn-clear-filters">
+                    <i class="bi bi-x-circle"></i>
+                    <span>Effacer</span>
+                </a>
+                {% endif %}
+            </form>
+
+            {% if type_selectionne or entrepot_selectionne %}
+            <div class="active-filters">
+                <span class="active-filters-label">Filtres actifs :</span>
+                {% if type_selectionne %}
+                <span class="filter-chip chip-type">
+                    {{ type_selectionne }}
+                </span>
+                {% endif %}
+                {% if entrepot_selectionne %}
+                <span class="filter-chip chip-warehouse">
+                    {% for entrepot in entrepots %}
+                        {% if entrepot_selectionne == entrepot.id|string %}
+                            {{ entrepot.nom|truncate(15) }}
+                        {% endif %}
+                    {% endfor %}
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Tableau des mouvements -->
+        <div class="table-container">
+            <table class="movements-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="selectAll" class="checkbox-modern">
+                        </th>
+                        <th style="width: 140px;">Date & Heure</th>
+                        <th style="width: 120px;">Type</th>
+                        <th style="min-width: 180px;">Produit</th>
+                        <th style="width: 150px;">Entrepôt</th>
+                        <th style="width: 120px;">Quantité</th>
+                        <th style="width: 140px;">Référence</th>
+                        <th style="width: 130px;">Utilisateur</th>
+                        <th style="width: 100px;" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mouvement in mouvements %}
+                    <tr class="movement-row">
+                        <td>
+                            <input type="checkbox" name="mouvement_ids" value="{{ mouvement.pk }}" class="checkbox-modern">
+                        </td>
+                        <td>
+                            <div class="date-cell">
+                                <div class="date-main">{{ mouvement.date.strftime('%d/%m/%Y') }}</div>
+                                <div class="date-time">{{ mouvement.date.strftime('%H:%M') }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if mouvement.type_mouvement == 'ENTREE' %}
+                            <span class="movement-badge movement-entree">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                                Entrée
+                            </span>
+                            {% elif mouvement.type_mouvement == 'SORTIE' %}
+                            <span class="movement-badge movement-sortie">
+                                <i class="bi bi-box-arrow-left"></i>
+                                Sortie
+                            </span>
+                            {% elif mouvement.type_mouvement == 'AJUSTEMENT' %}
+                            <span class="movement-badge movement-ajustement">
+                                <i class="bi bi-gear"></i>
+                                Ajustement
+                            </span>
+                            {% elif mouvement.type_mouvement == 'TRANSFERT' %}
+                            <span class="movement-badge movement-transfert">
+                                <i class="bi bi-arrow-left-right"></i>
+                                Transfert
+                            </span>
+                            {% else %}
+                            <span class="movement-badge movement-other">
+                                {{ mouvement.get_type_mouvement_display() }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="product-cell">
+                                {% if mouvement.produit and mouvement.produit.image %}
+                                <img src="{{ mouvement.produit.image.url }}" alt="{{ mouvement.produit.nom }}" class="product-image">
+                                {% else %}
+                                <div class="product-avatar">
+                                    {% if mouvement.produit and mouvement.produit.nom %}
+                                        {{ mouvement.produit.nom[0]|upper }}
+                                    {% else %}
+                                        P
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                <div class="product-info">
+                                    <div class="product-name">
+                                        {% if mouvement.produit %}
+                                            {{ mouvement.produit.nom|truncate(25) }}
+                                        {% else %}
+                                            <span class="text-muted">Produit supprimé</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if mouvement.produit and mouvement.produit.code %}
+                                    <div class="product-code">{{ mouvement.produit.code|truncate(20) }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if mouvement.entrepot %}
+                            <div class="warehouse-badge">
+                                <i class="bi bi-building"></i>
+                                {{ mouvement.entrepot.nom|truncate(18) }}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="quantity-cell">
+                                {% if mouvement.type_mouvement == 'ENTREE' %}
+                                <span class="qty-badge qty-positive">
+                                    <i class="bi bi-plus-circle"></i>
+                                    {{ mouvement.quantite }}
+                                </span>
+                                {% elif mouvement.type_mouvement == 'SORTIE' %}
+                                <span class="qty-badge qty-negative">
+                                    <i class="bi bi-dash-circle"></i>
+                                    {{ mouvement.quantite }}
+                                </span>
+                                {% else %}
+                                <span class="qty-badge qty-neutral">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                    {{ mouvement.quantite }}
+                                </span>
+                                {% endif %}
+                                {% if mouvement.produit and mouvement.produit.unite_mesure %}
+                                <div class="qty-unit">{{ mouvement.produit.unite_mesure|truncate(5, True, '') }}</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if mouvement.reference %}
+                            <div class="reference-badge" title="{{ mouvement.reference }}">
+                                {{ mouvement.reference|truncate(18) }}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">
+                                    {% if mouvement.utilisateur and mouvement.utilisateur.username %}
+                                        {{ mouvement.utilisateur.username[0]|upper }}
+                                    {% else %}
+                                        S
+                                    {% endif %}
+                                </div>
+                                <div class="user-name">
+                                    {% if mouvement.utilisateur %}
+                                        {{ mouvement.utilisateur.username|truncate(15) }}
+                                    {% else %}
+                                        Système
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="action-buttons">
+                                <a href="/stock/mouvements/{{ mouvement.pk }}/" class="action-btn action-btn-view" title="Voir détails">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="/stock/mouvements/{{ mouvement.pk }}/supprimer/" class="action-btn action-btn-delete" title="Annuler">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <div class="empty-state-content">
+                                    <i class="bi bi-arrow-left-right"></i>
+                                    <h5>Aucun mouvement trouvé</h5>
+                                    <p>
+                                        {% if type_selectionne or entrepot_selectionne %}
+                                        Aucun mouvement ne correspond à vos critères de filtrage.
+                                        {% else %}
+                                        Aucun mouvement n'a été enregistré pour le moment.
+                                        {% endif %}
+                                    </p>
+                                    <a href="/stock/mouvements/nouveau/" class="btn-primary">
+                                        <i class="bi bi-plus-circle"></i>
+                                        <span>Créer un mouvement</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer avec actions -->
+        <div class="table-footer">
+            <div class="bulk-actions">
+                <select class="bulk-select" id="bulkActionSelect">
+                    <option value="">Actions groupées</option>
+                    <option value="export">📊 Exporter sélection</option>
+                    <option value="print">🖨️ Imprimer mouvements</option>
+                    <option value="cancel">❌ Annuler mouvements</option>
+                    <option value="report">📄 Générer rapport</option>
+                </select>
+                <button class="btn-apply" id="applyBulkAction">Appliquer</button>
+            </div>
+
+            <div class="pagination-info">
+                <span class="info-text">
+                    {% if page_obj %}
+                    {{ page_obj.start_index }} - {{ page_obj.end_index }} sur {{ page_obj.paginator.count }}
+                    {% else %}
+                    Total: {{ mouvements|length }} mouvement(s)
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sélection multiple
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('input[name="mouvement_ids"]');
+    
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+    }
+    
+    // Actions groupées
+    const applyBtn = document.getElementById('applyBulkAction');
+    const bulkSelect = document.getElementById('bulkActionSelect');
+    
+    if (applyBtn && bulkSelect) {
+        applyBtn.addEventListener('click', function() {
+            const action = bulkSelect.value;
+            const selected = Array.from(checkboxes).filter(cb => cb.checked);
+            
+            if (!action) {
+                alert('⚠️ Veuillez sélectionner une action');
+                return;
+            }
+            
+            if (selected.length === 0) {
+                alert('⚠️ Veuillez sélectionner au moins un mouvement');
+                return;
+            }
+            
+            const count = selected.length;
+            let message = '';
+            
+            switch(action) {
+                case 'export':
+                    message = `📊 Exporter ${count} mouvement(s) ?`;
+                    break;
+                case 'print':
+                    message = `🖨️ Imprimer ${count} mouvement(s) ?`;
+                    break;
+                case 'cancel':
+                    message = `❌ ATTENTION ! Annuler ${count} mouvement(s) ?\n\nCette action est IRRÉVERSIBLE !`;
+                    break;
+                case 'report':
+                    message = `📄 Générer un rapport pour ${count} mouvement(s) ?`;
+                    break;
+            }
+            
+            if (confirm(message)) {
+                alert(`Action "${action}" appliquée à ${count} mouvement(s)`);
+                // TODO: Implémenter l'action côté serveur
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* ==================== PAGE HEADER ==================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    flex: 1;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+.page-header-right {
+    display: flex;
+    gap: 12px;
+}
+
+/* ==================== BUTTONS ==================== */
+.btn-primary {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+/* ==================== STATS GRID ==================== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.stat-success .stat-icon {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    color: white;
+}
+
+.stat-danger .stat-icon {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    color: white;
+}
+
+.stat-info .stat-icon {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    color: white;
+}
+
+.stat-primary .stat-icon {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.stat-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+/* ==================== MAIN CARD ==================== */
+.main-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    margin-bottom: 32px;
+}
+
+/* ==================== FILTERS BAR ==================== */
+.filters-bar {
+    padding: 24px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #f8fafc;
+}
+
+.filters-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    padding: 10px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+    min-width: 150px;
+}
+
+.btn-clear-filters {
+    padding: 10px 20px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-clear-filters:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.active-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.active-filters-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.chip-type {
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+}
+
+.chip-warehouse {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* ==================== TABLE ==================== */
+.table-container {
+    overflow-x: auto;
+}
+
+.movements-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.movements-table thead {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.movements-table th {
+    padding: 16px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.movements-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s;
+}
+
+.movements-table tbody tr:hover {
+    background: #f8fafc;
+    transform: translateX(2px);
+}
+
+.movements-table td {
+    padding: 14px 12px;
+    vertical-align: middle;
+}
+
+/* ==================== TABLE CELLS ==================== */
+.checkbox-modern {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #6366f1;
+}
+
+.date-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.date-main {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 13px;
+}
+
+.date-time {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.movement-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.movement-entree {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.movement-sortie {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.movement-ajustement {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.movement-transfert {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.movement-other {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.product-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.product-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.product-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.product-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.product-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.product-code {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.warehouse-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.quantity-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.qty-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.qty-positive {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.qty-negative {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.qty-neutral {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.qty-unit {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.reference-badge {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 13px;
+}
+
+.text-muted {
+    color: #94a3b8;
+}
+
+/* ==================== ACTION BUTTONS ==================== */
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn-view:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.action-btn-delete:hover {
+    border-color: #dc2626;
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+/* ==================== EMPTY STATE ==================== */
+.empty-state {
+    padding: 80px 20px !important;
+    text-align: center;
+}
+
+.empty-state-content i {
+    font-size: 64px;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.empty-state-content h5 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.empty-state-content p {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 24px;
+}
+
+/* ==================== TABLE FOOTER ==================== */
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-top: 1px solid #f1f5f9;
+    background: #f8fafc;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.bulk-select {
+    padding: 10px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+}
+
+.btn-apply {
+    padding: 10px 20px;
+    background: #6366f1;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.btn-apply:hover {
+    background: #5558e3;
+}
+
+.pagination-info {
+    display: flex;
+    align-items: center;
+}
+
+.info-text {
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .filters-form {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .filter-select {
+        width: 100%;
+    }
+    
+    .table-footer {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .bulk-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .bulk-select {
+        width: 100%;
+    }
+}
+</style>
+
+{% endblock %}

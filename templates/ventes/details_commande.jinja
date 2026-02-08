@@ -1,0 +1,1319 @@
+<!-- templates/ventes/details_commande.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Commande {{ commande.numero_commande }}{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête moderne avec actions -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/ventes/commandes/" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">Commande {{ commande.numero_commande }}</h4>
+                <p class="page-subtitle">Détails et lignes de la commande</p>
+            </div>
+        </div>
+        <div class="page-header-right">
+            <!-- Actions selon le statut -->
+            {% if commande.statut == 'BROUILLON' %}
+            <a href="/ventes/commandes/{{ commande.pk }}/confirmer/" class="btn-action-primary">
+                <i class="bi bi-check-circle"></i>
+                <span>Confirmer</span>
+            </a>
+            <a href="/ventes/commandes/{{ commande.pk }}/modifier/" class="btn-action-secondary">
+                <i class="bi bi-pencil"></i>
+                <span>Modifier</span>
+            </a>
+            {% elif commande.statut == 'CONFIRME' %}
+            <a href="/ventes/commandes/{{ commande.pk }}/expedier/" class="btn-action-primary">
+                <i class="bi bi-truck"></i>
+                <span>Expédier</span>
+            </a>
+            {% elif commande.statut == 'EXPEDIE' %}
+            <a href="/ventes/commandes/{{ commande.pk }}/facturer/" class="btn-action-primary">
+                <i class="bi bi-receipt"></i>
+                <span>Créer facture</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Colonne principale (gauche) -->
+        <div class="col-lg-8">
+            <!-- Carte informations principales -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-icon bg-primary">
+                        <i class="bi bi-info-circle"></i>
+                    </div>
+                    <h6>Informations de la commande</h6>
+                </div>
+                <div class="info-card-body">
+                    <div class="row g-3">
+                        <!-- Client -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Client</div>
+                                <div class="info-content">
+                                    <div class="client-display">
+                                        <div class="client-avatar">
+                                            {{ commande.client.nom[0]|upper if commande.client.nom else 'C' }}
+                                        </div>
+                                        <div>
+                                            <div class="client-name">{{ commande.client.nom }}</div>
+                                            <div class="client-code">{{ commande.client.code|default('') }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Entrepôt -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Entrepôt</div>
+                                <div class="info-content">
+                                    <div class="info-value">
+                                        <i class="bi bi-building"></i>
+                                        {{ commande.entrepot.nom }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date commande -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Date de commande</div>
+                                <div class="info-content">
+                                    <div class="info-value">
+                                        <i class="bi bi-calendar3"></i>
+                                        {{ commande.date_commande.strftime('%d/%m/%Y à %H:%M') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date livraison -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Livraison prévue</div>
+                                <div class="info-content">
+                                    <div class="info-value">
+                                        <i class="bi bi-truck"></i>
+                                        {{ commande.date_livraison.strftime('%d/%m/%Y') }}
+                                    </div>
+                                    {% if commande.date_livraison and commande.date_livraison < aujourdhui %}
+                                    <div class="delay-badge">
+                                        <i class="bi bi-clock-history"></i> En retard
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statut -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Statut</div>
+                                <div class="info-content">
+                                    {% if commande.statut == 'BROUILLON' %}
+                                    <span class="status-badge-large status-draft">
+                                        <span class="status-dot"></span>
+                                        Brouillon
+                                    </span>
+                                    {% elif commande.statut == 'CONFIRME' %}
+                                    <span class="status-badge-large status-confirmed">
+                                        <span class="status-dot"></span>
+                                        Confirmé
+                                    </span>
+                                    {% elif commande.statut == 'EXPEDIE' %}
+                                    <span class="status-badge-large status-shipped">
+                                        <span class="status-dot"></span>
+                                        Expédié
+                                    </span>
+                                    {% elif commande.statut == 'LIVRE' %}
+                                    <span class="status-badge-large status-delivered">
+                                        <span class="status-dot"></span>
+                                        Livré
+                                    </span>
+                                    {% elif commande.statut == 'FACTURE' %}
+                                    <span class="status-badge-large status-invoiced">
+                                        <span class="status-dot"></span>
+                                        Facturé
+                                    </span>
+                                    {% elif commande.statut == 'ANNULE' %}
+                                    <span class="status-badge-large status-cancelled">
+                                        <span class="status-dot"></span>
+                                        Annulé
+                                    </span>
+                                    {% endif %}
+                                    {% if commande.urgent %}
+                                    <span class="urgent-badge-large">
+                                        <i class="bi bi-exclamation-triangle"></i> Urgent
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Créée par -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Créée par</div>
+                                <div class="info-content">
+                                    <div class="user-display">
+                                        <div class="user-avatar">
+                                            {{ commande.cree_par.username[0]|upper if commande.cree_par and commande.cree_par.username else 'S' }}
+                                        </div>
+                                        <div class="user-name">
+                                            {{ commande.cree_par.username if commande.cree_par else 'Système' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lignes de commande -->
+            <div class="lines-card">
+                <div class="lines-card-header">
+                    <div class="lines-icon">
+                        <i class="bi bi-list-check"></i>
+                    </div>
+                    <h6>Lignes de commande</h6>
+                    <div class="badge-count">{{ lignes|length }}</div>
+                </div>
+                <div class="lines-card-body">
+                    <div class="table-container">
+                        <table class="lines-table">
+                            <thead>
+                                <tr>
+                                    <th>Produit</th>
+                                    <th class="text-center" style="width: 100px;">Qté</th>
+                                    <th class="text-end" style="width: 140px;">Prix unit.</th>
+                                    <th class="text-center" style="width: 80px;">Remise</th>
+                                    <th class="text-center" style="width: 80px;">TVA</th>
+                                    <th class="text-end" style="width: 140px;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ligne in lignes %}
+                                <tr>
+                                    <td>
+                                        <div class="product-display">
+                                            <div class="product-avatar">
+                                                {{ ligne.produit.nom[0]|upper if ligne.produit and ligne.produit.nom else 'P' }}
+                                            </div>
+                                            <div>
+                                                <div class="product-name">{{ ligne.produit.nom if ligne.produit else 'Produit supprimé' }}</div>
+                                                {% if ligne.produit and ligne.produit.code %}
+                                                <div class="product-code">{{ ligne.produit.code }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="quantity-display">{{ ligne.quantite }}</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="price-display">{{ "{:,.0f}".format(ligne.prix_unitaire) }}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if ligne.remise and ligne.remise > 0 %}
+                                        <span class="discount-badge">{{ ligne.remise }}%</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="tax-badge">{{ ligne.taux_tva }}%</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="total-display">{{ "{:,.0f}".format(ligne.total) }}</div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes (si présentes) -->
+            {% if commande.notes %}
+            <div class="notes-card">
+                <div class="notes-header">
+                    <i class="bi bi-chat-left-text"></i>
+                    <span>Notes</span>
+                </div>
+                <div class="notes-body">
+                    <i class="bi bi-info-circle notes-icon"></i>
+                    <p>{{ commande.notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Timeline -->
+            <div class="timeline-card">
+                <div class="timeline-header">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Historique</span>
+                </div>
+                <div class="timeline-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Commande créée</div>
+                                <div class="timeline-date">{{ commande.date_creation.strftime('%d/%m/%Y à %H:%M') }}</div>
+                                <div class="timeline-desc">Par {{ commande.cree_par.username if commande.cree_par else 'Système' }}</div>
+                            </div>
+                        </div>
+                        {% if commande.date_confirmation %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Commande confirmée</div>
+                                <div class="timeline-date">{{ commande.date_confirmation.strftime('%d/%m/%Y à %H:%M') }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if commande.date_expedition %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Commande expédiée</div>
+                                <div class="timeline-date">{{ commande.date_expedition.strftime('%d/%m/%Y à %H:%M') }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if commande.facture %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Facture créée</div>
+                                <div class="timeline-date">{{ commande.facture.date_creation.strftime('%d/%m/%Y à %H:%M') }}</div>
+                                <div class="timeline-desc">Facture n° {{ commande.facture.numero_facture }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne latérale (droite) -->
+        <div class="col-lg-4">
+            <div class="sticky-sidebar">
+                <!-- Résumé financier -->
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <i class="bi bi-calculator"></i>
+                        <h6>Résumé financier</h6>
+                    </div>
+                    <div class="summary-body">
+                        <div class="summary-row">
+                            <span class="summary-label">Sous-total</span>
+                            <span class="summary-value">{{ "{:,.0f}".format(commande.sous_total) }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">TVA</span>
+                            <span class="summary-value">{{ "{:,.0f}".format(commande.montant_tva) }}</span>
+                        </div>
+                        {% if commande.remise and commande.remise > 0 %}
+                        <div class="summary-row">
+                            <span class="summary-label">Remise</span>
+                            <span class="summary-value summary-discount">-{{ commande.remise }}%</span>
+                        </div>
+                        {% endif %}
+                        <div class="summary-divider"></div>
+                        <div class="summary-row summary-total">
+                            <span class="summary-label">Total</span>
+                            <span class="summary-amount">{{ "{:,.0f}".format(commande.total) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Facture associée -->
+                <div class="invoice-card">
+                    <div class="invoice-header">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <span>Facture</span>
+                    </div>
+                    <div class="invoice-body">
+                        {% if commande.facture %}
+                        <div class="invoice-exists">
+                            <div class="invoice-icon">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+                            <div>
+                                <div class="invoice-number">{{ commande.facture.numero_facture }}</div>
+                                <div class="invoice-date">{{ commande.facture.date_creation.strftime('%d/%m/%Y') }}</div>
+                            </div>
+                        </div>
+                        <a href="/ventes/factures/{{ commande.facture.pk }}/" class="btn-view-invoice">
+                            <i class="bi bi-eye"></i>
+                            <span>Voir la facture</span>
+                        </a>
+                        {% else %}
+                        <div class="invoice-empty">
+                            <i class="bi bi-file-earmark-x"></i>
+                            <p>Aucune facture créée</p>
+                        </div>
+                        {% if commande.statut in ['CONFIRME', 'EXPEDIE', 'LIVRE'] %}
+                        <a href="/ventes/commandes/{{ commande.pk }}/facturer/" class="btn-create-invoice">
+                            <i class="bi bi-receipt"></i>
+                            <span>Créer une facture</span>
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Actions rapides -->
+                <div class="actions-card">
+                    <div class="actions-header">
+                        <i class="bi bi-lightning"></i>
+                        <span>Actions rapides</span>
+                    </div>
+                    <div class="actions-body">
+                        <a href="/ventes/commandes/{{ commande.pk }}/imprimer/" target="_blank" class="action-item">
+                            <i class="bi bi-printer"></i>
+                            <span>Imprimer</span>
+                        </a>
+                        <a href="/ventes/commandes/{{ commande.pk }}/telecharger-pdf/" class="action-item">
+                            <i class="bi bi-download"></i>
+                            <span>Télécharger PDF</span>
+                        </a>
+                        <a href="/ventes/commandes/{{ commande.pk }}/envoyer-email/" 
+                           class="action-item"
+                           onclick="return confirm('Envoyer cette commande par email à {{ commande.client.email }} ?');">
+                            <i class="bi bi-envelope"></i>
+                            <span>Envoyer par email</span>
+                        </a>
+                        {% if commande.statut == 'BROUILLON' %}
+                        <a href="/ventes/commandes/{{ commande.pk }}/supprimer/" class="action-item action-danger" 
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette commande ?');">
+                            <i class="bi bi-trash"></i>
+                            <span>Supprimer</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ==================== PAGE HEADER ==================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+.page-header-right {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-action-primary {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-action-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+.btn-action-secondary {
+    padding: 10px 20px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-action-secondary:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+/* ==================== INFO CARD ==================== */
+.info-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.info-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.info-icon.bg-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.info-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.info-card-body {
+    padding: 24px;
+}
+
+.info-box {
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 10px;
+    height: 100%;
+}
+
+.info-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.info-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-value i {
+    color: #94a3b8;
+}
+
+.client-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.client-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+}
+
+.client-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.client-code {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.user-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    background: #e2e8f0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.delay-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge-large {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-draft {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status-draft .status-dot {
+    background: #64748b;
+}
+
+.status-confirmed {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-confirmed .status-dot {
+    background: #3b82f6;
+}
+
+.status-shipped {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.status-shipped .status-dot {
+    background: #6366f1;
+}
+
+.status-delivered {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-delivered .status-dot {
+    background: #16a34a;
+}
+
+.status-invoiced {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-invoiced .status-dot {
+    background: #10b981;
+}
+
+.status-cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-cancelled .status-dot {
+    background: #dc2626;
+}
+
+.urgent-badge-large {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #fee2e2;
+    color: #991b1b;
+    margin-top: 6px;
+}
+
+/* ==================== LINES CARD ==================== */
+.lines-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.lines-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lines-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.lines-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    flex: 1;
+}
+
+.badge-count {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #6366f1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.lines-card-body {
+    padding: 0;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.lines-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.lines-table thead {
+    background: #f8fafc;
+}
+
+.lines-table th {
+    padding: 16px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.lines-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.lines-table td {
+    padding: 20px;
+    vertical-align: middle;
+}
+
+.product-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.product-avatar {
+    width: 40px;
+    height: 40px;
+    background: #e0e7ff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.product-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.product-code {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.quantity-display {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.price-display {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.price-display::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+.discount-badge {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #dcfce7;
+    color: #166534;
+}
+
+.tax-badge {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.total-display {
+    font-size: 16px;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.total-display::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+/* ==================== NOTES CARD ==================== */
+.notes-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.notes-header {
+    padding: 16px 20px;
+    background: rgba(245, 158, 11, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #92400e;
+}
+
+.notes-body {
+    padding: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.notes-icon {
+    font-size: 20px;
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+.notes-body p {
+    font-size: 14px;
+    color: #78350f;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ==================== TIMELINE CARD ==================== */
+.timeline-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.timeline-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.timeline-body {
+    padding: 24px;
+}
+
+.timeline {
+    position: relative;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 36px;
+    padding-bottom: 24px;
+    border-left: 2px solid #e2e8f0;
+}
+
+.timeline-item:last-child {
+    border-left: 2px solid transparent;
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -9px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 1px #e2e8f0;
+}
+
+.timeline-marker.bg-primary {
+    background: #6366f1;
+}
+
+.timeline-marker.bg-success {
+    background: #10b981;
+}
+
+.timeline-marker.bg-info {
+    background: #0ea5e9;
+}
+
+.timeline-marker.bg-warning {
+    background: #f59e0b;
+}
+
+.timeline-content {
+    padding-left: 12px;
+}
+
+.timeline-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.timeline-date {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.timeline-desc {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* ==================== SIDEBAR ==================== */
+.sticky-sidebar {
+    position: sticky;
+    top: 24px;
+}
+
+.summary-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.summary-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.summary-header i {
+    font-size: 20px;
+    color: #6366f1;
+}
+
+.summary-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.summary-body {
+    padding: 24px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.summary-label {
+    font-size: 14px;
+    color: #64748b;
+}
+
+.summary-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.summary-value::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+.summary-discount {
+    color: #10b981;
+}
+
+.summary-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 20px 0;
+}
+
+.summary-total .summary-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.summary-amount {
+    font-size: 24px;
+    font-weight: 700;
+    color: #6366f1;
+}
+
+.summary-amount::after {
+    content: ' FCFA';
+    font-size: 12px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+/* ==================== INVOICE CARD ==================== */
+.invoice-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.invoice-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.invoice-body {
+    padding: 20px;
+}
+
+.invoice-exists {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #dcfce7;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+.invoice-icon {
+    width: 40px;
+    height: 40px;
+    background: #16a34a;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.invoice-number {
+    font-size: 14px;
+    font-weight: 700;
+    color: #166534;
+}
+
+.invoice-date {
+    font-size: 12px;
+    color: #65a30d;
+}
+
+.invoice-empty {
+    text-align: center;
+    padding: 20px;
+    color: #94a3b8;
+}
+
+.invoice-empty i {
+    font-size: 40px;
+    margin-bottom: 8px;
+}
+
+.invoice-empty p {
+    font-size: 13px;
+    margin: 0;
+}
+
+.btn-view-invoice,
+.btn-create-invoice {
+    width: 100%;
+    padding: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-view-invoice:hover {
+    border-color: #10b981;
+    background: #dcfce7;
+    color: #166534;
+}
+
+.btn-create-invoice {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    color: white;
+}
+
+.btn-create-invoice:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+/* ==================== ACTIONS CARD ==================== */
+.actions-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.actions-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.actions-body {
+    padding: 12px;
+}
+
+.action-item {
+    width: 100%;
+    padding: 12px 16px;
+    background: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 4px;
+}
+
+.action-item:hover {
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+.action-danger {
+    color: #dc2626;
+}
+
+.action-danger:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 992px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .page-header-right {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .sticky-sidebar {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .btn-action-primary,
+    .btn-action-secondary {
+        flex: 1;
+    }
+}
+</style>
+
+{% endblock %}

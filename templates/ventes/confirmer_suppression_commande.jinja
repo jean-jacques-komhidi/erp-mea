@@ -1,0 +1,535 @@
+<!-- templates/ventes/confirmer_suppression_commande.jinja - DESIGN MODERNE ROUGE -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Supprimer la commande{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête avec retour -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/ventes/commandes/{{ commande.pk }}/" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">Supprimer la commande</h4>
+                <p class="page-subtitle">Confirmation de suppression</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card de confirmation centrée -->
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <!-- Icône d'avertissement -->
+            <div class="warning-icon">
+                <div class="icon-circle">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+            </div>
+
+            <!-- Card principale -->
+            <div class="confirmation-card">
+                <div class="confirmation-header">
+                    <h5>⚠️ Attention : Action irréversible</h5>
+                    <p>Cette action supprimera définitivement la commande</p>
+                </div>
+
+                <!-- Informations de la commande -->
+                <div class="order-info">
+                    <div class="info-row">
+                        <div class="info-icon bg-danger">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Numéro de commande</div>
+                            <div class="info-value">{{ commande.numero_commande }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-icon bg-secondary">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Client</div>
+                            <div class="info-value">{{ commande.client.nom }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-icon bg-warning">
+                            <i class="bi bi-currency-dollar"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Montant total</div>
+                            <div class="info-value">{{ "{:,.0f}".format(commande.total) }} FCFA</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-icon bg-info">
+                            <i class="bi bi-calendar3"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Date de création</div>
+                            <div class="info-value">{{ commande.date_creation.strftime('%d/%m/%Y à %H:%M') }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerte de danger -->
+                <div class="alert-danger">
+                    <i class="bi bi-shield-exclamation"></i>
+                    <div>
+                        <strong>Cette action est définitive !</strong>
+                        <p>La commande et toutes ses lignes seront supprimées de la base de données. Cette action ne peut pas être annulée.</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <form method="post" id="deleteForm">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    
+                    <div class="confirmation-actions">
+                        <a href="/ventes/commandes/{{ commande.pk }}/" class="btn-cancel">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annuler</span>
+                        </a>
+                        <button type="submit" class="btn-delete">
+                            <i class="bi bi-trash"></i>
+                            <span>Supprimer définitivement</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Informations supplémentaires -->
+            <div class="info-box">
+                <div class="info-box-header">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Conditions de suppression</span>
+                </div>
+                <ul class="info-list">
+                    <li>
+                        <i class="bi bi-check2"></i>
+                        <span>Seules les commandes au statut "Brouillon" peuvent être supprimées</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-check2"></i>
+                        <span>Les commandes confirmées ou expédiées ne peuvent pas être supprimées</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-check2"></i>
+                        <span>Pour annuler une commande confirmée, changez son statut à "Annulé"</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('deleteForm');
+    
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Double confirmation
+            const confirmed = confirm('⚠️ DERNIÈRE CONFIRMATION\n\nÊtes-vous absolument certain de vouloir supprimer cette commande ?\n\nCette action est DÉFINITIVE et IRRÉVERSIBLE.');
+            
+            if (confirmed) {
+                const btn = this.querySelector('.btn-delete');
+                btn.innerHTML = '<i class="bi bi-hourglass-split"></i><span>Suppression en cours...</span>';
+                btn.disabled = true;
+                this.submit();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* ==================== PAGE HEADER ==================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+/* ==================== WARNING ICON ==================== */
+.warning-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.icon-circle {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(220, 38, 38, 0.3);
+    animation: shake 2s infinite;
+}
+
+.icon-circle i {
+    font-size: 40px;
+    color: white;
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-2px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(2px);
+    }
+}
+
+/* ==================== CONFIRMATION CARD ==================== */
+.confirmation-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    margin-bottom: 24px;
+    border: 2px solid #fee2e2;
+}
+
+.confirmation-header {
+    padding: 32px;
+    text-align: center;
+    background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%);
+    border-bottom: 1px solid #fecaca;
+}
+
+.confirmation-header h5 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #991b1b;
+    margin: 0 0 8px 0;
+}
+
+.confirmation-header p {
+    font-size: 14px;
+    color: #dc2626;
+    margin: 0;
+}
+
+/* ==================== ORDER INFO ==================== */
+.order-info {
+    padding: 24px 32px;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+}
+
+.info-row:hover {
+    background: #f1f5f9;
+    transform: translateX(4px);
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.info-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.info-icon i {
+    font-size: 22px;
+    color: white;
+}
+
+.info-icon.bg-danger {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+.info-icon.bg-secondary {
+    background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+}
+
+.info-icon.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.info-icon.bg-info {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.info-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* ==================== ALERT DANGER ==================== */
+.alert-danger {
+    margin: 24px 32px;
+    padding: 16px;
+    background: #fee2e2;
+    border-left: 4px solid #dc2626;
+    border-radius: 8px;
+    display: flex;
+    gap: 12px;
+}
+
+.alert-danger i {
+    font-size: 24px;
+    color: #dc2626;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.alert-danger strong {
+    font-size: 14px;
+    color: #991b1b;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.alert-danger p {
+    font-size: 13px;
+    color: #991b1b;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ==================== CONFIRMATION ACTIONS ==================== */
+.confirmation-actions {
+    padding: 24px 32px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 12px;
+}
+
+.btn-delete {
+    flex: 1;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-delete:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+}
+
+.btn-delete:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-delete i {
+    font-size: 18px;
+}
+
+.btn-cancel {
+    flex: 1;
+    padding: 14px 24px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    color: #64748b;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+    border-color: #10b981;
+    background: #dcfce7;
+    color: #166534;
+}
+
+.btn-cancel i {
+    font-size: 18px;
+}
+
+/* ==================== INFO BOX ==================== */
+.info-box {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.info-box-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.info-box-header i {
+    font-size: 18px;
+}
+
+.info-list {
+    padding: 20px;
+    margin: 0;
+    list-style: none;
+}
+
+.info-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #475569;
+}
+
+.info-list li:last-child {
+    margin-bottom: 0;
+}
+
+.info-list i {
+    color: #3b82f6;
+    font-size: 18px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .confirmation-header {
+        padding: 24px 20px;
+    }
+    
+    .order-info {
+        padding: 20px;
+    }
+    
+    .alert-danger {
+        margin: 20px;
+    }
+    
+    .confirmation-actions {
+        flex-direction: column-reverse;
+        padding: 20px;
+    }
+    
+    .btn-delete,
+    .btn-cancel {
+        width: 100%;
+    }
+    
+    .icon-circle {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .icon-circle i {
+        font-size: 30px;
+    }
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,1007 @@
+<!-- templates/achats/annuler_commande.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Annuler la commande {{ commande.numero_commande }}{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête moderne avec retour -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/achats/{{ commande.pk }}/" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">Annulation de commande</h4>
+                <p class="page-subtitle">Annuler définitivement {{ commande.numero_commande }}</p>
+            </div>
+        </div>
+        <div class="page-header-right">
+            <span class="status-indicator status-danger">
+                <i class="bi bi-exclamation-triangle"></i> Action irréversible
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <div class="col-lg-8">
+            <!-- Alerte d'avertissement -->
+            <div class="danger-alert">
+                <div class="danger-alert-icon">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div class="danger-alert-content">
+                    <h6 class="danger-alert-title">Cette action est irréversible</h6>
+                    <p class="danger-alert-text">Vous êtes sur le point d'annuler la commande. Une fois annulée, la commande ne pourra plus être modifiée ou confirmée. Veuillez fournir une raison détaillée pour cette annulation.</p>
+                </div>
+            </div>
+
+            <!-- Informations de la commande -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-icon bg-primary">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                    <h6>Informations de la commande</h6>
+                </div>
+                <div class="info-card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="info-item-icon bg-primary">
+                                    <i class="bi bi-hash"></i>
+                                </div>
+                                <div class="info-item-content">
+                                    <div class="info-item-label">N° Commande</div>
+                                    <div class="info-item-value">{{ commande.numero_commande }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="info-item-icon bg-info">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                                <div class="info-item-content">
+                                    <div class="info-item-label">Fournisseur</div>
+                                    <div class="info-item-value">{{ commande.fournisseur.nom }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="info-item-icon bg-success">
+                                    <i class="bi bi-calendar3"></i>
+                                </div>
+                                <div class="info-item-content">
+                                    <div class="info-item-label">Date commande</div>
+                                    <div class="info-item-value">{{ commande.date_commande.strftime('%d/%m/%Y') }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="info-item-icon bg-warning">
+                                    <i class="bi bi-currency-dollar"></i>
+                                </div>
+                                <div class="info-item-content">
+                                    <div class="info-item-label">Montant total</div>
+                                    <div class="info-item-value">{{ "{:,.0f}".format(commande.total) }} FCFA</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="info-item">
+                                <div class="info-item-icon bg-secondary">
+                                    <i class="bi bi-box-seam"></i>
+                                </div>
+                                <div class="info-item-content">
+                                    <div class="info-item-label">Statut actuel</div>
+                                    <div class="info-item-status">
+                                        {% if commande.statut == 'BROUILLON' %}
+                                        <span class="status-badge status-draft">
+                                            <span class="status-dot"></span>
+                                            Brouillon
+                                        </span>
+                                        {% elif commande.statut == 'CONFIRMEE' %}
+                                        <span class="status-badge status-confirmed">
+                                            <span class="status-dot"></span>
+                                            Confirmée
+                                        </span>
+                                        {% elif commande.statut == 'ENVOYEE' %}
+                                        <span class="status-badge status-sent">
+                                            <span class="status-dot"></span>
+                                            Envoyée
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulaire d'annulation -->
+            <form method="post" id="cancelForm">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                
+                <div class="cancel-form-card">
+                    <div class="cancel-form-header">
+                        <i class="bi bi-chat-left-text"></i>
+                        <h6>Raison de l'annulation</h6>
+                    </div>
+                    <div class="cancel-form-body">
+                        <!-- Zone de texte -->
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">
+                                Motif de l'annulation <span class="required">*</span>
+                            </label>
+                            <textarea name="raison_annulation" 
+                                      id="raisonAnnulation"
+                                      class="form-control-modern" 
+                                      rows="5" 
+                                      required 
+                                      minlength="10"
+                                      placeholder="Veuillez expliquer en détail la raison de l'annulation (minimum 10 caractères)..."></textarea>
+                            <div class="form-help">
+                                <i class="bi bi-info-circle"></i>
+                                <span id="charCount">0 caractère (minimum 10)</span>
+                            </div>
+                        </div>
+
+                        <!-- Exemples de raisons -->
+                        <div class="examples-section">
+                            <div class="examples-header">
+                                <i class="bi bi-lightbulb"></i>
+                                <span>Exemples de raisons (cliquez pour copier)</span>
+                            </div>
+                            <div class="examples-grid">
+                                <button type="button" class="example-item" data-raison="Fournisseur ne peut pas livrer dans les délais convenus">
+                                    <div class="example-icon bg-warning">
+                                        <i class="bi bi-clock"></i>
+                                    </div>
+                                    <div class="example-text">Délais non respectés</div>
+                                </button>
+
+                                <button type="button" class="example-item" data-raison="Prix trop élevé, négociation en cours avec un autre fournisseur">
+                                    <div class="example-icon bg-info">
+                                        <i class="bi bi-currency-exchange"></i>
+                                    </div>
+                                    <div class="example-text">Prix non compétitif</div>
+                                </button>
+
+                                <button type="button" class="example-item" data-raison="Produits commandés par erreur, besoin modifié">
+                                    <div class="example-icon bg-danger">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="example-text">Commande erronée</div>
+                                </button>
+
+                                <button type="button" class="example-item" data-raison="Stock suffisant finalement disponible dans un autre entrepôt">
+                                    <div class="example-icon bg-success">
+                                        <i class="bi bi-box"></i>
+                                    </div>
+                                    <div class="example-text">Stock disponible</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Confirmation -->
+                        <div class="confirm-checkbox">
+                            <div class="custom-checkbox-danger">
+                                <input type="checkbox" id="confirmCancel" required>
+                                <label for="confirmCancel">
+                                    <span class="checkbox-icon"></span>
+                                    <span class="checkbox-text">Je confirme vouloir annuler définitivement cette commande</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="action-buttons">
+                    <a href="/achats/{{ commande.pk }}/" class="btn-secondary-outline">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Retour</span>
+                    </a>
+                    <button type="submit" class="btn-danger-gradient" id="btnCancel" disabled>
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span>Annuler la commande</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Conséquences de l'annulation -->
+            <div class="consequences-card">
+                <div class="consequences-header">
+                    <i class="bi bi-question-circle"></i>
+                    <h6>Ce qui se passera après l'annulation</h6>
+                </div>
+                <div class="consequences-body">
+                    <div class="consequence-grid">
+                        <div class="consequence-item consequence-positive">
+                            <div class="consequence-icon">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+                            <div class="consequence-content">
+                                <div class="consequence-title">Statut de la commande</div>
+                                <div class="consequence-desc">La commande sera marquée comme "ANNULÉE"</div>
+                            </div>
+                        </div>
+
+                        <div class="consequence-item consequence-positive">
+                            <div class="consequence-icon">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+                            <div class="consequence-content">
+                                <div class="consequence-title">Conservation des données</div>
+                                <div class="consequence-desc">Les informations restent pour référence</div>
+                            </div>
+                        </div>
+
+                        <div class="consequence-item consequence-negative">
+                            <div class="consequence-icon">
+                                <i class="bi bi-x-circle"></i>
+                            </div>
+                            <div class="consequence-content">
+                                <div class="consequence-title">Modification impossible</div>
+                                <div class="consequence-desc">La commande ne pourra plus être modifiée</div>
+                            </div>
+                        </div>
+
+                        <div class="consequence-item consequence-negative">
+                            <div class="consequence-icon">
+                                <i class="bi bi-x-circle"></i>
+                            </div>
+                            <div class="consequence-content">
+                                <div class="consequence-title">Actions bloquées</div>
+                                <div class="consequence-desc">Aucune réception ou paiement possible</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('cancelForm');
+    const textarea = document.getElementById('raisonAnnulation');
+    const charCount = document.getElementById('charCount');
+    const confirmCheckbox = document.getElementById('confirmCancel');
+    const btnCancel = document.getElementById('btnCancel');
+    const exampleItems = document.querySelectorAll('.example-item');
+
+    // Compteur de caractères
+    function updateCharCount() {
+        const length = textarea.value.length;
+        charCount.textContent = `${length} caractère${length > 1 ? 's' : ''} (minimum 10)`;
+        
+        if (length >= 10) {
+            charCount.classList.remove('text-danger');
+            charCount.classList.add('text-success');
+        } else {
+            charCount.classList.remove('text-success');
+            charCount.classList.add('text-danger');
+        }
+        
+        updateButtonState();
+    }
+
+    // Mise à jour de l'état du bouton
+    function updateButtonState() {
+        const hasText = textarea.value.trim().length >= 10;
+        const isConfirmed = confirmCheckbox.checked;
+        
+        btnCancel.disabled = !(hasText && isConfirmed);
+        
+        if (hasText && isConfirmed) {
+            btnCancel.classList.add('active');
+        } else {
+            btnCancel.classList.remove('active');
+        }
+    }
+
+    // Exemples de raisons
+    exampleItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const raison = this.getAttribute('data-raison');
+            textarea.value = raison;
+            updateCharCount();
+            textarea.focus();
+            
+            // Highlight de l'exemple sélectionné
+            exampleItems.forEach(i => i.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+    });
+
+    // Écouteurs d'événements
+    textarea.addEventListener('input', updateCharCount);
+    confirmCheckbox.addEventListener('change', updateButtonState);
+
+    // État initial
+    updateCharCount();
+
+    // Validation du formulaire
+    form.addEventListener('submit', function(event) {
+        const raison = textarea.value.trim();
+        const confirmed = confirmCheckbox.checked;
+
+        if (raison.length < 10) {
+            event.preventDefault();
+            alert('La raison doit contenir au moins 10 caractères.');
+            textarea.focus();
+            return;
+        }
+
+        if (!confirmed) {
+            event.preventDefault();
+            alert('Vous devez confirmer l\'annulation en cochant la case.');
+            return;
+        }
+
+        // Confirmation finale
+        if (!confirm('Êtes-vous absolument certain de vouloir annuler cette commande ?\n\nCette action est IRRÉVERSIBLE.')) {
+            event.preventDefault();
+        }
+    });
+});
+</script>
+
+<style>
+/* ==================== PAGE HEADER ==================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* ==================== DANGER ALERT ==================== */
+.danger-alert {
+    display: flex;
+    gap: 16px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    border-left: 4px solid #dc2626;
+}
+
+.danger-alert-icon {
+    width: 48px;
+    height: 48px;
+    background: #dc2626;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.danger-alert-content {
+    flex: 1;
+}
+
+.danger-alert-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #991b1b;
+    margin: 0 0 8px 0;
+}
+
+.danger-alert-text {
+    font-size: 14px;
+    color: #7f1d1d;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ==================== INFO CARD ==================== */
+.info-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.info-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.info-icon.bg-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.info-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.info-card-body {
+    padding: 24px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.info-item-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.info-item-icon.bg-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.info-item-icon.bg-info {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+}
+
+.info-item-icon.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.info-item-icon.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.info-item-icon.bg-secondary {
+    background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+}
+
+.info-item-content {
+    flex: 1;
+}
+
+.info-item-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.info-item-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-draft {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status-draft .status-dot {
+    background: #64748b;
+}
+
+.status-confirmed {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-confirmed .status-dot {
+    background: #3b82f6;
+}
+
+.status-sent {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.status-sent .status-dot {
+    background: #6366f1;
+}
+
+/* ==================== CANCEL FORM CARD ==================== */
+.cancel-form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.cancel-form-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cancel-form-header i {
+    font-size: 20px;
+    color: #dc2626;
+}
+
+.cancel-form-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.cancel-form-body {
+    padding: 24px;
+}
+
+.form-group-modern {
+    margin-bottom: 24px;
+}
+
+.form-label-modern {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.form-control-modern {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #1e293b;
+    transition: all 0.2s;
+    background: white;
+    resize: vertical;
+}
+
+.form-control-modern:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-help {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 8px;
+}
+
+.form-help.text-success {
+    color: #10b981;
+}
+
+.form-help.text-danger {
+    color: #dc2626;
+}
+
+/* ==================== EXAMPLES SECTION ==================== */
+.examples-section {
+    margin-bottom: 24px;
+}
+
+.examples-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.examples-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.example-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.example-item:hover {
+    background: white;
+    border-color: #6366f1;
+    transform: translateX(4px);
+}
+
+.example-item.selected {
+    background: #e0e7ff;
+    border-color: #6366f1;
+}
+
+.example-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.example-icon.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.example-icon.bg-info {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+}
+
+.example-icon.bg-danger {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+.example-icon.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.example-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* ==================== CONFIRM CHECKBOX ==================== */
+.confirm-checkbox {
+    padding: 20px;
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-radius: 12px;
+    border-left: 3px solid #dc2626;
+}
+
+.custom-checkbox-danger {
+    position: relative;
+}
+
+.custom-checkbox-danger input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.custom-checkbox-danger label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.checkbox-icon {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #dc2626;
+    border-radius: 6px;
+    background: white;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.custom-checkbox-danger input:checked + label .checkbox-icon {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+.custom-checkbox-danger input:checked + label .checkbox-icon::after {
+    content: '\f26b';
+    font-family: 'bootstrap-icons';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+}
+
+.checkbox-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #991b1b;
+    line-height: 1.5;
+}
+
+/* ==================== ACTION BUTTONS ==================== */
+.action-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.btn-secondary-outline {
+    padding: 12px 24px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.btn-secondary-outline:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+.btn-danger-gradient {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    opacity: 0.5;
+}
+
+.btn-danger-gradient:disabled {
+    cursor: not-allowed;
+}
+
+.btn-danger-gradient.active {
+    opacity: 1;
+}
+
+.btn-danger-gradient.active:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(220, 38, 38, 0.3);
+}
+
+/* ==================== CONSEQUENCES CARD ==================== */
+.consequences-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.consequences-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.consequences-header i {
+    font-size: 20px;
+    color: #0ea5e9;
+}
+
+.consequences-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.consequences-body {
+    padding: 24px;
+}
+
+.consequence-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.consequence-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 12px;
+}
+
+.consequence-positive {
+    background: #f0fdf4;
+    border-left: 3px solid #10b981;
+}
+
+.consequence-negative {
+    background: #fef2f2;
+    border-left: 3px solid #dc2626;
+}
+
+.consequence-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.consequence-positive .consequence-icon {
+    color: #10b981;
+}
+
+.consequence-negative .consequence-icon {
+    color: #dc2626;
+}
+
+.consequence-content {
+    flex: 1;
+}
+
+.consequence-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.consequence-desc {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .examples-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .consequence-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-secondary-outline,
+    .btn-danger-gradient {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+{% endblock %}

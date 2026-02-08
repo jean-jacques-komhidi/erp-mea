@@ -1,0 +1,946 @@
+<!-- templates/stock/supprimer_mouvement.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Supprimer un mouvement de stock{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <!-- Carte principale de confirmation -->
+            <div class="confirmation-card">
+                <!-- En-tête avec icône d'alerte animée -->
+                <div class="confirmation-header">
+                    <div class="warning-icon-container">
+                        <div class="warning-icon">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div class="warning-pulse"></div>
+                    </div>
+                    
+                    <h2 class="confirmation-title">Confirmer la suppression</h2>
+                    <p class="confirmation-subtitle">
+                        Vous êtes sur le point de supprimer définitivement ce mouvement de stock. Cette action est irréversible et affectera l'historique des mouvements.
+                    </p>
+                </div>
+
+                <!-- Informations du mouvement -->
+                <div class="movement-info-card">
+                    <div class="movement-header">
+                        <div class="movement-type-icon
+                            {% if mouvement.type_mouvement == 'entree' %}icon-entree
+                            {% elif mouvement.type_mouvement == 'sortie' %}icon-sortie
+                            {% elif mouvement.type_mouvement == 'ajustement' %}icon-ajustement
+                            {% elif mouvement.type_mouvement == 'transfert' %}icon-transfert
+                            {% endif %}">
+                            {% if mouvement.type_mouvement == 'entree' %}
+                                <i class="bi bi-arrow-down-circle"></i>
+                            {% elif mouvement.type_mouvement == 'sortie' %}
+                                <i class="bi bi-arrow-up-circle"></i>
+                            {% elif mouvement.type_mouvement == 'ajustement' %}
+                                <i class="bi bi-arrow-repeat"></i>
+                            {% elif mouvement.type_mouvement == 'transfert' %}
+                                <i class="bi bi-arrow-left-right"></i>
+                            {% endif %}
+                        </div>
+                        <div class="movement-details">
+                            <h5 class="movement-title">Mouvement de stock</h5>
+                            <span class="movement-badge
+                                {% if mouvement.type_mouvement == 'entree' %}badge-entree
+                                {% elif mouvement.type_mouvement == 'sortie' %}badge-sortie
+                                {% elif mouvement.type_mouvement == 'ajustement' %}badge-ajustement
+                                {% elif mouvement.type_mouvement == 'transfert' %}badge-transfert
+                                {% endif %}">
+                                {% if mouvement.type_mouvement == 'entree' %}
+                                    <i class="bi bi-arrow-down-circle"></i> Entrée
+                                {% elif mouvement.type_mouvement == 'sortie' %}
+                                    <i class="bi bi-arrow-up-circle"></i> Sortie
+                                {% elif mouvement.type_mouvement == 'ajustement' %}
+                                    <i class="bi bi-arrow-repeat"></i> Ajustement
+                                {% elif mouvement.type_mouvement == 'transfert' %}
+                                    <i class="bi bi-arrow-left-right"></i> Transfert
+                                {% else %}
+                                    {{ mouvement.get_type_mouvement_display() }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="movement-grid">
+                        <div class="movement-item">
+                            <span class="item-label"><i class="bi bi-box"></i> Produit</span>
+                            <span class="item-value">{{ mouvement.produit.nom }}</span>
+                        </div>
+
+                        <div class="movement-item">
+                            <span class="item-label"><i class="bi bi-building"></i> Entrepôt</span>
+                            <span class="item-value">{{ mouvement.entrepot.nom }}</span>
+                        </div>
+
+                        <div class="movement-item">
+                            <span class="item-label"><i class="bi bi-calculator"></i> Quantité</span>
+                            <span class="item-value item-quantity">
+                                {% if mouvement.type_mouvement == 'entree' %}
+                                    <span class="qty-positive">+ {{ mouvement.quantite }}</span>
+                                {% elif mouvement.type_mouvement == 'sortie' %}
+                                    <span class="qty-negative">- {{ mouvement.quantite }}</span>
+                                {% else %}
+                                    {{ mouvement.quantite }}
+                                {% endif %}
+                                unité(s)
+                            </span>
+                        </div>
+
+                        <div class="movement-item">
+                            <span class="item-label"><i class="bi bi-calendar"></i> Date</span>
+                            <span class="item-value">{{ mouvement.date.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </div>
+
+                        {% if mouvement.reference %}
+                        <div class="movement-item">
+                            <span class="item-label"><i class="bi bi-hash"></i> Référence</span>
+                            <span class="item-value">{{ mouvement.reference }}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if mouvement.utilisateur %}
+                        <div class="movement-item">
+                            <span class="item-label"><i class="bi bi-person"></i> Créé par</span>
+                            <span class="item-value">{{ mouvement.utilisateur.get_full_name() or mouvement.utilisateur.username }}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if mouvement.notes %}
+                        <div class="movement-item movement-item-full">
+                            <span class="item-label"><i class="bi bi-pencil"></i> Notes</span>
+                            <p class="item-description">{{ mouvement.notes }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Avertissement impact stock -->
+                <div class="alert-box alert-danger-box">
+                    <div class="alert-icon">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h6 class="alert-title">⚠️ Impact sur le stock</h6>
+                        <p class="alert-text">
+                            La suppression de ce mouvement 
+                            {% if mouvement.type_mouvement == 'entree' %}
+                                <strong class="text-danger">réduira le stock</strong> de {{ mouvement.quantite }} unité(s).
+                            {% elif mouvement.type_mouvement == 'sortie' %}
+                                <strong class="text-success">augmentera le stock</strong> de {{ mouvement.quantite }} unité(s).
+                            {% elif mouvement.type_mouvement == 'ajustement' %}
+                                <strong>annulera l'ajustement</strong> de {{ mouvement.quantite }} unité(s).
+                            {% elif mouvement.type_mouvement == 'transfert' %}
+                                <strong>inversera le transfert</strong> de {{ mouvement.quantite }} unité(s).
+                            {% else %}
+                                inversera l'impact de ce mouvement sur le stock.
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Information importante -->
+                <div class="info-box">
+                    <div class="info-icon">
+                        <i class="bi bi-info-circle-fill"></i>
+                    </div>
+                    <div class="info-content">
+                        <h6 class="info-title">💡 Action irréversible</h6>
+                        <p class="info-text">
+                            Une fois supprimé, ce mouvement de stock ne pourra plus être récupéré. 
+                            L'historique sera définitivement perdu et les calculs de stock seront automatiquement recalculés.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Impact de la suppression -->
+                <div class="impact-section">
+                    <h6 class="impact-title">Conséquences de la suppression :</h6>
+                    <div class="impact-grid">
+                        <div class="impact-item">
+                            <div class="impact-icon impact-blocked">
+                                <i class="bi bi-trash"></i>
+                            </div>
+                            <div class="impact-label">Mouvement</div>
+                            <div class="impact-status">Supprimé</div>
+                        </div>
+
+                        <div class="impact-item">
+                            <div class="impact-icon impact-stock">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <div class="impact-label">Stock</div>
+                            <div class="impact-status">Recalculé</div>
+                        </div>
+
+                        <div class="impact-item">
+                            <div class="impact-icon impact-history">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="impact-label">Historique</div>
+                            <div class="impact-status">Perdu</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case de confirmation -->
+                <div class="checkbox-confirmation">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="confirmCheckbox">
+                        <span class="checkbox-checkmark"></span>
+                        <span class="checkbox-label">
+                            Je comprends que cette action est <strong>irréversible</strong> et je souhaite supprimer définitivement ce mouvement de stock
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Boutons d'action -->
+                <form method="post" id="deleteForm">
+                    {% csrf_token %}
+                    
+                    <div class="action-buttons">
+                        <a href="{{ url('stock:liste_mouvements') }}" class="btn-cancel-modern">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annuler et retourner</span>
+                        </a>
+                        <button type="submit" class="btn-delete-modern" id="deleteBtn" disabled>
+                            <i class="bi bi-trash"></i>
+                            <span>Oui, supprimer définitivement</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Recommandations de sécurité -->
+            <div class="recommendations-card">
+                <div class="recommendations-header">
+                    <i class="bi bi-shield-check"></i>
+                    <h6>Alternatives recommandées</h6>
+                </div>
+                <div class="recommendations-grid">
+                    <div class="recommendation-item">
+                        <i class="bi bi-pencil"></i>
+                        <div>
+                            <strong>Modifier plutôt que supprimer</strong>
+                            <p>Corriger les informations si elles sont incorrectes</p>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-item">
+                        <i class="bi bi-journal-text"></i>
+                        <div>
+                            <strong>Ajouter une note explicative</strong>
+                            <p>Documenter pourquoi ce mouvement est incorrect</p>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-item">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        <div>
+                            <strong>Créer un mouvement correctif</strong>
+                            <p>Compenser par un ajustement inverse</p>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-item">
+                        <i class="bi bi-file-earmark-arrow-down"></i>
+                        <div>
+                            <strong>Export avant suppression</strong>
+                            <p>Sauvegarder les données importantes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('deleteForm');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const confirmCheckbox = document.getElementById('confirmCheckbox');
+    
+    // Activer/désactiver le bouton selon la case à cocher
+    if (confirmCheckbox && deleteBtn) {
+        confirmCheckbox.addEventListener('change', function() {
+            deleteBtn.disabled = !this.checked;
+            
+            if (this.checked) {
+                deleteBtn.classList.add('enabled');
+            } else {
+                deleteBtn.classList.remove('enabled');
+            }
+        });
+    }
+    
+    // Double confirmation avant suppression
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!confirmCheckbox.checked) {
+            alert('⚠️ Veuillez confirmer la suppression en cochant la case.');
+            return;
+        }
+        
+        let message = '🗑️ DERNIÈRE CONFIRMATION\n\n';
+        message += 'Êtes-vous ABSOLUMENT certain de vouloir supprimer ce mouvement ?\n\n';
+        message += '⚠️ Cette action est IRRÉVERSIBLE\n';
+        message += '📦 Le stock sera recalculé automatiquement\n';
+        message += '📋 L\'historique sera définitivement perdu\n\n';
+        message += 'Voulez-vous vraiment continuer ?';
+        
+        if (confirm(message)) {
+            // Désactiver le bouton pour éviter les doubles soumissions
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span><span>Suppression en cours...</span>';
+            form.submit();
+        }
+    });
+});
+</script>
+
+<style>
+/* Confirmation Card */
+.confirmation-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 48px;
+    margin-bottom: 24px;
+}
+
+/* Header */
+.confirmation-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.warning-icon-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 24px;
+}
+
+.warning-icon {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+}
+
+.warning-icon i {
+    font-size: 56px;
+    color: #dc2626;
+    animation: pulse-icon 2s infinite;
+}
+
+.warning-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.2);
+    animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-icon {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+.confirmation-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.confirmation-subtitle {
+    font-size: 16px;
+    color: #64748b;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Movement Info Card */
+.movement-info-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 2px solid #e2e8f0;
+}
+
+.movement-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.movement-type-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.icon-entree {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.icon-sortie {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+.icon-ajustement {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.icon-transfert {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+}
+
+.movement-details {
+    flex: 1;
+}
+
+.movement-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px 0;
+}
+
+.movement-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.badge-entree {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+}
+
+.badge-sortie {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+}
+
+.badge-ajustement {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+}
+
+.badge-transfert {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+}
+
+.movement-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.movement-item {
+    background: white;
+    padding: 16px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.movement-item-full {
+    grid-column: 1 / -1;
+}
+
+.item-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.item-label i {
+    font-size: 14px;
+    color: #6366f1;
+}
+
+.item-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.item-quantity {
+    font-size: 16px;
+}
+
+.qty-positive {
+    color: #10b981;
+}
+
+.qty-negative {
+    color: #dc2626;
+}
+
+.item-description {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Alert Boxes */
+.alert-box {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.alert-danger-box {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-left: 4px solid #dc2626;
+}
+
+.alert-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.alert-danger-box .alert-icon {
+    color: #dc2626;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #991b1b;
+    margin: 0 0 8px 0;
+}
+
+.alert-text {
+    font-size: 14px;
+    color: #7f1d1d;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.text-danger {
+    color: #dc2626;
+}
+
+.text-success {
+    color: #10b981;
+}
+
+/* Info Box */
+.info-box {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-left: 4px solid #6366f1;
+    margin-bottom: 28px;
+}
+
+.info-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 0 0 8px 0;
+}
+
+.info-text {
+    font-size: 14px;
+    color: #1e40af;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Impact Section */
+.impact-section {
+    margin-bottom: 32px;
+}
+
+.impact-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+
+.impact-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.impact-item {
+    text-align: center;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+}
+
+.impact-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 12px;
+}
+
+.impact-blocked {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #dc2626;
+}
+
+.impact-stock {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #f59e0b;
+}
+
+.impact-history {
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+}
+
+.impact-label {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+}
+
+.impact-status {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Checkbox Confirmation */
+.checkbox-confirmation {
+    margin-bottom: 32px;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-container input[type="checkbox"] {
+    display: none;
+}
+
+.checkbox-checkmark {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #cbd5e1;
+    border-radius: 6px;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.2s;
+    margin-top: 2px;
+}
+
+.checkbox-container:hover .checkbox-checkmark {
+    border-color: #6366f1;
+}
+
+.checkbox-container input:checked ~ .checkbox-checkmark {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-color: #6366f1;
+}
+
+.checkbox-checkmark::after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 7px;
+    top: 3px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checkbox-container input:checked ~ .checkbox-checkmark::after {
+    display: block;
+}
+
+.checkbox-label {
+    font-size: 14px;
+    color: #1e293b;
+    line-height: 1.6;
+}
+
+.checkbox-label strong {
+    color: #dc2626;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.btn-cancel-modern,
+.btn-delete-modern {
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-cancel-modern {
+    background: white;
+    border: 2px solid #e2e8f0;
+    color: #64748b;
+}
+
+.btn-cancel-modern:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: #64748b;
+}
+
+.btn-delete-modern {
+    background: #cbd5e1;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.btn-delete-modern.enabled {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+    cursor: pointer;
+}
+
+.btn-delete-modern.enabled:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3);
+}
+
+.btn-delete-modern:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+    display: inline-block;
+    border: 0.15em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to { transform: rotate(360deg); }
+}
+
+/* Recommendations Card */
+.recommendations-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 24px;
+}
+
+.recommendations-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.recommendations-header i {
+    font-size: 24px;
+    color: #10b981;
+}
+
+.recommendations-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.recommendation-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 10px;
+}
+
+.recommendation-item i {
+    font-size: 20px;
+    color: #6366f1;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.recommendation-item strong {
+    display: block;
+    font-size: 13px;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.recommendation-item p {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .confirmation-card {
+        padding: 32px;
+    }
+}
+
+@media (max-width: 768px) {
+    .confirmation-card {
+        padding: 24px;
+    }
+    
+    .movement-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .impact-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .recommendations-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .warning-icon-container,
+    .warning-icon {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .warning-icon i {
+        font-size: 48px;
+    }
+}
+</style>
+
+{% endblock %}

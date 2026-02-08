@@ -1,0 +1,336 @@
+<!-- templates/achats/imprimer_historique.jinja -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des Achats - Impression</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: white;
+            color: #1e293b;
+            padding: 40px;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #6366f1;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #6366f1;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .header .periode {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+
+        .header .date-impression {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            background: #f8fafc;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table thead {
+            background: #6366f1;
+            color: white;
+        }
+
+        table th {
+            padding: 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        table tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        table td {
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-end {
+            text-align: right;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-brouillon { background: #f1f5f9; color: #475569; }
+        .status-confirmee { background: #dbeafe; color: #1e40af; }
+        .status-envoyee { background: #e0e7ff; color: #4338ca; }
+        .status-recue { background: #dcfce7; color: #166534; }
+        .status-facturee { background: #d1fae5; color: #065f46; }
+        .status-annulee { background: #fee2e2; color: #991b1b; }
+
+        .footer {
+            text-align: center;
+            padding-top: 30px;
+            margin-top: 50px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .print-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .print-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        @media print {
+            body {
+                padding: 0;
+            }
+
+            .print-button {
+                display: none !important;
+            }
+
+            .section {
+                page-break-inside: avoid;
+            }
+
+            table thead {
+                display: table-header-group;
+            }
+
+            table tbody tr {
+                page-break-inside: avoid;
+            }
+
+            @page {
+                margin: 2cm;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body>
+    <!-- En-tête -->
+    <div class="header">
+        <h1>RAPPORT D'HISTORIQUE DES ACHATS</h1>
+        <div class="periode">Période du {{ date_debut }} au {{ date_fin }}</div>
+        <div class="date-impression">Généré le {{ date_impression }}</div>
+    </div>
+
+    <!-- Statistiques Globales -->
+    <div class="section">
+        <h2 class="section-title">Statistiques Globales</h2>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Nombre de commandes</div>
+                <div class="stat-value">{{ stats_globales.nombre_commandes }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Montant total</div>
+                <div class="stat-value">{{ "{:,.0f}".format(stats_globales.montant_total) }} FCFA</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Nombre de fournisseurs</div>
+                <div class="stat-value">{{ stats_globales.nombre_fournisseurs }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Montant moyen/commande</div>
+                <div class="stat-value">{{ "{:,.0f}".format(stats_globales.montant_moyen) }} FCFA</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Répartition par Statut -->
+    {% if stats_par_statut %}
+    <div class="section">
+        <h2 class="section-title">Répartition par Statut</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Statut</th>
+                    <th class="text-center">Nombre</th>
+                    <th class="text-end">Montant Total</th>
+                    <th class="text-center">Pourcentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in stats_par_statut %}
+                <tr>
+                    <td>
+                        <span class="status-badge status-{{ stat.statut|lower }}">
+                            {{ stat.statut_display }}
+                        </span>
+                    </td>
+                    <td class="text-center">{{ stat.nombre }}</td>
+                    <td class="text-end">{{ "{:,.0f}".format(stat.montant) }} FCFA</td>
+                    <td class="text-center">{{ stat.pourcentage|round|int }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Top Fournisseurs -->
+    {% if top_fournisseurs %}
+    <div class="section">
+        <h2 class="section-title">Top 10 Fournisseurs</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Rang</th>
+                    <th>Fournisseur</th>
+                    <th class="text-center">Commandes</th>
+                    <th class="text-end">Montant Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fournisseur in top_fournisseurs %}
+                <tr>
+                    <td class="text-center">{{ loop.index }}</td>
+                    <td>{{ fournisseur.fournisseur__nom }}</td>
+                    <td class="text-center">{{ fournisseur.nombre }}</td>
+                    <td class="text-end">{{ "{:,.0f}".format(fournisseur.montant) }} FCFA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Top Produits -->
+    {% if top_produits %}
+    <div class="section">
+        <h2 class="section-title">Top 10 Produits Achetés</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Rang</th>
+                    <th>Produit</th>
+                    <th>Code</th>
+                    <th class="text-center">Quantité</th>
+                    <th class="text-end">Montant Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produit in top_produits %}
+                <tr>
+                    <td class="text-center">{{ loop.index }}</td>
+                    <td>{{ produit.produit__nom }}</td>
+                    <td>{{ produit.produit__code if produit.produit__code else '-' }}</td>
+                    <td class="text-center">{{ produit.quantite_totale }}</td>
+                    <td class="text-end">{{ "{:,.0f}".format(produit.montant_total) }} FCFA</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Pied de page -->
+    <div class="footer">
+        <p>Document généré automatiquement le {{ date_impression }}</p>
+        <p><em>Système de Gestion ERP</em></p>
+    </div>
+
+    <!-- Bouton d'impression -->
+    <button onclick="window.print()" class="print-button">
+        <i class="bi bi-printer"></i>
+        Imprimer
+    </button>
+</body>
+</html>

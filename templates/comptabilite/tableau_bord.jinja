@@ -1,0 +1,841 @@
+<!-- templates/comptabilite/tableau_bord.jinja - TABLEAU DE BORD COMPTABILITÉ -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Tableau de bord Comptabilité{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête du tableau de bord -->
+    <div class="page-header-dashboard">
+        <div class="header-left">
+            <div class="header-icon-box">
+                <i class="bi bi-calculator"></i>
+            </div>
+            <div>
+                <h4 class="header-title">Tableau de bord Comptabilité</h4>
+                <p class="header-subtitle">Vue d'ensemble de votre comptabilité SYSCOHADA</p>
+            </div>
+        </div>
+        <div class="header-right">
+            {% if exercice_actuel %}
+            <div class="exercice-badge">
+                <i class="bi bi-calendar-check"></i>
+                <div>
+                    <div class="exercice-label">Exercice en cours</div>
+                    <div class="exercice-nom">{{ exercice_actuel.nom }}</div>
+                </div>
+            </div>
+            {% else %}
+            <div class="exercice-badge exercice-alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                <div>
+                    <div class="exercice-label">Aucun exercice actif</div>
+                    <a href="/comptabilite/exercices/nouveau/" class="exercice-link">Créer un exercice</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Statistiques principales -->
+    <div class="stats-grid-dashboard">
+        <div class="stat-card-dashboard stat-primary">
+            <div class="stat-card-header">
+                <div class="stat-icon">
+                    <i class="bi bi-journal-text"></i>
+                </div>
+                <div class="stat-badge-top">
+                    <span class="badge badge-primary">Actifs</span>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                <div class="stat-value">{{ total_comptes }}</div>
+                <div class="stat-label">Comptes comptables</div>
+                <a href="/comptabilite/plan-comptable/" class="stat-link">
+                    Voir le plan comptable <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="stat-card-dashboard stat-success">
+            <div class="stat-card-header">
+                <div class="stat-icon">
+                    <i class="bi bi-book"></i>
+                </div>
+                <div class="stat-badge-top">
+                    <span class="badge badge-success">Actifs</span>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                <div class="stat-value">{{ total_journaux }}</div>
+                <div class="stat-label">Journaux comptables</div>
+                <a href="/comptabilite/journaux/" class="stat-link">
+                    Voir les journaux <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="stat-card-dashboard stat-info">
+            <div class="stat-card-header">
+                <div class="stat-icon">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <div class="stat-badge-top">
+                    <span class="badge badge-info">Validées</span>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                <div class="stat-value">{{ total_pieces }}</div>
+                <div class="stat-label">Pièces comptables</div>
+                <a href="/comptabilite/pieces/" class="stat-link">
+                    Voir les pièces <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="stat-card-dashboard stat-warning">
+            <div class="stat-card-header">
+                <div class="stat-icon">
+                    <i class="bi bi-calendar3"></i>
+                </div>
+                <div class="stat-badge-top">
+                    <span class="badge badge-warning">Année</span>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                <div class="stat-value">{{ exercice_actuel.nom if exercice_actuel else 'N/A' }}</div>
+                <div class="stat-label">Exercice comptable</div>
+                <a href="/comptabilite/exercices/" class="stat-link">
+                    Gérer les exercices <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Accès rapides -->
+        <div class="col-lg-8">
+            <div class="quick-access-card">
+                <div class="quick-access-header">
+                    <div class="header-icon">
+                        <i class="bi bi-lightning-charge"></i>
+                    </div>
+                    <h6 class="header-title">Accès rapides</h6>
+                </div>
+                <div class="quick-access-body">
+                    <div class="quick-access-grid">
+                        <!-- Plan comptable -->
+                        <a href="/comptabilite/plan-comptable/" class="quick-access-item">
+                            <div class="quick-icon bg-primary">
+                                <i class="bi bi-journal-text"></i>
+                            </div>
+                            <div class="quick-content">
+                                <div class="quick-title">Plan comptable</div>
+                                <div class="quick-desc">Gérer les comptes SYSCOHADA</div>
+                            </div>
+                            <div class="quick-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+
+                        <!-- Nouvelle pièce -->
+                        <a href="/comptabilite/pieces/nouvelle/" class="quick-access-item">
+                            <div class="quick-icon bg-success">
+                                <i class="bi bi-file-earmark-plus"></i>
+                            </div>
+                            <div class="quick-content">
+                                <div class="quick-title">Nouvelle pièce</div>
+                                <div class="quick-desc">Saisir une écriture comptable</div>
+                            </div>
+                            <div class="quick-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+
+                        <!-- Journaux -->
+                        <a href="/comptabilite/journaux/" class="quick-access-item">
+                            <div class="quick-icon bg-info">
+                                <i class="bi bi-book"></i>
+                            </div>
+                            <div class="quick-content">
+                                <div class="quick-title">Journaux</div>
+                                <div class="quick-desc">Consulter les journaux</div>
+                            </div>
+                            <div class="quick-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+
+                        <!-- Bilan -->
+                        <a href="/comptabilite/rapports/bilan/" class="quick-access-item">
+                            <div class="quick-icon bg-warning">
+                                <i class="bi bi-pie-chart"></i>
+                            </div>
+                            <div class="quick-content">
+                                <div class="quick-title">Bilan</div>
+                                <div class="quick-desc">Consulter le bilan comptable</div>
+                            </div>
+                            <div class="quick-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+
+                        <!-- Compte de résultat -->
+                        <a href="/comptabilite/rapports/compte-resultat/" class="quick-access-item">
+                            <div class="quick-icon bg-danger">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <div class="quick-content">
+                                <div class="quick-title">Compte de résultat</div>
+                                <div class="quick-desc">Analyser les performances</div>
+                            </div>
+                            <div class="quick-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+
+                        <!-- Banques -->
+                        <a href="/comptabilite/banques/" class="quick-access-item">
+                            <div class="quick-icon bg-purple">
+                                <i class="bi bi-bank"></i>
+                            </div>
+                            <div class="quick-content">
+                                <div class="quick-title">Banques</div>
+                                <div class="quick-desc">Gérer les comptes bancaires</div>
+                            </div>
+                            <div class="quick-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+
+                        <!-- Budgets -->
+                        <a href="/comptabilite/budgets/" class="quick-access-item">
+                            <div class="quick-icon bg-teal">
+                                <i class="bi bi-wallet2"></i>
+                            </div>
+                            <div class="quick-content">
+                                <div class="quick-title">Budgets</div>
+                                <div class="quick-desc">Suivre les budgets prévisionnels</div>
+                            </div>
+                            <div class="quick-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+
+                        <!-- Exercices -->
+                        <a href="/comptabilite/exercices/" class="quick-access-item">
+                            <div class="quick-icon bg-orange">
+                                <i class="bi bi-calendar-range"></i>
+                            </div>
+                            <div class="quick-content">
+                                <div class="quick-title">Exercices</div>
+                                <div class="quick-desc">Gérer les exercices comptables</div>
+                            </div>
+                            <div class="quick-arrow">
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dernières pièces + Info SYSCOHADA -->
+        <div class="col-lg-4">
+            <!-- Dernières pièces -->
+            <div class="recent-pieces-card">
+                <div class="recent-pieces-header">
+                    <div class="header-icon">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <h6 class="header-title">Dernières pièces</h6>
+                </div>
+                <div class="recent-pieces-body">
+                    {% if dernieres_pieces %}
+                    <div class="pieces-list">
+                        {% for piece in dernieres_pieces %}
+                        <a href="/comptabilite/pieces/{{ piece.pk }}/" class="piece-item">
+                            <div class="piece-icon">
+                                {% if piece.journal.type_journal == 'VENTE' %}
+                                <i class="bi bi-cart-check text-success"></i>
+                                {% elif piece.journal.type_journal == 'ACHAT' %}
+                                <i class="bi bi-cart-plus text-warning"></i>
+                                {% elif piece.journal.type_journal == 'BANQUE' %}
+                                <i class="bi bi-bank text-info"></i>
+                                {% elif piece.journal.type_journal == 'CAISSE' %}
+                                <i class="bi bi-cash text-primary"></i>
+                                {% else %}
+                                <i class="bi bi-file-text text-secondary"></i>
+                                {% endif %}
+                            </div>
+                            <div class="piece-content">
+                                <div class="piece-numero">{{ piece.numero_piece }}</div>
+                                <div class="piece-libelle">{{ piece.libelle[:40] }}{% if piece.libelle|length > 40 %}...{% endif %}</div>
+                                <div class="piece-meta">
+                                    <span class="piece-journal">{{ piece.journal.code }}</span>
+                                    <span class="piece-date">{{ piece.date_piece.strftime('%d/%m/%Y') }}</span>
+                                </div>
+                            </div>
+                            {% if piece.est_validee %}
+                            <div class="piece-badge">
+                                <i class="bi bi-check-circle text-success"></i>
+                            </div>
+                            {% else %}
+                            <div class="piece-badge">
+                                <i class="bi bi-clock text-warning"></i>
+                            </div>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-pieces">
+                        <i class="bi bi-inbox"></i>
+                        <p>Aucune pièce comptable</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Info SYSCOHADA -->
+            <div class="info-syscohada-card mt-4">
+                <div class="info-header">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Système SYSCOHADA</span>
+                </div>
+                <div class="info-body">
+                    <p class="info-text">
+                        Le <strong>SYSCOHADA</strong> (Système Comptable OHADA) est le référentiel 
+                        comptable harmonisé pour les pays membres de l'OHADA.
+                    </p>
+                    <div class="info-classes">
+                        <div class="info-title">Classes de comptes :</div>
+                        <div class="classes-grid">
+                            <div class="classe-item">
+                                <span class="classe-num">1-2</span>
+                                <span class="classe-label">Bilan</span>
+                            </div>
+                            <div class="classe-item">
+                                <span class="classe-num">3-5</span>
+                                <span class="classe-label">Gestion</span>
+                            </div>
+                            <div class="classe-item">
+                                <span class="classe-num">6-7</span>
+                                <span class="classe-label">Résultat</span>
+                            </div>
+                            <div class="classe-item">
+                                <span class="classe-num">8</span>
+                                <span class="classe-label">Autres</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ==================== EN-TÊTE DASHBOARD ==================== */
+.page-header-dashboard {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-icon-box {
+    width: 64px;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.header-icon-box i {
+    font-size: 32px;
+    color: white;
+}
+
+.header-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+}
+
+.header-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+}
+
+.exercice-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.exercice-badge i {
+    font-size: 28px;
+    color: white;
+}
+
+.exercice-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2px;
+}
+
+.exercice-nom {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+}
+
+.exercice-alert {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.exercice-link {
+    font-size: 13px;
+    color: white;
+    text-decoration: underline;
+}
+
+/* ==================== STATS DASHBOARD ==================== */
+.stats-grid-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-card-dashboard {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+}
+
+.stat-card-dashboard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.stat-primary .stat-icon {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+.stat-success .stat-icon {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    color: white;
+}
+
+.stat-info .stat-icon {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    color: white;
+}
+
+.stat-warning .stat-icon {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: white;
+}
+
+.stat-badge-top .badge {
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-primary { background: #dbeafe; color: #1e40af; }
+.badge-success { background: #dcfce7; color: #166534; }
+.badge-info { background: #dbeafe; color: #0ea5e9; }
+.badge-warning { background: #fef3c7; color: #92400e; }
+
+.stat-card-body {
+    padding: 20px;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.stat-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6366f1;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+}
+
+.stat-link:hover {
+    color: #4f46e5;
+    gap: 8px;
+}
+
+/* ==================== ACCÈS RAPIDES ==================== */
+.quick-access-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.quick-access-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-icon i {
+    font-size: 20px;
+    color: white;
+}
+
+.header-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.quick-access-body {
+    padding: 24px;
+}
+
+.quick-access-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.quick-access-item {
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.quick-access-item:hover {
+    background: white;
+    border-color: #6366f1;
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.quick-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.quick-icon i {
+    font-size: 20px;
+    color: white;
+}
+
+.quick-icon.bg-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+.quick-icon.bg-success { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
+.quick-icon.bg-info { background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%); }
+.quick-icon.bg-warning { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); }
+.quick-icon.bg-danger { background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); }
+.quick-icon.bg-purple { background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); }
+.quick-icon.bg-teal { background: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%); }
+.quick-icon.bg-orange { background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); }
+
+.quick-content {
+    flex: 1;
+}
+
+.quick-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.quick-desc {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.quick-arrow {
+    color: #94a3b8;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.quick-access-item:hover .quick-arrow {
+    color: #6366f1;
+}
+
+/* ==================== DERNIÈRES PIÈCES ==================== */
+.recent-pieces-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.recent-pieces-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.recent-pieces-body {
+    padding: 16px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.pieces-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.piece-item {
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.piece-item:hover {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translateX(4px);
+}
+
+.piece-icon {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.piece-content {
+    flex: 1;
+}
+
+.piece-numero {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.piece-libelle {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.piece-meta {
+    display: flex;
+    gap: 8px;
+    font-size: 11px;
+}
+
+.piece-journal {
+    color: #6366f1;
+    font-weight: 600;
+}
+
+.piece-date {
+    color: #94a3b8;
+}
+
+.piece-badge {
+    font-size: 18px;
+}
+
+.empty-pieces {
+    padding: 40px;
+    text-align: center;
+}
+
+.empty-pieces i {
+    font-size: 48px;
+    color: #cbd5e1;
+    margin-bottom: 12px;
+}
+
+.empty-pieces p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ==================== INFO SYSCOHADA ==================== */
+.info-syscohada-card {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    border-radius: 16px;
+    overflow: hidden;
+    color: white;
+}
+
+.info-header {
+    padding: 16px 20px;
+    background: rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.info-header i {
+    font-size: 18px;
+}
+
+.info-body {
+    padding: 20px;
+}
+
+.info-text {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    opacity: 0.95;
+}
+
+.info-title {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    opacity: 0.9;
+}
+
+.classes-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.classe-item {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.classe-num {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.classe-label {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 992px) {
+    .page-header-dashboard {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .quick-access-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid-dashboard {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

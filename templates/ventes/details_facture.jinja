@@ -1,0 +1,1216 @@
+<!-- templates/ventes/details_facture.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Facture {{ facture.numero_facture }}{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête moderne avec actions -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/ventes/factures/" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">Facture {{ facture.numero_facture }}</h4>
+                <p class="page-subtitle">Détails et lignes de la facture</p>
+            </div>
+        </div>
+        <div class="page-header-right">
+            <!-- Actions selon le statut -->
+            {% set total = facture.total if facture.total else 0 %}
+            {% set paye = facture.montant_paye if facture.montant_paye else 0 %}
+            {% set solde = total - paye %}
+            
+            {% if solde > 0 and facture.statut != 'PAYEE' %}
+            <a href="/ventes/factures/{{ facture.pk }}/paiement/" class="btn-action-success">
+                <i class="bi bi-cash"></i>
+                <span>Enregistrer paiement</span>
+            </a>
+            {% endif %}
+            {% if facture.statut in ['BROUILLON', 'ENVOYEE'] %}
+            <a href="/ventes/factures/{{ facture.pk }}/envoyer/" class="btn-action-info">
+                <i class="bi bi-send"></i>
+                <span>Envoyer</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Colonne principale (gauche) -->
+        <div class="col-lg-8">
+            <!-- Carte informations principales -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-icon bg-primary">
+                        <i class="bi bi-info-circle"></i>
+                    </div>
+                    <h6>Informations de la facture</h6>
+                </div>
+                <div class="info-card-body">
+                    <div class="row g-3">
+                        <!-- Client -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Client</div>
+                                <div class="info-content">
+                                    <div class="client-display">
+                                        <div class="client-avatar">
+                                            {{ facture.client.nom[0]|upper if facture.client.nom else 'C' }}
+                                        </div>
+                                        <div>
+                                            <div class="client-name">{{ facture.client.nom }}</div>
+                                            {% if facture.client.adresse %}
+                                            <div class="client-address">{{ facture.client.adresse }}</div>
+                                            {% endif %}
+                                            {% if facture.client.telephone %}
+                                            <div class="client-phone">
+                                                <i class="bi bi-telephone"></i> {{ facture.client.telephone }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dates -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Dates importantes</div>
+                                <div class="info-content">
+                                    <div class="date-row">
+                                        <span class="date-label">Date facture :</span>
+                                        <span class="date-value">
+                                            {{ facture.date_facture.strftime('%d/%m/%Y') if facture.date_facture else 
+                                               facture.date_creation.strftime('%d/%m/%Y') if facture.date_creation else '-' }}
+                                        </span>
+                                    </div>
+                                    <div class="date-row">
+                                        <span class="date-label">Échéance :</span>
+                                        <span class="date-value {% if facture.statut == 'EN_RETARD' %}text-danger{% endif %}">
+                                            {{ facture.date_echeance.strftime('%d/%m/%Y') if facture.date_echeance else '-' }}
+                                            {% if facture.statut == 'EN_RETARD' %}
+                                            <span class="badge-danger ms-2">En retard</span>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Commande liée -->
+                        {% if facture.commande_vente %}
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Commande associée</div>
+                                <div class="info-content">
+                                    <a href="/ventes/commandes/{{ facture.commande_vente.pk }}/" class="commande-link">
+                                        <i class="bi bi-cart"></i>
+                                        {{ facture.commande_vente.numero_commande }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Statut -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Statut de la facture</div>
+                                <div class="info-content">
+                                    {% if facture.statut == 'PAYEE' %}
+                                    <span class="status-badge-large status-paid">
+                                        <span class="status-dot"></span>
+                                        Payée
+                                    </span>
+                                    {% elif facture.statut == 'EN_RETARD' %}
+                                    <span class="status-badge-large status-late">
+                                        <span class="status-dot"></span>
+                                        En retard
+                                    </span>
+                                    {% elif facture.statut == 'BROUILLON' %}
+                                    <span class="status-badge-large status-draft">
+                                        <span class="status-dot"></span>
+                                        Brouillon
+                                    </span>
+                                    {% elif facture.statut == 'ENVOYEE' %}
+                                    <span class="status-badge-large status-sent">
+                                        <span class="status-dot"></span>
+                                        Envoyée
+                                    </span>
+                                    {% else %}
+                                    <span class="status-badge-large status-secondary">
+                                        <span class="status-dot"></span>
+                                        {{ facture.get_statut_display() }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lignes de facture -->
+            <div class="lines-card">
+                <div class="lines-card-header">
+                    <div class="lines-icon">
+                        <i class="bi bi-list-check"></i>
+                    </div>
+                    <h6>Articles facturés</h6>
+                    <div class="badge-count">{{ lignes|length }}</div>
+                </div>
+                <div class="lines-card-body">
+                    <div class="table-container">
+                        <table class="lines-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">#</th>
+                                    <th>Description</th>
+                                    <th class="text-center" style="width: 100px;">Quantité</th>
+                                    <th class="text-end" style="width: 140px;">Prix unit.</th>
+                                    <th class="text-end" style="width: 140px;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ligne in lignes %}
+                                <tr>
+                                    <td class="text-center text-muted">{{ loop.index }}</td>
+                                    <td>
+                                        <div class="product-display">
+                                            <div class="product-avatar">
+                                                {{ ligne.produit.nom[0]|upper if ligne.produit and ligne.produit.nom else 'P' }}
+                                            </div>
+                                            <div>
+                                                <div class="product-name">{{ ligne.produit.nom if ligne.produit else 'Produit supprimé' }}</div>
+                                                {% if ligne.produit and ligne.produit.description %}
+                                                <div class="product-desc">
+                                                    {{ ligne.produit.description[:100] }}{% if ligne.produit.description|length > 100 %}...{% endif %}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="quantity-display">{{ ligne.quantite }}</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="price-display">{{ "{:,.0f}".format(ligne.prix_unitaire) }}</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="total-display">{{ "{:,.0f}".format(ligne.prix_unitaire * ligne.quantite) }}</div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="empty-state-small">
+                                        <i class="bi bi-exclamation-circle"></i>
+                                        <p>Aucun article trouvé</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remarques -->
+            {% if facture.remarques %}
+            <div class="notes-card">
+                <div class="notes-header">
+                    <i class="bi bi-chat-left-text"></i>
+                    <span>Remarques</span>
+                </div>
+                <div class="notes-body">
+                    <i class="bi bi-info-circle notes-icon"></i>
+                    <p>{{ facture.remarques }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Colonne latérale (droite) -->
+        <div class="col-lg-4">
+            <div class="sticky-sidebar">
+                <!-- Résumé financier -->
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <i class="bi bi-calculator"></i>
+                        <h6>Résumé financier</h6>
+                    </div>
+                    <div class="summary-body">
+                        <div class="summary-row">
+                            <span class="summary-label">Sous-total HT</span>
+                            <span class="summary-value">{{ "{:,.0f}".format(facture.sous_total) if facture.sous_total else '0' }}</span>
+                        </div>
+                        {% if facture.montant_tva and facture.montant_tva > 0 %}
+                        <div class="summary-row">
+                            <span class="summary-label">TVA ({{ facture.taux_tva if facture.taux_tva else '0' }}%)</span>
+                            <span class="summary-value">{{ "{:,.0f}".format(facture.montant_tva) }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="summary-divider"></div>
+                        <div class="summary-row summary-total">
+                            <span class="summary-label">Total TTC</span>
+                            <span class="summary-amount">{{ "{:,.0f}".format(total) }}</span>
+                        </div>
+                        <div class="summary-row summary-paid">
+                            <span class="summary-label">Montant payé</span>
+                            <span class="summary-value-paid">{{ "{:,.0f}".format(paye) }}</span>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-row summary-balance">
+                            <span class="summary-label">Solde restant</span>
+                            <span class="summary-balance-amount {% if solde == 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ "{:,.0f}".format(solde) }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions rapides -->
+                <div class="actions-card">
+                    <div class="actions-header">
+                        <i class="bi bi-lightning"></i>
+                        <span>Actions rapides</span>
+                    </div>
+                    <div class="actions-body">
+                        <a href="/ventes/factures/{{ facture.pk }}/imprimer/" target="_blank" class="action-item">
+                            <i class="bi bi-printer"></i>
+                            <span>Imprimer</span>
+                        </a>
+                        <a href="/ventes/factures/{{ facture.pk }}/telecharger-pdf/" class="action-item">
+                            <i class="bi bi-download"></i>
+                            <span>Télécharger PDF</span>
+                        </a>
+                        <a href="/ventes/factures/{{ facture.pk }}/envoyer-email/" class="action-item">
+                            <i class="bi bi-envelope"></i>
+                            <span>Envoyer par email</span>
+                        </a>
+                        {% if solde > 0 and facture.statut != 'PAYEE' %}
+                        <a href="/ventes/factures/{{ facture.pk }}/paiement/" class="action-item action-success">
+                            <i class="bi bi-cash"></i>
+                            <span>Enregistrer paiement</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Informations complémentaires -->
+                <div class="info-card-small">
+                    <div class="info-card-small-header">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Informations</span>
+                    </div>
+                    <div class="info-card-small-body">
+                        <div class="info-item-small">
+                            <i class="bi bi-calendar-plus"></i>
+                            <div>
+                                <div class="info-item-label">Créée le</div>
+                                <div class="info-item-value">
+                                    {{ facture.date_creation.strftime('%d/%m/%Y à %H:%M') if facture.date_creation else '-' }}
+                                </div>
+                            </div>
+                        </div>
+                        {% if facture.conditions_paiement %}
+                        <div class="info-item-small">
+                            <i class="bi bi-wallet2"></i>
+                            <div>
+                                <div class="info-item-label">Conditions</div>
+                                <div class="info-item-value">{{ facture.conditions_paiement }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Historique des paiements -->
+                {% if paye > 0 %}
+                <div class="payment-history-card">
+                    <div class="payment-history-header">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Historique paiements</span>
+                    </div>
+                    <div class="payment-history-body">
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">Paiement enregistré</div>
+                                    <div class="timeline-amount">{{ "{:,.0f}".format(paye) }} FCFA</div>
+                                    {% if facture.date_modification %}
+                                    <div class="timeline-date">{{ facture.date_modification.strftime('%d/%m/%Y') }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if solde == 0 %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-title">✅ Facture réglée</div>
+                                    <div class="timeline-desc">Solde: 0 FCFA</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+
+/* ==================== STYLES COMPLETS POUR details_facture.jinja ==================== */
+/* À ajouter dans le bloc <style> du template */
+
+/* PAGE HEADER */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+.page-header-right {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-action-success {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-action-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+    color: white;
+}
+
+.btn-action-info {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-action-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+    color: white;
+}
+
+/* INFO CARD */
+.info-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.info-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.info-icon.bg-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.info-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.info-card-body {
+    padding: 24px;
+}
+
+.info-box {
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 10px;
+    height: 100%;
+}
+
+.info-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.client-display {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.client-avatar {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+}
+
+.client-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.client-address {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.client-phone {
+    font-size: 13px;
+    color: #6366f1;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.date-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.date-row:last-child {
+    border-bottom: none;
+}
+
+.date-label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.date-value {
+    font-size: 14px;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+}
+
+.commande-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.commande-link:hover {
+    background: #1e40af;
+    color: white;
+}
+
+/* STATUS BADGES */
+.status-badge-large {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-draft {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status-draft .status-dot {
+    background: #64748b;
+}
+
+.status-sent {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-sent .status-dot {
+    background: #f59e0b;
+}
+
+.status-paid {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-paid .status-dot {
+    background: #16a34a;
+}
+
+.status-late {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-late .status-dot {
+    background: #dc2626;
+}
+
+/* LINES CARD */
+.lines-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.lines-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lines-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.lines-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    flex: 1;
+}
+
+.badge-count {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #6366f1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.lines-card-body {
+    padding: 0;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.lines-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.lines-table thead {
+    background: #f8fafc;
+}
+
+.lines-table th {
+    padding: 16px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.lines-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.lines-table td {
+    padding: 20px;
+    vertical-align: middle;
+}
+
+.product-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.product-avatar {
+    width: 40px;
+    height: 40px;
+    background: #e0e7ff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.product-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.product-desc {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.quantity-display {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.price-display {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.price-display::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+.total-display {
+    font-size: 16px;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.total-display::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+.empty-state-small {
+    padding: 40px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.empty-state-small i {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+/* NOTES CARD */
+.notes-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.notes-header {
+    padding: 16px 20px;
+    background: rgba(245, 158, 11, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #92400e;
+}
+
+.notes-body {
+    padding: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.notes-icon {
+    font-size: 20px;
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+.notes-body p {
+    font-size: 14px;
+    color: #78350f;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* SIDEBAR */
+.sticky-sidebar {
+    position: sticky;
+    top: 24px;
+}
+
+.summary-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.summary-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.summary-header i {
+    font-size: 20px;
+    color: #6366f1;
+}
+
+.summary-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.summary-body {
+    padding: 24px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.summary-label {
+    font-size: 14px;
+    color: #64748b;
+}
+
+.summary-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.summary-value::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+.summary-value-paid {
+    font-size: 16px;
+    font-weight: 600;
+    color: #10b981;
+}
+
+.summary-value-paid::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+.summary-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 20px 0;
+}
+
+.summary-total .summary-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.summary-amount {
+    font-size: 24px;
+    font-weight: 700;
+    color: #6366f1;
+}
+
+.summary-amount::after {
+    content: ' FCFA';
+    font-size: 12px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+.summary-balance .summary-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.summary-balance-amount {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.summary-balance-amount::after {
+    content: ' FCFA';
+    font-size: 12px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+/* ACTIONS CARD */
+.actions-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.actions-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.actions-body {
+    padding: 12px;
+}
+
+.action-item {
+    width: 100%;
+    padding: 12px 16px;
+    background: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 4px;
+}
+
+.action-item:hover {
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+.action-success {
+    color: #10b981;
+}
+
+.action-success:hover {
+    background: #dcfce7;
+    color: #166534;
+}
+
+/* INFO CARD SMALL */
+.info-card-small {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.info-card-small-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.info-card-small-body {
+    padding: 20px;
+}
+
+.info-item-small {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.info-item-small:last-child {
+    margin-bottom: 0;
+}
+
+.info-item-small i {
+    font-size: 20px;
+    color: #6366f1;
+    margin-top: 2px;
+}
+
+.info-item-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.info-item-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* PAYMENT HISTORY */
+.payment-history-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.payment-history-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.payment-history-body {
+    padding: 20px;
+}
+
+.timeline {
+    position: relative;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 36px;
+    padding-bottom: 20px;
+    border-left: 2px solid #e2e8f0;
+}
+
+.timeline-item:last-child {
+    border-left: 2px solid transparent;
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -9px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 1px #e2e8f0;
+}
+
+.timeline-marker.bg-success {
+    background: #10b981;
+}
+
+.timeline-content {
+    padding-left: 12px;
+}
+
+.timeline-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.timeline-amount {
+    font-size: 16px;
+    font-weight: 700;
+    color: #10b981;
+    margin-bottom: 4px;
+}
+
+.timeline-date {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.timeline-desc {
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* RESPONSIVE */
+@media (max-width: 992px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .page-header-right {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .sticky-sidebar {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .btn-action-success,
+    .btn-action-info {
+        flex: 1;
+    }
+}
+</style>
+
+
+{% endblock %}

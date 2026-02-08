@@ -1,0 +1,1015 @@
+<!-- templates/stock/formulaire_entrepot.jinja - DESIGN MODERNE VIOLET CORRIGÉ -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}{{ action }} un entrepôt{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête de page -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="{{ url('stock:liste_entrepots') }}" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">{{ action }} un entrepôt</h4>
+                <p class="page-subtitle">
+                    {% if action == "Modifier" %}
+                    Modification de l'entrepôt {{ entrepot.nom if entrepot else '' }}
+                    {% else %}
+                    Créer un nouvel espace de stockage
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <form method="post" id="warehouseForm">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                
+                <div class="row g-4">
+                    <!-- Colonne principale (gauche) -->
+                    <div class="col-lg-8">
+                        <!-- Informations principales -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-primary">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                                <h6>Informations principales</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-hash"></i>
+                                                Code entrepôt
+                                                <span class="required">*</span>
+                                            </label>
+                                            {{ formulaire.code }}
+                                            {% if formulaire.code.errors %}
+                                            <div class="error-message">{{ formulaire.code.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Code unique (ex: ENT001, WH-PARIS)</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-building"></i>
+                                                Nom de l'entrepôt
+                                                <span class="required">*</span>
+                                            </label>
+                                            {{ formulaire.nom }}
+                                            {% if formulaire.nom.errors %}
+                                            <div class="error-message">{{ formulaire.nom.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Nom descriptif de l'entrepôt</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Localisation -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-success">
+                                    <i class="bi bi-geo-alt"></i>
+                                </div>
+                                <h6>Localisation</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-map"></i>
+                                                Adresse complète
+                                            </label>
+                                            {{ formulaire.adresse }}
+                                            {% if formulaire.adresse.errors %}
+                                            <div class="error-message">{{ formulaire.adresse.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Adresse physique de l'entrepôt (rue, ville, pays)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gestion -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-info">
+                                    <i class="bi bi-person-badge"></i>
+                                </div>
+                                <h6>Gestion et contact</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-person"></i>
+                                                Responsable
+                                            </label>
+                                            {{ formulaire.responsable }}
+                                            {% if formulaire.responsable.errors %}
+                                            <div class="error-message">{{ formulaire.responsable.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Gestionnaire de l'entrepôt</div>
+                                        </div>
+                                    </div>
+
+                                    {% if formulaire.telephone %}
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-telephone"></i>
+                                                Téléphone
+                                            </label>
+                                            {{ formulaire.telephone }}
+                                            {% if formulaire.telephone.errors %}
+                                            <div class="error-message">{{ formulaire.telephone.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Numéro de contact principal</div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Capacité (si les champs existent) -->
+                        {% if formulaire.capacite_totale %}
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-warning">
+                                    <i class="bi bi-box-seam"></i>
+                                </div>
+                                <h6>Capacité de stockage</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-boxes"></i>
+                                                Capacité totale
+                                            </label>
+                                            {{ formulaire.capacite_totale }}
+                                            {% if formulaire.capacite_totale.errors %}
+                                            <div class="error-message">{{ formulaire.capacite_totale.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Nombre maximum d'unités stockables</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-stack"></i>
+                                                Capacité utilisée
+                                            </label>
+                                            {{ formulaire.capacite_utilisee }}
+                                            {% if formulaire.capacite_utilisee.errors %}
+                                            <div class="error-message">{{ formulaire.capacite_utilisee.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Nombre d'unités actuellement stockées</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Visualisation capacité -->
+                                <div class="calculations-card">
+                                    <div class="calc-grid">
+                                        <div class="calc-item">
+                                            <div class="calc-icon bg-warning">
+                                                <i class="bi bi-speedometer"></i>
+                                            </div>
+                                            <div class="calc-content">
+                                                <div class="calc-label">Taux d'occupation</div>
+                                                <div class="calc-value" id="occupationRate">0%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Colonne latérale (droite) -->
+                    <div class="col-lg-4">
+                        <!-- Statut -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-gray">
+                                    <i class="bi bi-toggle-on"></i>
+                                </div>
+                                <h6>Statut de l'entrepôt</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="status-toggle">
+                                    <label class="toggle-switch">
+                                        {{ formulaire.est_actif }}
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <div class="status-info">
+                                        <div class="status-label">Entrepôt actif</div>
+                                        <div class="status-description">
+                                            Un entrepôt actif peut recevoir des mouvements de stock
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="info-box">
+                                    <i class="bi bi-info-circle"></i>
+                                    <p>Désactivez temporairement un entrepôt sans le supprimer</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Aperçu -->
+                        <div class="preview-card">
+                            <div class="preview-header">
+                                <i class="bi bi-eye"></i>
+                                <h6>Aperçu</h6>
+                            </div>
+                            <div class="preview-body">
+                                <div class="warehouse-preview" id="warehousePreview">
+                                    <div class="preview-icon">
+                                        <i class="bi bi-building"></i>
+                                    </div>
+                                    <div class="preview-name" id="previewName">Nouvel entrepôt</div>
+                                    <div class="preview-code" id="previewCode">-</div>
+                                    <div class="preview-location" id="previewLocation">
+                                        <i class="bi bi-geo-alt"></i>
+                                        <span>Localisation non définie</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conseils -->
+                        <div class="tips-card">
+                            <div class="tips-header">
+                                <i class="bi bi-lightbulb"></i>
+                                <span>Conseils pratiques</span>
+                            </div>
+                            <div class="tips-list">
+                                <div class="tip-item">
+                                    <i class="bi bi-check2-circle"></i>
+                                    <p><strong>Code unique :</strong> Utilisez des codes clairs (ENT001, WH-PARIS)</p>
+                                </div>
+                                <div class="tip-item">
+                                    <i class="bi bi-check2-circle"></i>
+                                    <p><strong>Responsable :</strong> Assignez un gestionnaire pour faciliter le suivi</p>
+                                </div>
+                                <div class="tip-item">
+                                    <i class="bi bi-check2-circle"></i>
+                                    <p><strong>Localisation :</strong> Renseignez l'adresse complète pour la logistique</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions du formulaire -->
+                <div class="form-actions-bar">
+                    <div class="actions-left">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span>Les champs marqués d'un * sont obligatoires</span>
+                    </div>
+                    <div class="actions-right">
+                        <a href="{{ url('stock:liste_entrepots') }}" class="btn-cancel">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annuler</span>
+                        </a>
+                        <button type="submit" class="btn-submit" id="submitBtn">
+                            <i class="bi bi-check-circle"></i>
+                            <span>Enregistrer l'entrepôt</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('warehouseForm');
+    const codeInput = document.querySelector('input[name="code"]');
+    const nomInput = document.querySelector('input[name="nom"]');
+    const adresseInput = document.querySelector('textarea[name="adresse"]');
+    const capaciteTotale = document.querySelector('input[name="capacite_totale"]');
+    const capaciteUtilisee = document.querySelector('input[name="capacite_utilisee"]');
+    
+    // Mise à jour de l'aperçu
+    function updatePreview() {
+        const nom = nomInput ? (nomInput.value || 'Nouvel entrepôt') : 'Nouvel entrepôt';
+        const code = codeInput ? (codeInput.value || '-') : '-';
+        const adresse = adresseInput ? adresseInput.value : '';
+        
+        const previewName = document.getElementById('previewName');
+        const previewCode = document.getElementById('previewCode');
+        const previewLocation = document.getElementById('previewLocation');
+        
+        if (previewName) previewName.textContent = nom;
+        if (previewCode) previewCode.textContent = code;
+        
+        if (previewLocation) {
+            if (adresse) {
+                // Extraire la première ligne ou les 50 premiers caractères
+                const firstLine = adresse.split('\n')[0].substring(0, 50);
+                previewLocation.innerHTML = `
+                    <i class="bi bi-geo-alt"></i>
+                    <span>${firstLine}${adresse.length > 50 ? '...' : ''}</span>
+                `;
+            } else {
+                previewLocation.innerHTML = `
+                    <i class="bi bi-geo-alt"></i>
+                    <span>Localisation non définie</span>
+                `;
+            }
+        }
+    }
+    
+    // Calcul du taux d'occupation
+    function updateOccupation() {
+        if (capaciteTotale && capaciteUtilisee) {
+            const total = parseFloat(capaciteTotale.value) || 0;
+            const utilisee = parseFloat(capaciteUtilisee.value) || 0;
+            
+            const rateElement = document.getElementById('occupationRate');
+            if (rateElement && total > 0) {
+                const taux = Math.round((utilisee / total) * 100);
+                rateElement.textContent = taux + '%';
+                
+                // Colorier selon le taux
+                if (taux > 90) {
+                    rateElement.style.color = '#dc2626';
+                } else if (taux > 70) {
+                    rateElement.style.color = '#f59e0b';
+                } else {
+                    rateElement.style.color = '#10b981';
+                }
+            }
+        }
+    }
+    
+    // Écouter les changements
+    if (nomInput) nomInput.addEventListener('input', updatePreview);
+    if (codeInput) codeInput.addEventListener('input', updatePreview);
+    if (adresseInput) adresseInput.addEventListener('input', updatePreview);
+    if (capaciteTotale) capaciteTotale.addEventListener('input', updateOccupation);
+    if (capaciteUtilisee) capaciteUtilisee.addEventListener('input', updateOccupation);
+    
+    // Initialiser
+    updatePreview();
+    updateOccupation();
+    
+    // Auto-générer le code
+    if (nomInput && codeInput) {
+        nomInput.addEventListener('blur', function() {
+            if (!codeInput.value && nomInput.value) {
+                const prefix = nomInput.value.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
+                const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                const suggestedCode = 'ENT' + (prefix || '') + random;
+                
+                if (confirm(`💡 Voulez-vous utiliser le code suggéré : ${suggestedCode} ?`)) {
+                    codeInput.value = suggestedCode;
+                    updatePreview();
+                }
+            }
+        });
+    }
+    
+    // Validation
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const code = codeInput ? codeInput.value.trim() : '';
+            const nom = nomInput ? nomInput.value.trim() : '';
+            
+            if (!code) {
+                e.preventDefault();
+                alert('⚠️ Le code est obligatoire');
+                if (codeInput) codeInput.focus();
+                return false;
+            }
+            
+            if (!nom) {
+                e.preventDefault();
+                alert('⚠️ Le nom est obligatoire');
+                if (nomInput) nomInput.focus();
+                return false;
+            }
+            
+            // Désactiver le bouton
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span><span>Enregistrement...</span>';
+            }
+        });
+    }
+    
+    // Confirmation avant annulation
+    let formModified = false;
+    const inputs = form.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+        input.addEventListener('change', function() {
+            formModified = true;
+        });
+    });
+    
+    const cancelBtn = document.querySelector('.btn-cancel');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function(e) {
+            if (formModified) {
+                if (!confirm('⚠️ Vous avez des modifications non enregistrées.\n\nVoulez-vous vraiment quitter ?')) {
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* [Tous les styles CSS identiques à la version précédente] */
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+/* Form Card */
+.form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.form-card-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.header-icon.bg-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.header-icon.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.header-icon.bg-info {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+}
+
+.header-icon.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.header-icon.bg-gray {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+}
+
+.form-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.form-card-body {
+    padding: 24px;
+}
+
+/* Form Groups */
+.form-group-modern {
+    margin-bottom: 0;
+}
+
+.form-label-modern {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+.form-label-modern i {
+    color: #6366f1;
+    font-size: 16px;
+}
+
+.required {
+    color: #dc2626;
+    margin-left: 4px;
+}
+
+.form-group-modern input[type="text"],
+.form-group-modern input[type="number"],
+.form-group-modern select,
+.form-group-modern textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: white;
+}
+
+.form-group-modern input:focus,
+.form-group-modern select:focus,
+.form-group-modern textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-group-modern textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-help {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.error-message {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #dc2626;
+    font-weight: 500;
+}
+
+/* Calculations Card */
+.calculations-card {
+    margin-top: 24px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+}
+
+.calc-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.calc-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.calc-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.calc-icon.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.calc-content {
+    flex: 1;
+}
+
+.calc-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.calc-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Status Toggle */
+.status-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 32px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: 0.3s;
+    border-radius: 16px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(28px);
+}
+
+.status-info {
+    flex: 1;
+}
+
+.status-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.status-description {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.info-box {
+    padding: 16px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.info-box i {
+    font-size: 20px;
+    color: #0ea5e9;
+    flex-shrink: 0;
+}
+
+.info-box p {
+    font-size: 13px;
+    color: #1e40af;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Preview Card */
+.preview-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.preview-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.preview-header i {
+    font-size: 24px;
+    color: #6366f1;
+}
+
+.preview-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.preview-body {
+    padding: 24px;
+}
+
+.warehouse-preview {
+    text-align: center;
+    padding: 20px;
+}
+
+.preview-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    color: white;
+}
+
+.preview-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.preview-code {
+    display: inline-block;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.preview-location {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* Tips Card */
+.tips-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tips-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    color: #92400e;
+}
+
+.tips-header i {
+    font-size: 24px;
+}
+
+.tips-header span {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tip-item {
+    display: flex;
+    gap: 10px;
+}
+
+.tip-item i {
+    font-size: 18px;
+    color: #10b981;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.tip-item p {
+    font-size: 13px;
+    color: #78350f;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.tip-item strong {
+    color: #92400e;
+}
+
+/* Form Actions Bar */
+.form-actions-bar {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 20px 24px;
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.actions-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.actions-left i {
+    color: #f59e0b;
+    font-size: 18px;
+}
+
+.actions-right {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-cancel,
+.btn-submit {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel {
+    background: white;
+    border: 2px solid #e2e8f0;
+    color: #64748b;
+}
+
+.btn-cancel:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-card-body {
+        padding: 20px 16px;
+    }
+    
+    .form-actions-bar {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .actions-right {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .btn-cancel,
+    .btn-submit {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+{% endblock %}

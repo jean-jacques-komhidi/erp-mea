@@ -1,0 +1,355 @@
+<!-- templates/achats/envoyer_commande.jinja -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Envoyer la commande {{ commande.numero_commande }}{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <!-- Carte d'information -->
+            <div class="card border-info shadow-sm mb-4">
+                <div class="card-header bg-info text-white border-0 py-3">
+                    <h5 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-send me-2"></i>Envoyer la commande au fournisseur
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info bg-info bg-opacity-10 border-info border-opacity-25">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-info-circle text-info fs-4"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="fw-bold mb-2">Transmission au fournisseur</h6>
+                                <p class="mb-0">
+                                    Vous êtes sur le point d'envoyer cette commande au fournisseur. 
+                                    Assurez-vous que toutes les informations sont correctes avant l'envoi.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informations de la commande -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-receipt me-2"></i>Récapitulatif de la commande
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center p-3 bg-light rounded">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-hash text-primary fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">N° Commande</small>
+                                    <h6 class="mb-0 fw-semibold">{{ commande.numero_commande }}</h6>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center p-3 bg-light rounded">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-calendar text-success fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">Date</small>
+                                    <h6 class="mb-0 fw-semibold">{{ commande.date_commande.strftime('%d/%m/%Y') }}</h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fournisseur -->
+                    <div class="card border-0 bg-light mb-3">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-building me-2"></i>Informations fournisseur
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Nom</small>
+                                    <div class="fw-semibold">{{ commande.fournisseur.nom }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Code</small>
+                                    <div class="fw-semibold">{{ commande.fournisseur.code }}</div>
+                                </div>
+                                {% if commande.fournisseur.email %}
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Email</small>
+                                    <div class="fw-semibold">{{ commande.fournisseur.email }}</div>
+                                </div>
+                                {% endif %}
+                                {% if commande.fournisseur.telephone %}
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Téléphone</small>
+                                    <div class="fw-semibold">{{ commande.fournisseur.telephone }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Montant -->
+                    <div class="alert alert-success bg-success bg-opacity-10 border-success border-opacity-25">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold">Montant total de la commande</span>
+                            <span class="fw-bold fs-4 text-success">
+                                {% if commande.total %}
+                                    {{ "{:,.0f}".format(commande.total) }} FCFA
+                                {% else %}
+                                    0 FCFA
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Formulaire d'envoi -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-envelope me-2"></i>Mode d'envoi
+                    </h6>
+                </div>
+                <form method="post" class="needs-validation" novalidate>
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                Comment souhaitez-vous envoyer cette commande ?
+                            </label>
+                            <div class="list-group">
+                                <label class="list-group-item">
+                                    <input class="form-check-input me-2" type="radio" name="mode_envoi" value="email" checked>
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <div>
+                                            <i class="bi bi-envelope text-primary me-2"></i>
+                                            <strong>Par email</strong>
+                                        </div>
+                                        {% if commande.fournisseur.email %}
+                                            <small class="text-success">
+                                                <i class="bi bi-check-circle me-1"></i>Disponible
+                                            </small>
+                                        {% else %}
+                                            <small class="text-danger">
+                                                <i class="bi bi-x-circle me-1"></i>Email non renseigné
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                    {% if commande.fournisseur.email %}
+                                        <small class="text-muted d-block ms-4">{{ commande.fournisseur.email }}</small>
+                                    {% endif %}
+                                </label>
+                                
+                                <label class="list-group-item">
+                                    <input class="form-check-input me-2" type="radio" name="mode_envoi" value="fax">
+                                    <div>
+                                        <i class="bi bi-printer text-info me-2"></i>
+                                        <strong>Par fax</strong>
+                                    </div>
+                                    {% if commande.fournisseur.fax %}
+                                        <small class="text-muted d-block ms-4">{{ commande.fournisseur.fax }}</small>
+                                    {% endif %}
+                                </label>
+                                
+                                <label class="list-group-item">
+                                    <input class="form-check-input me-2" type="radio" name="mode_envoi" value="telephone">
+                                    <div>
+                                        <i class="bi bi-telephone text-success me-2"></i>
+                                        <strong>Par téléphone</strong>
+                                    </div>
+                                    {% if commande.fournisseur.telephone %}
+                                        <small class="text-muted d-block ms-4">{{ commande.fournisseur.telephone }}</small>
+                                    {% endif %}
+                                </label>
+                                
+                                <label class="list-group-item">
+                                    <input class="form-check-input me-2" type="radio" name="mode_envoi" value="manuel">
+                                    <div>
+                                        <i class="bi bi-hand-thumbs-up text-warning me-2"></i>
+                                        <strong>Remise en main propre</strong>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Notes d'envoi (optionnel)</label>
+                            <textarea name="notes_envoi" 
+                                      class="form-control" 
+                                      rows="3" 
+                                      placeholder="Ajouter des instructions spéciales pour le fournisseur..."></textarea>
+                        </div>
+                        
+                        <!-- Confirmation -->
+                        <div class="form-check p-3 bg-info bg-opacity-10 rounded">
+                            <input class="form-check-input" type="checkbox" id="confirmEnvoi" required>
+                            <label class="form-check-label fw-bold" for="confirmEnvoi">
+                                Je confirme que la commande est prête à être envoyée au fournisseur
+                            </label>
+                            <div class="invalid-feedback">
+                                Vous devez confirmer l'envoi.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="card-footer bg-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="/achats/{{ commande.pk }}/" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Retour
+                            </a>
+                            <div class="d-flex gap-2">
+                                <a href="/achats/" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle me-2"></i>Annuler
+                                </a>
+                                <button type="submit" class="btn btn-custom-primary">
+                                    <i class="bi bi-send me-2"></i>Envoyer la commande
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Informations complémentaires -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success bg-opacity-10 text-success rounded p-2 me-2">
+                            <i class="bi bi-info-circle"></i>
+                        </div>
+                        <h6 class="mb-0 fw-bold">Après l'envoi</h6>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                </div>
+                                <div class="ms-2">
+                                    <small class="fw-semibold d-block">Statut mis à jour</small>
+                                    <small class="text-muted">La commande passera au statut "Envoyée"</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                </div>
+                                <div class="ms-2">
+                                    <small class="fw-semibold d-block">Suivi activé</small>
+                                    <small class="text-muted">Vous pourrez suivre l'état de livraison</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form.needs-validation');
+    
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            const confirmation = document.getElementById('confirmEnvoi').checked;
+            
+            if (!form.checkValidity() || !confirmation) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                if (!confirmation) {
+                    alert('Vous devez confirmer l\'envoi de la commande.');
+                }
+            } else {
+                if (!confirm('Confirmer l\'envoi de cette commande au fournisseur ?')) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            }
+            
+            form.classList.add('was-validated');
+        });
+    }
+});
+</script>
+
+<style>
+.btn-custom-primary {
+    background-color: #1e40af;
+    border-color: #1e40af;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+}
+
+.btn-custom-primary:hover {
+    background-color: #1e3a8a;
+    border-color: #1e3a8a;
+    color: white;
+}
+
+.list-group-item {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+.list-group-item:has(input:checked) {
+    background-color: rgba(13, 202, 240, 0.1);
+    border-left: 3px solid #0dcaf0;
+}
+
+.alert-info.bg-info.bg-opacity-10 {
+    border-left: 4px solid #0dcaf0;
+}
+
+.alert-success.bg-success.bg-opacity-10 {
+    border-left: 4px solid #198754;
+}
+
+.card {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .card-footer .d-flex {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .card-footer .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

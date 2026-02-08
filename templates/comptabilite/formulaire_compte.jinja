@@ -1,0 +1,353 @@
+<!-- templates/comptabilite/formulaire_compte.jinja - FORMULAIRE COMPTE COMPTABLE -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}{{ 'Modifier' if compte else 'Nouveau' }} compte comptable{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête du formulaire -->
+    <div class="form-header-modern">
+        <div class="header-left">
+            <a href="/comptabilite/plan-comptable/" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div class="header-icon-box">
+                <i class="bi bi-journal-plus"></i>
+            </div>
+            <div>
+                <h4 class="header-title">{{ 'Modifier le compte' if compte else 'Nouveau compte comptable' }}</h4>
+                <p class="header-subtitle">
+                    {% if compte %}
+                        Modifier le compte {{ compte.numero_compte }} - {{ compte.libelle }}
+                    {% else %}
+                        Créer un nouveau compte dans le plan comptable SYSCOHADA
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Formulaire principal -->
+        <div class="col-lg-8">
+            <div class="form-card-modern">
+                <div class="form-card-header">
+                    <div class="form-icon-box">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                    <h6 class="form-card-title">Informations du compte</h6>
+                </div>
+                <div class="form-card-body">
+                    <form method="post" id="compteForm">
+                        
+                        <!-- Numéro de compte -->
+                        <div class="form-group-modern">
+                            <label class="form-label-modern required">
+                                <i class="bi bi-hash"></i>
+                                Numéro de compte
+                            </label>
+                            <div class="input-group-modern">
+                                <div class="input-icon">
+                                    <i class="bi bi-hash"></i>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    name="numero_compte" 
+                                    class="form-control-modern" 
+                                    placeholder="Ex: 101000, 411000, 601000..."
+                                    value="{{ compte.numero_compte if compte else '' }}"
+                                    {% if compte %}readonly{% endif %}
+                                    required
+                                    maxlength="20"
+                                >
+                            </div>
+                            <div class="form-help-text">
+                                <i class="bi bi-info-circle"></i>
+                                Utilisez la nomenclature SYSCOHADA (Classes 1 à 8)
+                            </div>
+                        </div>
+
+                        <!-- Libellé -->
+                        <div class="form-group-modern">
+                            <label class="form-label-modern required">
+                                <i class="bi bi-fonts"></i>
+                                Libellé du compte
+                            </label>
+                            <div class="input-group-modern">
+                                <div class="input-icon">
+                                    <i class="bi bi-fonts"></i>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    name="libelle" 
+                                    class="form-control-modern" 
+                                    placeholder="Ex: Capital social, Clients, Achats de marchandises..."
+                                    value="{{ compte.libelle if compte else '' }}"
+                                    required
+                                    maxlength="200"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Type de compte -->
+                        <div class="form-group-modern">
+                            <label class="form-label-modern required">
+                                <i class="bi bi-diagram-2"></i>
+                                Type de compte
+                            </label>
+                            <div class="type-compte-grid">
+                                {% for type_code, type_label in types_compte %}
+                                <div class="type-compte-option">
+                                    <input 
+                                        type="radio" 
+                                        id="type_{{ type_code }}" 
+                                        name="type_compte" 
+                                        value="{{ type_code }}"
+                                        {% if compte and compte.type_compte == type_code %}checked{% endif %}
+                                        {% if not compte and loop.first %}checked{% endif %}
+                                        required
+                                    >
+                                    <label for="type_{{ type_code }}" class="type-compte-label">
+                                        <div class="type-icon">
+                                            {% if type_code == 'ACTIF' %}
+                                                <i class="bi bi-plus-circle"></i>
+                                            {% elif type_code == 'PASSIF' %}
+                                                <i class="bi bi-minus-circle"></i>
+                                            {% elif type_code == 'CHARGE' %}
+                                                <i class="bi bi-arrow-up-circle"></i>
+                                            {% elif type_code == 'PRODUIT' %}
+                                                <i class="bi bi-arrow-down-circle"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="type-text">
+                                            <div class="type-name">{{ type_label }}</div>
+                                            <div class="type-desc">
+                                                {% if type_code == 'ACTIF' %}
+                                                    Biens et créances
+                                                {% elif type_code == 'PASSIF' %}
+                                                    Dettes et capitaux
+                                                {% elif type_code == 'CHARGE' %}
+                                                    Dépenses et coûts
+                                                {% elif type_code == 'PRODUIT' %}
+                                                    Revenus et gains
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Compte parent (optionnel) -->
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">
+                                <i class="bi bi-diagram-3"></i>
+                                Compte parent (optionnel)
+                            </label>
+                            <div class="input-group-modern">
+                                <div class="input-icon">
+                                    <i class="bi bi-diagram-3"></i>
+                                </div>
+                                <select name="compte_parent" class="form-control-modern">
+                                    <option value="">Aucun (compte principal)</option>
+                                    {% for parent in comptes_parents %}
+                                    <option 
+                                        value="{{ parent.pk }}"
+                                        {% if compte and compte.compte_parent and compte.compte_parent.pk == parent.pk %}selected{% endif %}
+                                    >
+                                        {{ parent.numero_compte }} - {{ parent.libelle }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-help-text">
+                                <i class="bi bi-info-circle"></i>
+                                Choisissez un compte parent pour créer une hiérarchie
+                            </div>
+                        </div>
+
+                        <!-- Statut (seulement en modification) -->
+                        {% if compte %}
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">
+                                <i class="bi bi-toggle-on"></i>
+                                Statut du compte
+                            </label>
+                            <div class="toggle-switch-container">
+                                <label class="toggle-switch">
+                                    <input 
+                                        type="checkbox" 
+                                        name="est_actif"
+                                        {% if compte.est_actif %}checked{% endif %}
+                                    >
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <div class="toggle-label">
+                                    <span class="toggle-text-active">Compte actif</span>
+                                    <span class="toggle-text-inactive">Compte inactif</span>
+                                </div>
+                            </div>
+                            <div class="form-help-text">
+                                <i class="bi bi-info-circle"></i>
+                                Les comptes inactifs ne peuvent pas être utilisés dans les écritures
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Boutons d'action -->
+                        <div class="form-actions">
+                            <a href="/comptabilite/plan-comptable/" class="btn-secondary">
+                                <i class="bi bi-x-circle"></i>
+                                <span>Annuler</span>
+                            </a>
+                            <button type="submit" class="btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                <span>{{ 'Modifier' if compte else 'Créer' }} le compte</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panneau d'aide SYSCOHADA -->
+        <div class="col-lg-4">
+            <!-- Guide des classes -->
+            <div class="help-card-modern">
+                <div class="help-card-header">
+                    <i class="bi bi-book"></i>
+                    <span>Guide SYSCOHADA</span>
+                </div>
+                <div class="help-card-body">
+                    <p class="help-intro">
+                        Le système SYSCOHADA organise les comptes en 8 classes :
+                    </p>
+                    
+                    <div class="classe-help-list">
+                        <div class="classe-help-item">
+                            <div class="classe-badge classe-1">1</div>
+                            <div class="classe-content">
+                                <div class="classe-title">Ressources durables</div>
+                                <div class="classe-examples">Capital, réserves, emprunts</div>
+                            </div>
+                        </div>
+
+                        <div class="classe-help-item">
+                            <div class="classe-badge classe-2">2</div>
+                            <div class="classe-content">
+                                <div class="classe-title">Actif immobilisé</div>
+                                <div class="classe-examples">Terrains, matériel, brevets</div>
+                            </div>
+                        </div>
+
+                        <div class="classe-help-item">
+                            <div class="classe-badge classe-3">3</div>
+                            <div class="classe-content">
+                                <div class="classe-title">Comptes de stocks</div>
+                                <div class="classe-examples">Marchandises, matières</div>
+                            </div>
+                        </div>
+
+                        <div class="classe-help-item">
+                            <div class="classe-badge classe-4">4</div>
+                            <div class="classe-content">
+                                <div class="classe-title">Comptes de tiers</div>
+                                <div class="classe-examples">Clients, fournisseurs</div>
+                            </div>
+                        </div>
+
+                        <div class="classe-help-item">
+                            <div class="classe-badge classe-5">5</div>
+                            <div class="classe-content">
+                                <div class="classe-title">Trésorerie</div>
+                                <div class="classe-examples">Banque, caisse, chèques</div>
+                            </div>
+                        </div>
+
+                        <div class="classe-help-item">
+                            <div class="classe-badge classe-6">6</div>
+                            <div class="classe-content">
+                                <div class="classe-title">Comptes de charges</div>
+                                <div class="classe-examples">Achats, salaires</div>
+                            </div>
+                        </div>
+
+                        <div class="classe-help-item">
+                            <div class="classe-badge classe-7">7</div>
+                            <div class="classe-content">
+                                <div class="classe-title">Comptes de produits</div>
+                                <div class="classe-examples">Ventes, prestations</div>
+                            </div>
+                        </div>
+
+                        <div class="classe-help-item">
+                            <div class="classe-badge classe-8">8</div>
+                            <div class="classe-content">
+                                <div class="classe-title">Autres charges/produits</div>
+                                <div class="classe-examples">Exceptionnels, HAO</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exemples de numérotation -->
+            <div class="examples-card-modern mt-4">
+                <div class="examples-card-header">
+                    <i class="bi bi-lightbulb"></i>
+                    <span>Exemples</span>
+                </div>
+                <div class="examples-card-body">
+                    <div class="example-item">
+                        <div class="example-numero">101000</div>
+                        <div class="example-libelle">Capital social</div>
+                    </div>
+                    <div class="example-item">
+                        <div class="example-numero">411000</div>
+                        <div class="example-libelle">Clients</div>
+                    </div>
+                    <div class="example-item">
+                        <div class="example-numero">521000</div>
+                        <div class="example-libelle">Banques</div>
+                    </div>
+                    <div class="example-item">
+                        <div class="example-numero">601000</div>
+                        <div class="example-libelle">Achats marchandises</div>
+                    </div>
+                    <div class="example-item">
+                        <div class="example-numero">701000</div>
+                        <div class="example-libelle">Ventes marchandises</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* EN-TÊTE */
+.form-header-modern{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);padding:24px 32px;margin-bottom:24px}.header-left{display:flex;align-items:center;gap:16px}.btn-back{width:44px;height:44px;border-radius:10px;background:#f1f5f9;color:#64748b;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all .2s}.btn-back:hover{background:#6366f1;color:#fff}.header-icon-box{width:54px;height:54px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:14px;display:flex;align-items:center;justify-content:center}.header-icon-box i{font-size:26px;color:#fff}.header-title{font-size:20px;font-weight:700;color:#1e293b;margin:0}.header-subtitle{font-size:13px;color:#64748b;margin:0}
+
+/* CARTE FORMULAIRE */
+.form-card-modern{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}.form-card-header{padding:20px 24px;background:linear-gradient(135deg,#f8fafc,#fff);border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:12px}.form-icon-box{width:42px;height:42px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center}.form-icon-box i{font-size:20px;color:#fff}.form-card-title{font-size:16px;font-weight:700;color:#1e293b;margin:0}.form-card-body{padding:32px}
+
+/* FORM GROUPS */
+.form-group-modern{margin-bottom:24px}.form-label-modern{font-size:14px;font-weight:600;color:#475569;margin-bottom:8px;display:flex;align-items:center;gap:6px}.form-label-modern.required::after{content:'*';color:#ef4444;margin-left:4px}.form-label-modern i{color:#6366f1}.input-group-modern{position:relative}.input-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:18px;pointer-events:none}.form-control-modern{width:100%;padding:12px 16px 12px 48px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;transition:all .3s;background:#fff}.form-control-modern:focus{outline:0;border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,.1)}.form-control-modern:read-only{background:#f8fafc;color:#64748b;cursor:not-allowed}.form-help-text{font-size:12px;color:#64748b;margin-top:6px;display:flex;align-items:center;gap:4px}.form-help-text i{color:#6366f1;font-size:14px}
+
+/* TYPE COMPTE */
+.type-compte-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.type-compte-option{position:relative}.type-compte-option input[type=radio]{position:absolute;opacity:0;pointer-events:none}.type-compte-label{display:flex;align-items:center;gap:12px;padding:16px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:all .3s}.type-compte-option input[type=radio]:checked+.type-compte-label{background:#eff6ff;border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,.1)}.type-compte-label:hover{border-color:#6366f1;background:#fff}.type-icon{width:48px;height:48px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.type-icon i{font-size:24px;color:#fff}.type-text{flex:1}.type-name{font-size:14px;font-weight:600;color:#1e293b;margin-bottom:2px}.type-desc{font-size:12px;color:#64748b}
+
+/* TOGGLE */
+.toggle-switch-container{display:flex;align-items:center;gap:12px}.toggle-switch{position:relative;display:inline-block;width:52px;height:28px}.toggle-switch input{opacity:0;width:0;height:0}.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#e2e8f0;transition:.3s;border-radius:28px}.toggle-slider:before{position:absolute;content:"";height:20px;width:20px;left:4px;bottom:4px;background:#fff;transition:.3s;border-radius:50%}.toggle-switch input:checked+.toggle-slider{background:#6366f1}.toggle-switch input:checked+.toggle-slider:before{transform:translateX(24px)}.toggle-label{font-size:14px;font-weight:600;color:#475569}.toggle-text-inactive{display:none}.toggle-switch input:checked~.toggle-label .toggle-text-active{display:inline}.toggle-switch input:checked~.toggle-label .toggle-text-inactive{display:none}.toggle-switch input:not(:checked)~.toggle-label .toggle-text-active{display:none}.toggle-switch input:not(:checked)~.toggle-label .toggle-text-inactive{display:inline}
+
+/* BOUTONS */
+.form-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:32px;padding-top:24px;border-top:1px solid #e2e8f0}.btn-secondary{padding:12px 24px;background:#f1f5f9;color:#64748b;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none;transition:all .3s}.btn-secondary:hover{background:#fff;border-color:#94a3b8;color:#475569}.btn-primary{padding:12px 24px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:0;border-radius:10px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .3s}.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 16px rgba(99,102,241,.3)}
+
+/* AIDE */
+.help-card-modern,.examples-card-modern{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}.help-card-header,.examples-card-header{padding:16px 20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}.help-card-body,.examples-card-body{padding:20px}.help-intro{font-size:13px;color:#475569;margin-bottom:16px;line-height:1.6}.classe-help-list{display:flex;flex-direction:column;gap:12px}.classe-help-item{display:flex;align-items:flex-start;gap:12px}.classe-badge{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0}.classe-1{background:linear-gradient(135deg,#6366f1,#8b5cf6)}.classe-2{background:linear-gradient(135deg,#0ea5e9,#38bdf8)}.classe-3{background:linear-gradient(135deg,#10b981,#34d399)}.classe-4{background:linear-gradient(135deg,#f59e0b,#fbbf24)}.classe-5{background:linear-gradient(135deg,#8b5cf6,#a78bfa)}.classe-6{background:linear-gradient(135deg,#ef4444,#f87171)}.classe-7{background:linear-gradient(135deg,#14b8a6,#2dd4bf)}.classe-8{background:linear-gradient(135deg,#f97316,#fb923c)}.classe-content{flex:1}.classe-title{font-size:13px;font-weight:600;color:#1e293b;margin-bottom:2px}.classe-examples{font-size:12px;color:#64748b}.example-item{padding:12px;background:#f8fafc;border-radius:8px;margin-bottom:8px;border-left:3px solid #6366f1}.example-numero{font-size:14px;font-weight:700;color:#6366f1;font-family:'Courier New',monospace;margin-bottom:2px}.example-libelle{font-size:12px;color:#64748b}
+
+/* RESPONSIVE */
+@media(max-width:768px){.type-compte-grid{grid-template-columns:1fr}.form-actions{flex-direction:column-reverse}.btn-secondary,.btn-primary{width:100%;justify-content:center}}
+</style>
+{% endblock %}

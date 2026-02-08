@@ -1,0 +1,170 @@
+<!-- templates/accounts/register.jinja - PAGE D'INSCRIPTION -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - ERP MEA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}.register-container{width:100%;max-width:550px}.register-card{background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}.register-header{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);padding:30px;text-align:center;color:#fff}.register-logo{width:70px;height:70px;background:rgba(255,255,255,.2);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;backdrop-filter:blur(10px)}.register-logo i{font-size:36px}.register-header h1{font-size:24px;font-weight:700;margin-bottom:6px}.register-header p{font-size:13px;opacity:.9;margin:0}.register-body{padding:30px}.form-row{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px}.form-group{margin-bottom:20px}.form-label{font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;display:flex;align-items:center;gap:6px}.form-label i{color:#6366f1;font-size:14px}.input-group{position:relative}.input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;pointer-events:none}.form-control{width:100%;padding:12px 14px 12px 44px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;transition:all .3s;background:#fff}.form-control:focus{outline:0;border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,.1)}.password-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:0 0;border:0;color:#94a3b8;cursor:pointer;font-size:16px;padding:4px}.password-toggle:hover{color:#6366f1}.password-strength{margin-top:8px;height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden}.strength-bar{height:100%;width:0;transition:all .3s;border-radius:2px}.strength-weak{background:#ef4444;width:33%}.strength-medium{background:#f59e0b;width:66%}.strength-strong{background:#10b981;width:100%}.btn-register{width:100%;padding:14px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);color:#fff;border:0;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:24px}.btn-register:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.4)}.alert{padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px;display:flex;align-items:flex-start;gap:10px}.alert-error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}.alert i{font-size:16px;flex-shrink:0;margin-top:2px}.register-footer{text-align:center;padding:20px 30px;background:#f8fafc;border-top:1px solid #e2e8f0}.register-footer p{font-size:13px;color:#64748b;margin:0}.register-footer a{color:#6366f1;text-decoration:none;font-weight:600}.register-footer a:hover{text-decoration:underline}@media(max-width:576px){.form-row{grid-template-columns:1fr}.register-body{padding:24px 20px}.register-header{padding:24px 20px}}
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-card">
+            <div class="register-header">
+                <div class="register-logo">
+                    <i class="bi bi-person-plus"></i>
+                </div>
+                <h1>Créer un compte</h1>
+                <p>Rejoignez ERP MEA</p>
+            </div>
+            
+            <div class="register-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-error">
+                            <i class="bi bi-exclamation-circle"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <form method="post" id="registerForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-person"></i>
+                                Prénom
+                            </label>
+                            <div class="input-group">
+                                <i class="bi bi-person input-icon"></i>
+                                <input type="text" name="first_name" class="form-control" placeholder="Votre prénom" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-person"></i>
+                                Nom
+                            </label>
+                            <div class="input-group">
+                                <i class="bi bi-person input-icon"></i>
+                                <input type="text" name="last_name" class="form-control" placeholder="Votre nom" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-person-badge"></i>
+                            Nom d'utilisateur
+                        </label>
+                        <div class="input-group">
+                            <i class="bi bi-person-badge input-icon"></i>
+                            <input type="text" name="username" class="form-control" placeholder="Choisissez un nom d'utilisateur" required minlength="3">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-envelope"></i>
+                            Email
+                        </label>
+                        <div class="input-group">
+                            <i class="bi bi-envelope input-icon"></i>
+                            <input type="email" name="email" class="form-control" placeholder="votre.email@exemple.com" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-lock"></i>
+                            Mot de passe
+                        </label>
+                        <div class="input-group">
+                            <i class="bi bi-lock input-icon"></i>
+                            <input type="password" name="password1" id="password1" class="form-control" placeholder="Min. 8 caractères" required minlength="8" oninput="checkPasswordStrength()">
+                            <button type="button" class="password-toggle" onclick="togglePassword('password1', 'icon1')">
+                                <i class="bi bi-eye" id="icon1"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength">
+                            <div class="strength-bar" id="strengthBar"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-lock-fill"></i>
+                            Confirmer le mot de passe
+                        </label>
+                        <div class="input-group">
+                            <i class="bi bi-lock-fill input-icon"></i>
+                            <input type="password" name="password2" id="password2" class="form-control" placeholder="Répétez le mot de passe" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('password2', 'icon2')">
+                                <i class="bi bi-eye" id="icon2"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-register">
+                        <i class="bi bi-check-circle"></i>
+                        <span>Créer mon compte</span>
+                    </button>
+                </form>
+            </div>
+            
+            <div class="register-footer">
+                <p>Vous avez déjà un compte ? <a href="/accounts/login/">Se connecter</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+        
+        function checkPasswordStrength() {
+            const password = document.getElementById('password1').value;
+            const strengthBar = document.getElementById('strengthBar');
+            
+            strengthBar.className = 'strength-bar';
+            
+            if (password.length === 0) {
+                strengthBar.style.width = '0';
+                return;
+            }
+            
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+            if (password.match(/\d/)) strength++;
+            if (password.match(/[^a-zA-Z\d]/)) strength++;
+            
+            if (strength <= 1) {
+                strengthBar.classList.add('strength-weak');
+            } else if (strength <= 3) {
+                strengthBar.classList.add('strength-medium');
+            } else {
+                strengthBar.classList.add('strength-strong');
+            }
+        }
+    </script>
+</body>
+</html>

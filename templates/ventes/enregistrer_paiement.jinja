@@ -1,0 +1,941 @@
+<!-- templates/ventes/enregistrer_paiement.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Enregistrer un paiement{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête avec retour -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/ventes/factures/{{ facture.pk }}/" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">Enregistrer un paiement</h4>
+                <p class="page-subtitle">Facture {{ facture.numero_facture }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Carte informations facture -->
+            <div class="invoice-info-card">
+                <div class="invoice-info-header">
+                    <div class="invoice-icon">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                    <div>
+                        <h6>Facture {{ facture.numero_facture }}</h6>
+                        <p>{{ facture.client.nom }}</p>
+                    </div>
+                    {% if facture.statut == 'EN_RETARD' %}
+                    <div class="badge-late">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        En retard
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="invoice-info-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <i class="bi bi-calendar3"></i>
+                                <div>
+                                    <div class="info-item-label">Date facture</div>
+                                    <div class="info-item-value">
+                                        {{ facture.date_facture.strftime('%d/%m/%Y') if facture.date_facture else 
+                                           facture.date_creation.strftime('%d/%m/%Y') if facture.date_creation else '-' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <i class="bi bi-calendar-event"></i>
+                                <div>
+                                    <div class="info-item-label">Date échéance</div>
+                                    <div class="info-item-value {% if facture.statut == 'EN_RETARD' %}text-danger{% endif %}">
+                                        {{ facture.date_echeance.strftime('%d/%m/%Y') if facture.date_echeance else '-' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <i class="bi bi-tag"></i>
+                                <div>
+                                    <div class="info-item-label">Statut actuel</div>
+                                    <div class="info-item-value">
+                                        {% if facture.statut == 'PAYEE' %}
+                                        <span class="badge-status badge-paid">Payée</span>
+                                        {% elif facture.statut == 'EN_RETARD' %}
+                                        <span class="badge-status badge-late">En retard</span>
+                                        {% elif facture.statut == 'BROUILLON' %}
+                                        <span class="badge-status badge-draft">Brouillon</span>
+                                        {% else %}
+                                        <span class="badge-status badge-sent">Envoyée</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Résumé financier -->
+            <div class="financial-summary-card">
+                <div class="financial-summary-header">
+                    <i class="bi bi-graph-up"></i>
+                    <h6>Résumé financier</h6>
+                </div>
+                <div class="financial-summary-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="amount-box amount-total">
+                                <div class="amount-icon">
+                                    <i class="bi bi-receipt"></i>
+                                </div>
+                                <div>
+                                    <div class="amount-label">Montant total</div>
+                                    <div class="amount-value">{{ "{:,.0f}".format(facture.total) if facture.total else '0' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="amount-box amount-paid">
+                                <div class="amount-icon">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                                <div>
+                                    <div class="amount-label">Déjà payé</div>
+                                    <div class="amount-value">{{ "{:,.0f}".format(facture.montant_paye) if facture.montant_paye else '0' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="amount-box amount-due">
+                                <div class="amount-icon">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                </div>
+                                <div>
+                                    <div class="amount-label">Solde restant</div>
+                                    {% set total = facture.total if facture.total else 0 %}
+                                    {% set paye = facture.montant_paye if facture.montant_paye else 0 %}
+                                    {% set solde = total - paye %}
+                                    <div class="amount-value">{{ "{:,.0f}".format(solde) }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulaire de paiement -->
+            <div class="payment-form-card">
+                <div class="payment-form-header">
+                    <i class="bi bi-credit-card"></i>
+                    <h6>Détails du paiement</h6>
+                </div>
+                <div class="payment-form-body">
+                    <form method="post" id="paiementForm">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                        
+                        <!-- Montant -->
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">
+                                <i class="bi bi-cash-stack"></i>
+                                Montant du paiement (FCFA)
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-with-addon">
+                                <input type="number" 
+                                       name="montant" 
+                                       id="montant"
+                                       class="form-input-modern form-input-large" 
+                                       step="0.01" 
+                                       min="0.01"
+                                       max="{{ solde }}" 
+                                       required
+                                       placeholder="0">
+                                <div class="input-addon">FCFA</div>
+                            </div>
+                            <div class="form-help">
+                                Maximum autorisé : <strong>{{ "{:,.0f}".format(solde) }} FCFA</strong>
+                            </div>
+                        </div>
+
+                        <!-- Boutons de paiement rapide -->
+                        <div class="quick-amount-buttons">
+                            <button type="button" class="quick-amount-btn" onclick="setMontant({{ solde }})">
+                                <i class="bi bi-lightning-charge"></i>
+                                Solde complet
+                            </button>
+                            {% set moitie = solde / 2 %}
+                            <button type="button" class="quick-amount-btn" onclick="setMontant({{ moitie }})">
+                                <i class="bi bi-slash-circle"></i>
+                                Moitié ({{ "{:,.0f}".format(moitie) }} FCFA)
+                            </button>
+                            {% set quart = solde / 4 %}
+                            <button type="button" class="quick-amount-btn" onclick="setMontant({{ quart }})">
+                                <i class="bi bi-pie-chart"></i>
+                                Quart ({{ "{:,.0f}".format(quart) }} FCFA)
+                            </button>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">
+                                <i class="bi bi-calendar3"></i>
+                                Date du paiement
+                                <span class="required">*</span>
+                            </label>
+                            <input type="date" 
+                                   name="date_paiement" 
+                                   class="form-input-modern"
+                                   value="{{ aujourdhui }}"
+                                   required>
+                        </div>
+
+                        <!-- Mode de paiement -->
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">
+                                <i class="bi bi-wallet2"></i>
+                                Mode de paiement
+                                <span class="required">*</span>
+                            </label>
+                            <select name="mode_paiement" class="form-select-modern" required>
+                                <option value="">Sélectionnez un mode</option>
+                                <option value="ESPECES">💵 Espèces</option>
+                                <option value="VIREMENT">🏦 Virement bancaire</option>
+                                <option value="CHEQUE">📝 Chèque</option>
+                                <option value="CARTE">💳 Carte bancaire</option>
+                                <option value="MOBILE">📱 Paiement mobile</option>
+                            </select>
+                        </div>
+
+                        <!-- Référence -->
+                        <div class="form-group-modern">
+                            <label class="form-label-modern">
+                                <i class="bi bi-hash"></i>
+                                Référence
+                                <span class="optional">(Facultatif)</span>
+                            </label>
+                            <input type="text" 
+                                   name="reference" 
+                                   class="form-input-modern" 
+                                   placeholder="N° chèque, référence virement, etc.">
+                            <div class="form-help">
+                                Référence du paiement pour le suivi
+                            </div>
+                        </div>
+
+                        <!-- Informations après paiement -->
+                        <div class="after-payment-info" id="infoApresPaiement" style="display: none;">
+                            <div class="after-payment-icon">
+                                <i class="bi bi-info-circle"></i>
+                            </div>
+                            <div class="after-payment-content">
+                                <h6>Après ce paiement</h6>
+                                <div class="after-payment-details">
+                                    <div class="detail-row">
+                                        <span>Solde restant :</span>
+                                        <strong id="soldeApresPaiement">0 FCFA</strong>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span>Statut de la facture :</span>
+                                        <strong id="statutApresPaiement">Payée</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Boutons d'action -->
+                        <div class="form-actions">
+                            <a href="/ventes/factures/{{ facture.pk }}/" class="btn-cancel">
+                                <i class="bi bi-x-circle"></i>
+                                <span>Annuler</span>
+                            </a>
+                            <button type="submit" class="btn-submit">
+                                <i class="bi bi-check-circle"></i>
+                                <span>Enregistrer le paiement</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const montantInput = document.getElementById('montant');
+    const maxMontant = {{ solde }};
+    const infoApresPaiement = document.getElementById('infoApresPaiement');
+    const soldeApresPaiement = document.getElementById('soldeApresPaiement');
+    const statutApresPaiement = document.getElementById('statutApresPaiement');
+
+    // Fonction pour définir le montant
+    window.setMontant = function(montant) {
+        montantInput.value = montant.toFixed(0);
+        updateInfosApresPaiement();
+        montantInput.focus();
+    };
+
+    // Mettre à jour les informations après paiement
+    function updateInfosApresPaiement() {
+        const montant = parseFloat(montantInput.value) || 0;
+        const soldeRestant = maxMontant - montant;
+        
+        if (montant > 0) {
+            const formatter = new Intl.NumberFormat('fr-FR', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+            
+            soldeApresPaiement.textContent = formatter.format(soldeRestant) + ' FCFA';
+            statutApresPaiement.textContent = soldeRestant === 0 ? 'Payée ✅' : 'En attente';
+            statutApresPaiement.className = soldeRestant === 0 ? 'text-success' : 'text-warning';
+            
+            // Afficher l'information
+            infoApresPaiement.style.display = 'flex';
+            
+            // Changer la classe de l'alerte
+            if (soldeRestant === 0) {
+                infoApresPaiement.classList.remove('info-warning');
+                infoApresPaiement.classList.add('info-success');
+            } else {
+                infoApresPaiement.classList.remove('info-success');
+                infoApresPaiement.classList.add('info-warning');
+            }
+        } else {
+            infoApresPaiement.style.display = 'none';
+        }
+    }
+
+    // Écouter les changements sur le champ montant
+    montantInput.addEventListener('input', updateInfosApresPaiement);
+    montantInput.addEventListener('change', updateInfosApresPaiement);
+
+    // Validation du formulaire
+    document.getElementById('paiementForm').addEventListener('submit', function(e) {
+        const montant = parseFloat(montantInput.value);
+        
+        if (montant <= 0) {
+            e.preventDefault();
+            alert('⚠️ Le montant doit être supérieur à 0.');
+            montantInput.focus();
+            return;
+        }
+        
+        if (montant > maxMontant) {
+            e.preventDefault();
+            alert('⚠️ Le montant ne peut pas dépasser le solde restant de ' + 
+                  new Intl.NumberFormat('fr-FR').format(maxMontant) + ' FCFA');
+            montantInput.focus();
+            return;
+        }
+
+        // Confirmation pour les gros montants
+        if (montant > 1000000) {
+            const confirmation = confirm('💰 Vous êtes sur le point d\'enregistrer un paiement de ' + 
+                                        new Intl.NumberFormat('fr-FR').format(montant) + 
+                                        ' FCFA.\n\nConfirmez-vous cette opération ?');
+            if (!confirmation) {
+                e.preventDefault();
+            }
+        }
+    });
+
+    // Mettre à jour les infos au chargement si montant déjà saisi
+    if (montantInput.value) {
+        updateInfosApresPaiement();
+    }
+});
+</script>
+
+<style>
+/* ==================== PAGE HEADER ==================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+/* ==================== INVOICE INFO CARD ==================== */
+.invoice-info-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.invoice-info-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.invoice-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+}
+
+.invoice-info-header h6 {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+}
+
+.invoice-info-header p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+}
+
+.badge-late {
+    margin-left: auto;
+    padding: 8px 16px;
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.invoice-info-body {
+    padding: 24px;
+    background: #f8fafc;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+}
+
+.info-item i {
+    font-size: 20px;
+    color: #6366f1;
+}
+
+.info-item-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.info-item-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.badge-status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-paid {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge-late {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-draft {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.badge-sent {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* ==================== FINANCIAL SUMMARY CARD ==================== */
+.financial-summary-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.financial-summary-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.financial-summary-header i {
+    font-size: 20px;
+    color: #6366f1;
+}
+
+.financial-summary-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.financial-summary-body {
+    padding: 24px;
+}
+
+.amount-box {
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 100%;
+}
+
+.amount-total {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.amount-paid {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.amount-due {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.amount-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.amount-total .amount-icon {
+    background: #1e40af;
+    color: white;
+}
+
+.amount-paid .amount-icon {
+    background: #166534;
+    color: white;
+}
+
+.amount-due .amount-icon {
+    background: #92400e;
+    color: white;
+}
+
+.amount-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.amount-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.amount-value::after {
+    content: ' FCFA';
+    font-size: 14px;
+    color: #64748b;
+    margin-left: 4px;
+}
+
+/* ==================== PAYMENT FORM CARD ==================== */
+.payment-form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.payment-form-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.payment-form-header i {
+    font-size: 20px;
+    color: #10b981;
+}
+
+.payment-form-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.payment-form-body {
+    padding: 32px;
+}
+
+.form-group-modern {
+    margin-bottom: 24px;
+}
+
+.form-label-modern {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-label-modern i {
+    color: #6366f1;
+    font-size: 16px;
+}
+
+.required {
+    color: #dc2626;
+}
+
+.optional {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+.form-input-modern {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.form-input-modern:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-input-large {
+    font-size: 20px;
+    font-weight: 700;
+    padding: 16px 20px;
+}
+
+.input-with-addon {
+    position: relative;
+    display: flex;
+}
+
+.input-with-addon input {
+    flex: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-addon {
+    padding: 16px 20px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-left: none;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.form-select-modern {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: white;
+}
+
+.form-select-modern:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-help {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* ==================== QUICK AMOUNT BUTTONS ==================== */
+.quick-amount-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.quick-amount-btn {
+    padding: 10px 16px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.quick-amount-btn:hover {
+    border-color: #6366f1;
+    background: #f8fafc;
+    color: #6366f1;
+}
+
+.quick-amount-btn i {
+    font-size: 14px;
+}
+
+/* ==================== AFTER PAYMENT INFO ==================== */
+.after-payment-info {
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 16px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.info-warning {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+}
+
+.info-success {
+    background: #dcfce7;
+    border-left: 4px solid #10b981;
+}
+
+.after-payment-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.info-warning .after-payment-icon {
+    color: #f59e0b;
+}
+
+.info-success .after-payment-icon {
+    color: #10b981;
+}
+
+.after-payment-content h6 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.info-warning .after-payment-content h6 {
+    color: #92400e;
+}
+
+.info-success .after-payment-content h6 {
+    color: #166534;
+}
+
+.after-payment-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+
+.info-warning .detail-row {
+    color: #78350f;
+}
+
+.info-success .detail-row {
+    color: #166534;
+}
+
+.detail-row strong {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+/* ==================== FORM ACTIONS ==================== */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 24px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.btn-cancel {
+    padding: 12px 24px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+.btn-submit {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .financial-summary-body .row {
+        gap: 12px;
+    }
+    
+    .quick-amount-buttons {
+        flex-direction: column;
+    }
+    
+    .quick-amount-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+    
+    .btn-cancel,
+    .btn-submit {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+{% endblock %}

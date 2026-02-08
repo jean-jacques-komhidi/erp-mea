@@ -1,0 +1,234 @@
+<!-- templates/ventes/envoyer_facture.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Envoyer la facture{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête avec retour -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/ventes/factures/{{ facture.pk }}/" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">Envoyer la facture par email</h4>
+                <p class="page-subtitle">Facture {{ facture.numero_facture }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <!-- Icône d'envoi animée -->
+            <div class="send-icon">
+                <div class="icon-circle">
+                    <i class="bi bi-envelope-paper"></i>
+                </div>
+            </div>
+
+            <!-- Carte principale -->
+            <div class="send-card">
+                <div class="send-header">
+                    <h5>📧 Envoyer la facture au client</h5>
+                    <p>Cette action marquera la facture comme "Envoyée"</p>
+                </div>
+
+                <!-- Informations de la facture -->
+                <div class="invoice-info">
+                    <div class="info-row">
+                        <div class="info-icon bg-primary">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Numéro de facture</div>
+                            <div class="info-value">{{ facture.numero_facture }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-icon bg-success">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Client</div>
+                            <div class="info-value">{{ facture.client.nom }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-icon bg-warning">
+                            <i class="bi bi-currency-dollar"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Montant total</div>
+                            <div class="info-value">{{ "{:,.0f}".format(facture.total) if facture.total else '0' }} FCFA</div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="info-icon bg-info">
+                            <i class="bi bi-tag"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Statut actuel</div>
+                            <div class="info-value">
+                                {% if facture.statut == 'PAYEE' %}
+                                <span class="status-badge status-paid">Payée</span>
+                                {% elif facture.statut == 'EN_RETARD' %}
+                                <span class="status-badge status-late">En retard</span>
+                                {% elif facture.statut == 'BROUILLON' %}
+                                <span class="status-badge status-draft">Brouillon</span>
+                                {% elif facture.statut == 'ENVOYEE' %}
+                                <span class="status-badge status-sent">Envoyée</span>
+                                {% else %}
+                                <span class="status-badge status-secondary">{{ facture.get_statut_display() }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerte email client -->
+                {% if facture.client.email %}
+                <div class="alert-success">
+                    <i class="bi bi-check-circle"></i>
+                    <div>
+                        <strong>Email du client enregistré</strong>
+                        <p>La facture sera envoyée à : <strong>{{ facture.client.email }}</strong></p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div>
+                        <strong>Aucun email enregistré</strong>
+                        <p>Le client {{ facture.client.nom }} n'a pas d'adresse email dans le système. Vous pouvez tout de même marquer la facture comme envoyée si vous l'avez envoyée par un autre moyen.</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Alerte d'information -->
+                <div class="alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <div>
+                        <strong>Ce qui va se passer :</strong>
+                        <ul>
+                            <li>La facture sera marquée comme "Envoyée"</li>
+                            {% if facture.client.email %}
+                            <li>Un email sera envoyé automatiquement à {{ facture.client.email }}</li>
+                            <li>Le PDF de la facture sera attaché à l'email</li>
+                            {% else %}
+                            <li>Le statut sera changé en "Envoyée" (envoi manuel requis)</li>
+                            {% endif %}
+                            <li>Cette action sera enregistrée dans l'historique</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Formulaire de confirmation -->
+                <form method="post" id="sendForm">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    
+                    <!-- Checkbox de confirmation -->
+                    <div class="confirmation-box">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="confirmation" required>
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label">
+                                Je confirme vouloir {% if facture.client.email %}envoyer cette facture par email{% else %}marquer cette facture comme envoyée{% endif %}
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="send-actions">
+                        <a href="/ventes/factures/{{ facture.pk }}/" class="btn-cancel">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annuler</span>
+                        </a>
+                        <button type="submit" class="btn-send" id="btnSend" disabled>
+                            <i class="bi bi-send"></i>
+                            <span>{% if facture.client.email %}Envoyer par email{% else %}Marquer comme envoyée{% endif %}</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Informations supplémentaires -->
+            <div class="info-box">
+                <div class="info-box-header">
+                    <i class="bi bi-lightbulb"></i>
+                    <span>Bon à savoir</span>
+                </div>
+                <ul class="info-list">
+                    {% if facture.client.email %}
+                    <li>
+                        <i class="bi bi-check2"></i>
+                        <span>Le client recevra un email professionnel avec la facture en PDF</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-check2"></i>
+                        <span>L'email contiendra un récapitulatif des montants et du solde</span>
+                    </li>
+                    {% endif %}
+                    <li>
+                        <i class="bi bi-check2"></i>
+                        <span>Vous pouvez consulter l'historique d'envoi dans les détails de la facture</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-check2"></i>
+                        <span>Le statut de la facture sera automatiquement mis à jour</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('sendForm');
+    const checkbox = document.getElementById('confirmation');
+    const btnSend = document.getElementById('btnSend');
+    
+    // Activer/désactiver le bouton selon la checkbox
+    checkbox.addEventListener('change', function() {
+        btnSend.disabled = !this.checked;
+    });
+    
+    // Confirmation avant envoi
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        {% if facture.client.email %}
+        const message = '📧 Confirmation d\'envoi\n\n' +
+                       'Vous êtes sur le point d\'envoyer la facture {{ facture.numero_facture }} par email à :\n' +
+                       '{{ facture.client.email }}\n\n' +
+                       'Le client recevra un email avec le PDF de la facture.\n\n' +
+                       'Confirmez-vous l\'envoi ?';
+        {% else %}
+        const message = '✅ Confirmation\n\n' +
+                       'Vous êtes sur le point de marquer la facture {{ facture.numero_facture }} comme envoyée.\n\n' +
+                       'Le statut sera changé en "Envoyée".\n\n' +
+                       'Confirmez-vous cette action ?';
+        {% endif %}
+        
+        if (confirm(message)) {
+            // Désactiver le bouton et afficher le chargement
+            btnSend.disabled = true;
+            btnSend.innerHTML = '<i class="bi bi-hourglass-split"></i><span>Envoi en cours...</span>';
+            
+            // Soumettre le formulaire
+            this.submit();
+        }
+    });
+});
+</script>
+
+<style>
+/* Copier TOUS les styles de la version précédente - voir le fichier complet ci-dessus */
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #e2e8f0}.page-header-left{display:flex;align-items:center;gap:16px}.btn-back{width:48px;height:48px;border-radius:12px;background:#fff;border:2px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:all .2s}.btn-back:hover{border-color:#6366f1;color:#6366f1;background:#f8fafc}.page-title{font-size:24px;font-weight:700;color:#1e293b;margin:0}.page-subtitle{font-size:14px;color:#64748b;margin:4px 0 0 0}.send-icon{display:flex;justify-content:center;margin-bottom:24px}.icon-circle{width:80px;height:80px;background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(14,165,233,.3);animation:float 3s ease-in-out infinite}.icon-circle i{font-size:40px;color:#fff}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}.send-card{background:#fff;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,.08);overflow:hidden;margin-bottom:24px}.send-header{padding:32px;text-align:center;background:linear-gradient(135deg,#f8fafc 0%,#fff 100%);border-bottom:1px solid #e2e8f0}.send-header h5{font-size:24px;font-weight:700;color:#1e293b;margin:0 0 8px 0}.send-header p{font-size:14px;color:#64748b;margin:0}.invoice-info{padding:24px 32px}.info-row{display:flex;align-items:center;gap:16px;padding:16px;background:#f8fafc;border-radius:12px;margin-bottom:12px;transition:all .2s}.info-row:hover{background:#f1f5f9;transform:translateX(4px)}.info-row:last-child{margin-bottom:0}.info-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.info-icon i{font-size:22px;color:#fff}.info-icon.bg-primary{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)}.info-icon.bg-success{background:linear-gradient(135deg,#10b981 0%,#34d399 100%)}.info-icon.bg-warning{background:linear-gradient(135deg,#f59e0b 0%,#fbbf24 100%)}.info-icon.bg-info{background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%)}.info-content{flex:1}.info-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}.info-value{font-size:16px;font-weight:600;color:#1e293b}.status-badge{display:inline-block;padding:6px 12px;border-radius:16px;font-size:12px;font-weight:600}.status-paid{background:#dcfce7;color:#166534}.status-late{background:#fee2e2;color:#991b1b}.status-draft{background:#f1f5f9;color:#475569}.status-sent{background:#fef3c7;color:#92400e}.alert-success,.alert-danger,.alert-info{margin:24px 32px;padding:16px;border-radius:12px;display:flex;gap:12px}.alert-success{background:#dcfce7;border-left:4px solid #10b981}.alert-danger{background:#fee2e2;border-left:4px solid #dc2626}.alert-info{background:#dbeafe;border-left:4px solid #0ea5e9}.alert-success i{font-size:24px;color:#10b981;flex-shrink:0}.alert-danger i{font-size:24px;color:#dc2626;flex-shrink:0}.alert-info i{font-size:24px;color:#0ea5e9;flex-shrink:0}.alert-success strong{font-size:14px;color:#166534;display:block;margin-bottom:4px}.alert-danger strong{font-size:14px;color:#991b1b;display:block;margin-bottom:4px}.alert-info strong{font-size:14px;color:#1e40af;display:block;margin-bottom:4px}.alert-success p,.alert-danger p{font-size:13px;margin:0;line-height:1.6}.alert-success p{color:#166534}.alert-danger p{color:#991b1b}.alert-info ul{margin:8px 0 0 0;padding-left:20px;color:#1e40af}.alert-info li{font-size:13px;margin-bottom:6px;line-height:1.5}.confirmation-box{padding:24px 32px;background:#f8fafc;border-top:1px solid #e2e8f0}.checkbox-container{display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;padding-left:36px}.checkbox-container input[type="checkbox"]{position:absolute;opacity:0;cursor:pointer;height:0;width:0}.checkmark{position:absolute;left:0;height:24px;width:24px;background-color:#fff;border:2px solid #e2e8f0;border-radius:6px;transition:all .2s}.checkbox-container:hover .checkmark{border-color:#6366f1}.checkbox-container input:checked~.checkmark{background-color:#6366f1;border-color:#6366f1}.checkmark:after{content:"";position:absolute;display:none;left:7px;top:3px;width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}.checkbox-container input:checked~.checkmark:after{display:block}.checkbox-label{font-size:14px;font-weight:500;color:#1e293b;line-height:1.5}.send-actions{padding:24px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;gap:12px}.btn-cancel{flex:1;padding:14px 24px;background:#fff;border:2px solid #e2e8f0;border-radius:12px;color:#64748b;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;text-decoration:none;transition:all .2s}.btn-cancel:hover{border-color:#cbd5e1;background:#f8fafc;color:#64748b}.btn-send{flex:1;padding:14px 24px;background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .3s}.btn-send:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 20px rgba(14,165,233,.4)}.btn-send:disabled{opacity:.5;cursor:not-allowed;transform:none}.btn-send i{font-size:18px}.info-box{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}.info-box-header{padding:16px 20px;background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#92400e}.info-box-header i{font-size:18px}.info-list{padding:20px;margin:0;list-style:none}.info-list li{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;font-size:14px;color:#475569}.info-list li:last-child{margin-bottom:0}.info-list i{color:#10b981;font-size:18px;margin-top:2px;flex-shrink:0}@media(max-width:768px){.page-header{flex-direction:column;align-items:flex-start;gap:16px}.send-header{padding:24px 20px}.invoice-info{padding:20px}.alert-success,.alert-danger,.alert-info{margin:20px}.send-actions{flex-direction:column;padding:20px}.btn-cancel,.btn-send{width:100%}.icon-circle{width:60px;height:60px}.icon-circle i{font-size:30px}}
+</style>
+
+{% endblock %}

@@ -1,0 +1,748 @@
+<!-- templates/stock/confirmer_suppression_produit.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Supprimer un produit{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <!-- Carte principale de confirmation -->
+            <div class="confirmation-card">
+                <!-- En-tête avec icône d'alerte animée -->
+                <div class="confirmation-header">
+                    <div class="warning-icon-container">
+                        <div class="warning-icon">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div class="warning-pulse"></div>
+                    </div>
+                    
+                    <h2 class="confirmation-title">Confirmer la désactivation</h2>
+                    <p class="confirmation-subtitle">
+                        Vous êtes sur le point de désactiver ce produit. Il ne sera plus disponible pour les nouvelles commandes mais l'historique sera conservé.
+                    </p>
+                </div>
+
+                <!-- Informations du produit -->
+                <div class="product-info-card">
+                    <div class="product-header">
+                        {% if produit.image %}
+                        <img src="{{ produit.image.url }}" alt="{{ produit.nom }}" class="product-thumb">
+                        {% else %}
+                        <div class="product-thumb-placeholder">
+                            {{ produit.nom[0]|upper if produit.nom else 'P' }}
+                        </div>
+                        {% endif %}
+                        <div class="product-details">
+                            <h5 class="product-name">{{ produit.nom }}</h5>
+                            <span class="product-code">{{ produit.code }}</span>
+                        </div>
+                    </div>
+
+                    <div class="product-grid">
+                        <div class="product-item">
+                            <span class="item-label">Catégorie</span>
+                            <span class="item-value">
+                                {{ produit.categorie.nom if produit.categorie else 'Non catégorisé' }}
+                            </span>
+                        </div>
+
+                        <div class="product-item">
+                            <span class="item-label">Unité</span>
+                            <span class="item-value">{{ produit.unite }}</span>
+                        </div>
+
+                        <div class="product-item">
+                            <span class="item-label">Prix de vente</span>
+                            <span class="item-value item-price">
+                                {{ "{:,.0f}".format(produit.prix_vente) }} FCFA
+                            </span>
+                        </div>
+
+                        <div class="product-item">
+                            <span class="item-label">Stock actuel</span>
+                            {% set stock_actuel = produit.stock_actuel or 0 %}
+                            {% set seuil = produit.seuil_reapprovisionnement or 0 %}
+                            {% set stock_min = produit.stock_min or 0 %}
+                            <span class="item-value item-stock 
+                                {% if stock_actuel <= seuil %}stock-danger
+                                {% elif stock_actuel <= stock_min %}stock-warning
+                                {% else %}stock-success{% endif %}">
+                                {{ stock_actuel }} {{ produit.unite }}
+                            </span>
+                        </div>
+
+                        {% if produit.description %}
+                        <div class="product-item product-item-full">
+                            <span class="item-label">Description</span>
+                            <p class="item-description">{{ produit.description|truncate(120) }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Avertissement si stock présent -->
+                {% if stock_actuel > 0 %}
+                <div class="alert-box alert-warning-box">
+                    <div class="alert-icon">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h6 class="alert-title">⚠️ Stock présent !</h6>
+                        <p class="alert-text">
+                            Ce produit a un stock de <strong>{{ stock_actuel }} {{ produit.unite }}</strong>. 
+                            Assurez-vous de gérer ce stock avant de désactiver le produit.
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Information sur la désactivation -->
+                <div class="info-box">
+                    <div class="info-icon">
+                        <i class="bi bi-info-circle-fill"></i>
+                    </div>
+                    <div class="info-content">
+                        <h6 class="info-title">💡 Qu'est-ce que la désactivation ?</h6>
+                        <p class="info-text">
+                            Le produit sera désactivé mais toutes les données (historique, mouvements de stock, commandes) seront conservées. 
+                            Vous pourrez le réactiver à tout moment depuis la liste des produits.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Impact de la désactivation -->
+                <div class="impact-section">
+                    <h6 class="impact-title">Impact de la désactivation :</h6>
+                    <div class="impact-grid">
+                        <div class="impact-item">
+                            <div class="impact-icon impact-blocked">
+                                <i class="bi bi-cart-x"></i>
+                            </div>
+                            <div class="impact-label">Nouvelles commandes</div>
+                            <div class="impact-status">Bloquées</div>
+                        </div>
+
+                        <div class="impact-item">
+                            <div class="impact-icon impact-saved">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="impact-label">Historique</div>
+                            <div class="impact-status">Conservé</div>
+                        </div>
+
+                        <div class="impact-item">
+                            <div class="impact-icon impact-revert">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </div>
+                            <div class="impact-label">Réactivation</div>
+                            <div class="impact-status">Possible</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <form method="post" id="deleteForm">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    
+                    <div class="action-buttons">
+                        <a href="/stock/produits/{{ produit.pk }}/" class="btn-cancel-modern">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annuler et retourner</span>
+                        </a>
+                        <button type="submit" class="btn-delete-modern">
+                            <i class="bi bi-trash"></i>
+                            <span>Oui, désactiver le produit</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Recommandations de sécurité -->
+            <div class="recommendations-card">
+                <div class="recommendations-header">
+                    <i class="bi bi-shield-check"></i>
+                    <h6>Recommandations de sécurité</h6>
+                </div>
+                <div class="recommendations-grid">
+                    <div class="recommendation-item">
+                        <i class="bi bi-check-circle"></i>
+                        <div>
+                            <strong>Vérifier le stock</strong>
+                            <p>Transférez le stock restant si nécessaire</p>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-item">
+                        <i class="bi bi-check-circle"></i>
+                        <div>
+                            <strong>Informez les équipes</strong>
+                            <p>Prévenez les équipes commerciales</p>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-item">
+                        <i class="bi bi-check-circle"></i>
+                        <div>
+                            <strong>Alternative disponible</strong>
+                            <p>Proposez un produit similaire</p>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-item">
+                        <i class="bi bi-check-circle"></i>
+                        <div>
+                            <strong>Sauvegarde des données</strong>
+                            <p>Les données sont sauvegardées</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('deleteForm');
+    const stockActuel = {{ stock_actuel }};
+    const seuilReappro = {{ seuil }};
+    
+    // Double confirmation
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        let message = '🗑️ Êtes-vous certain de vouloir désactiver ce produit ?\n\n';
+        message += '⚠️ Cette action désactivera le produit pour les nouvelles commandes.\n';
+        
+        if (stockActuel > 0) {
+            message += `\n📦 Stock actuel : ${stockActuel} {{ produit.unite }}\n`;
+            message += 'Pensez à gérer le stock restant !';
+        }
+        
+        if (confirm(message)) {
+            // Deuxième confirmation si stock important
+            if (stockActuel > seuilReappro * 3) {
+                if (confirm('⚠️ ATTENTION : Ce produit a un stock important !\n\nÊtes-vous VRAIMENT sûr de vouloir continuer ?')) {
+                    form.submit();
+                }
+            } else {
+                form.submit();
+            }
+        }
+    });
+});
+</script>
+
+<style>
+/* Confirmation Card */
+.confirmation-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 48px;
+    margin-bottom: 24px;
+}
+
+/* Header */
+.confirmation-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.warning-icon-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 24px;
+}
+
+.warning-icon {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+}
+
+.warning-icon i {
+    font-size: 56px;
+    color: #dc2626;
+    animation: pulse-icon 2s infinite;
+}
+
+.warning-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.2);
+    animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-icon {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+.confirmation-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.confirmation-subtitle {
+    font-size: 16px;
+    color: #64748b;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Product Info Card */
+.product-info-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 2px solid #e2e8f0;
+}
+
+.product-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.product-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.product-thumb-placeholder {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.product-details {
+    flex: 1;
+}
+
+.product-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 6px 0;
+}
+
+.product-code {
+    display: inline-block;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.product-item {
+    background: white;
+    padding: 16px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.product-item-full {
+    grid-column: 1 / -1;
+}
+
+.item-label {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.item-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.item-price {
+    color: #10b981;
+}
+
+.item-stock.stock-success {
+    color: #10b981;
+}
+
+.item-stock.stock-warning {
+    color: #f59e0b;
+}
+
+.item-stock.stock-danger {
+    color: #dc2626;
+}
+
+.item-description {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Alert Boxes */
+.alert-box {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.alert-warning-box {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-left: 4px solid #f59e0b;
+}
+
+.alert-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.alert-warning-box .alert-icon {
+    color: #f59e0b;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #92400e;
+    margin: 0 0 8px 0;
+}
+
+.alert-text {
+    font-size: 14px;
+    color: #78350f;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Info Box */
+.info-box {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-left: 4px solid #6366f1;
+    margin-bottom: 28px;
+}
+
+.info-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 0 0 8px 0;
+}
+
+.info-text {
+    font-size: 14px;
+    color: #1e40af;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Impact Section */
+.impact-section {
+    margin-bottom: 32px;
+}
+
+.impact-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+
+.impact-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.impact-item {
+    text-align: center;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+}
+
+.impact-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 12px;
+}
+
+.impact-blocked {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #dc2626;
+}
+
+.impact-saved {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #0ea5e9;
+}
+
+.impact-revert {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #10b981;
+}
+
+.impact-label {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+}
+
+.impact-status {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 32px;
+}
+
+.btn-cancel-modern,
+.btn-delete-modern {
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-cancel-modern {
+    background: white;
+    border: 2px solid #e2e8f0;
+    color: #64748b;
+}
+
+.btn-cancel-modern:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: #64748b;
+}
+
+.btn-delete-modern {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    color: white;
+}
+
+.btn-delete-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3);
+}
+
+/* Recommendations Card */
+.recommendations-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 24px;
+}
+
+.recommendations-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.recommendations-header i {
+    font-size: 24px;
+    color: #10b981;
+}
+
+.recommendations-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.recommendation-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 10px;
+}
+
+.recommendation-item i {
+    font-size: 20px;
+    color: #10b981;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.recommendation-item strong {
+    display: block;
+    font-size: 13px;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.recommendation-item p {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .confirmation-card {
+        padding: 32px;
+    }
+}
+
+@media (max-width: 768px) {
+    .confirmation-card {
+        padding: 24px;
+    }
+    
+    .product-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .impact-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .recommendations-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .warning-icon-container,
+    .warning-icon {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .warning-icon i {
+        font-size: 48px;
+    }
+}
+</style>
+
+{% endblock %}

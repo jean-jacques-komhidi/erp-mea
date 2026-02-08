@@ -1,0 +1,504 @@
+<!-- templates/tableau_bord.jinja - Tableau de bord principal amélioré -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Tableau de bord{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête avec salutation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold">Bienvenue sur votre tableau de bord</h2>
+            <p class="text-muted">Voici un aperçu de votre activité</p>
+        </div>
+    </div>
+    
+    <!-- Cartes de statistiques -->
+    <div class="row g-4 mb-4">
+        <!-- Clients actifs -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h3 class="stat-value mb-1">{{ total_clients|default(0) }}</h3>
+                            <p class="stat-label mb-0">Clients actifs</p>
+                        </div>
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-people"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-success bg-opacity-10 text-success me-2">
+                            <i class="bi bi-arrow-up"></i> Actif
+                        </span>
+                        <small class="text-muted">Base clients</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ventes du mois -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h3 class="stat-value mb-1">{{ "{:,.0f}".format(ventes_mois) if ventes_mois else '0' }}</h3>
+                            <p class="stat-label mb-0">Ventes ce mois</p>
+                        </div>
+                        <div class="stat-icon bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-currency-dollar"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        {% if taux_croissance >= 0 %}
+                        <span class="badge bg-success bg-opacity-10 text-success me-2">
+                            <i class="bi bi-arrow-up"></i> +{{ taux_croissance|round(1) }}%
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger me-2">
+                            <i class="bi bi-arrow-down"></i> {{ taux_croissance|round(1) }}%
+                        </span>
+                        {% endif %}
+                        <small class="text-muted">vs mois dernier</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Commandes en cours -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h3 class="stat-value mb-1">{{ commandes_en_cours|default(0) }}</h3>
+                            <p class="stat-label mb-0">Commandes en cours</p>
+                        </div>
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                            <i class="bi bi-clipboard-check"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-warning bg-opacity-10 text-warning me-2">
+                            <i class="bi bi-clock"></i> En traitement
+                        </span>
+                        <small class="text-muted">{{ commandes_mois|default(0) }} ce mois</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Produits stock bas -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h3 class="stat-value mb-1">{{ produits_stock_bas|default(0) }}</h3>
+                            <p class="stat-label mb-0">Alertes stock</p>
+                        </div>
+                        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        {% if produits_rupture and produits_rupture > 0 %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger me-2">
+                            <i class="bi bi-x-circle"></i> {{ produits_rupture }} en rupture
+                        </span>
+                        {% else %}
+                        <span class="badge bg-success bg-opacity-10 text-success me-2">
+                            <i class="bi bi-check-circle"></i> Aucune rupture
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alertes importantes -->
+    {% if (factures_impayees and factures_impayees > 0) or (produits_stock_bas and produits_stock_bas > 0) %}
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle fs-3 me-3"></i>
+                <div class="flex-grow-1">
+                    <h6 class="mb-1 fw-bold">Attention requise</h6>
+                    <div class="d-flex flex-wrap gap-3">
+                        {% if factures_impayees and factures_impayees > 0 %}
+                        <span>
+                            <i class="bi bi-receipt text-danger me-1"></i>
+                            <strong>{{ factures_impayees }}</strong> facture(s) impayée(s) 
+                            ({{ "{:,.0f}".format(montant_impaye) if montant_impaye else '0' }} FCFA)
+                        </span>
+                        {% endif %}
+                        {% if produits_stock_bas and produits_stock_bas > 0 %}
+                        <span>
+                            <i class="bi bi-box-seam text-warning me-1"></i>
+                            <strong>{{ produits_stock_bas }}</strong> produit(s) nécessitent un réapprovisionnement
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <a href="/stock/produits/" class="btn btn-warning">Gérer</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Commandes récentes -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-cart-check me-2"></i>Commandes récentes
+                    </h5>
+                    <a href="/ventes/commandes/nouvelle/" class="btn btn-custom-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Nouvelle commande
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 custom-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">N° Commande</th>
+                                    <th scope="col">Client</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Montant</th>
+                                    <th scope="col">Statut</th>
+                                    <th scope="col" class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for commande in commandes_recentes %}
+                                <tr>
+                                    <td class="fw-semibold">{{ commande.numero_commande }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-xs bg-primary bg-opacity-10 text-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                {{ commande.client.nom[0]|upper }}
+                                            </div>
+                                            {{ commande.client.nom }}
+                                        </div>
+                                    </td>
+                                    <td>{{ commande.date_commande.strftime('%d/%m/%Y') if commande.date_commande else '-' }}</td>
+                                    <td class="fw-semibold">{{ "{:,.0f}".format(commande.total) if commande.total else '0' }} FCFA</td>
+                                    <td>
+                                        {% if commande.statut == 'CONFIRME' %}
+                                            <span class="badge bg-success">Confirmé</span>
+                                        {% elif commande.statut == 'BROUILLON' %}
+                                            <span class="badge bg-warning">Brouillon</span>
+                                        {% elif commande.statut == 'EXPEDIE' %}
+                                            <span class="badge bg-info">Expédié</span>
+                                        {% elif commande.statut == 'FACTURE' %}
+                                            <span class="badge bg-primary">Facturé</span>
+                                        {% elif commande.statut == 'ANNULE' %}
+                                            <span class="badge bg-danger">Annulé</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ commande.get_statut_display() }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="/ventes/commandes/{{ commande.id }}/" class="btn btn-outline-primary" title="Voir">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="/ventes/commandes/{{ commande.id }}/modifier/" class="btn btn-outline-secondary" title="Modifier">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="bi bi-inbox display-6 d-block mb-3 text-muted"></i>
+                                            <p class="mb-2 fw-semibold">Aucune commande récente</p>
+                                            <small>Créez votre première commande en cliquant sur "Nouvelle commande"</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% if commandes_recentes %}
+                <div class="card-footer bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Affichage des 10 dernières commandes</small>
+                        <a href="/ventes/commandes/" class="btn btn-link text-decoration-none">
+                            Voir toutes les commandes <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Factures récentes -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+                    <h5 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-receipt-cutoff me-2"></i>Factures récentes
+                    </h5>
+                    <a href="/ventes/factures/" class="btn btn-custom-primary">
+                        <i class="bi bi-eye me-2"></i>Toutes les factures
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 custom-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">N° Facture</th>
+                                    <th scope="col">Client</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Échéance</th>
+                                    <th scope="col">Montant</th>
+                                    <th scope="col">Statut</th>
+                                    <th scope="col" class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for facture in factures_recentes %}
+                                <tr>
+                                    <td class="fw-semibold">{{ facture.numero_facture }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-xs bg-success bg-opacity-10 text-success rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                {{ facture.client.nom[0]|upper }}
+                                            </div>
+                                            {{ facture.client.nom }}
+                                        </div>
+                                    </td>
+                                    <td>{{ facture.date_facture.strftime('%d/%m/%Y') if facture.date_facture else '-' }}</td>
+                                    <td>
+                                        {% if facture.date_echeance %}
+                                            {{ facture.date_echeance.strftime('%d/%m/%Y') }}
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="fw-semibold">{{ "{:,.0f}".format(facture.total) if facture.total else '0' }} FCFA</td>
+                                    <td>
+                                        {% if facture.statut == 'PAYEE' %}
+                                            <span class="badge bg-success">Payée</span>
+                                        {% elif facture.statut == 'EN_RETARD' %}
+                                            <span class="badge bg-danger">En retard</span>
+                                        {% elif facture.statut == 'EN_ATTENTE' %}
+                                            <span class="badge bg-warning">En attente</span>
+                                        {% elif facture.statut == 'PARTIELLE' %}
+                                            <span class="badge bg-info">Paiement partiel</span>
+                                        {% elif facture.statut == 'ENVOYEE' %}
+                                            <span class="badge bg-primary">Envoyée</span>
+                                        {% elif facture.statut == 'ANNULEE' %}
+                                            <span class="badge bg-secondary">Annulée</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ facture.get_statut_display() }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="/ventes/factures/{{ facture.id }}/" class="btn btn-outline-primary" title="Voir">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="/ventes/factures/{{ facture.id }}/pdf/" class="btn btn-outline-danger" title="PDF" target="_blank">
+                                                <i class="bi bi-file-pdf"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="bi bi-receipt display-6 d-block mb-3 text-muted"></i>
+                                            <p class="mb-2 fw-semibold">Aucune facture récente</p>
+                                            <small>Les factures créées apparaîtront ici</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% if factures_recentes %}
+                <div class="card-footer bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            {% set total_factures_payees = factures_recentes|selectattr('statut', 'equalto', 'PAYEE')|list|length %}
+                            {% set total_factures_en_retard = factures_recentes|selectattr('statut', 'equalto', 'EN_RETARD')|list|length %}
+                            <small class="text-muted">
+                                <span class="text-success fw-semibold">{{ total_factures_payees }} payées</span> • 
+                                <span class="text-danger fw-semibold">{{ total_factures_en_retard }} en retard</span>
+                            </small>
+                        </div>
+                        <a href="/ventes/factures/" class="btn btn-link text-decoration-none">
+                            Gérer les factures <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions rapides et Produits à réapprovisionner -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-lightning-charge text-warning me-2"></i>Actions rapides
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <a href="/ventes/commandes/nouvelle/" class="btn btn-outline-primary w-100 py-3">
+                                <i class="bi bi-plus-circle fs-4 d-block mb-2"></i>
+                                <div class="fw-bold">Nouvelle commande</div>
+                                <small class="text-muted">Créer une commande</small>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a href="/clients/nouveau/" class="btn btn-outline-success w-100 py-3">
+                                <i class="bi bi-person-plus fs-4 d-block mb-2"></i>
+                                <div class="fw-bold">Nouveau client</div>
+                                <small class="text-muted">Ajouter un client</small>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a href="/stock/produits/nouveau/" class="btn btn-outline-info w-100 py-3">
+                                <i class="bi bi-box-seam fs-4 d-block mb-2"></i>
+                                <div class="fw-bold">Nouveau produit</div>
+                                <small class="text-muted">Ajouter un produit</small>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a href="/achats/" class="btn btn-outline-warning w-100 py-3">
+                                <i class="bi bi-cart-plus fs-4 d-block mb-2"></i>
+                                <div class="fw-bold">Achat fournisseur</div>
+                                <small class="text-muted">Nouvelle commande</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-exclamation-triangle text-danger me-2"></i>Produits à réapprovisionner
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if produits_reappro %}
+                    <div class="list-group list-group-flush">
+                        {% for stock in produits_reappro %}
+                        <div class="list-group-item border-0 px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold">{{ stock.produit.nom }}</div>
+                                    <small class="text-muted">Code: {{ stock.produit.code }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-danger">{{ stock.quantite }} en stock</span>
+                                    <br>
+                                    <small class="text-muted">Seuil: {{ stock.produit.seuil_reapprovisionnement }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="/stock/produits/" class="btn btn-sm btn-outline-danger">
+                            Voir tous les produits <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-check-circle display-6 text-success d-block mb-3"></i>
+                        <p class="mb-0">Tous les produits sont bien approvisionnés</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.stat-label {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.btn-custom-primary {
+    background-color: #1e40af;
+    border-color: #1e40af;
+    color: white;
+}
+
+.btn-custom-primary:hover {
+    background-color: #1e3a8a;
+    border-color: #1e3a8a;
+    color: white;
+}
+
+.custom-table thead {
+    background-color: #f8f9fa;
+}
+
+.custom-table th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.avatar-xs {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,838 @@
+<!-- templates/comptabilite/liste_plan_comptable.jinja - INTERFACE PLAN COMPTABLE SYSCOHADA -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Plan Comptable SYSCOHADA{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête avec actions -->
+    <div class="page-header-modern">
+        <div class="header-left">
+            <div class="header-icon-box">
+                <i class="bi bi-journal-text"></i>
+            </div>
+            <div>
+                <h4 class="header-title">Plan Comptable SYSCOHADA</h4>
+                <p class="header-subtitle">Gestion des comptes comptables</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <a href="/comptabilite/plan-comptable/nouveau/" class="btn-primary-gradient">
+                <i class="bi bi-plus-circle"></i>
+                <span>Nouveau compte</span>
+            </a>
+            <a href="/comptabilite/plan-comptable/exporter/" class="btn-icon" title="Exporter Excel">
+                <i class="bi bi-file-earmark-excel"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistiques rapides -->
+    <div class="stats-grid-modern">
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="stat-icon-box bg-primary">
+                    <i class="bi bi-journal-text"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ total_comptes }}</div>
+                    <div class="stat-label">Comptes total</div>
+                    <div class="stat-badge">
+                        <span class="badge badge-primary-soft">Résultats filtrés</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="stat-icon-box bg-success">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comptes_actifs }}</div>
+                    <div class="stat-label">Comptes actifs</div>
+                    <div class="stat-badge">
+                        <span class="badge badge-success-soft">Utilisables</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="stat-icon-box bg-warning">
+                    <i class="bi bi-x-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ comptes_inactifs }}</div>
+                    <div class="stat-label">Comptes inactifs</div>
+                    <div class="stat-badge">
+                        <span class="badge badge-warning-soft">Archivés</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="stat-icon-box bg-info">
+                    <i class="bi bi-diagram-3"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">8</div>
+                    <div class="stat-label">Classes SYSCOHADA</div>
+                    <div class="stat-badge">
+                        <span class="badge badge-info-soft">Standard OHADA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres avancés -->
+    <div class="filters-card-modern">
+        <form method="get" class="filters-form-grid">
+            <div class="filter-group-modern">
+                <label class="filter-label-modern">
+                    <i class="bi bi-search"></i>
+                    Recherche
+                </label>
+                <div class="input-with-icon-modern">
+                    <i class="bi bi-search input-icon-modern"></i>
+                    <input type="text" name="recherche" class="form-control-modern" placeholder="Numéro ou libellé..." value="{{ recherche }}">
+                </div>
+            </div>
+
+            <div class="filter-group-modern">
+                <label class="filter-label-modern">
+                    <i class="bi bi-diagram-2"></i>
+                    Type de compte
+                </label>
+                <div class="input-with-icon-modern">
+                    <i class="bi bi-diagram-2 input-icon-modern"></i>
+                    <select name="type_compte" class="form-control-modern">
+                        <option value="">Tous les types</option>
+                        {% for type_code, type_label in types_compte %}
+                        <option value="{{ type_code }}" {% if type_compte == type_code %}selected{% endif %}>
+                            {{ type_label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-group-modern">
+                <label class="filter-label-modern">
+                    <i class="bi bi-collection"></i>
+                    Classe SYSCOHADA
+                </label>
+                <div class="input-with-icon-modern">
+                    <i class="bi bi-collection input-icon-modern"></i>
+                    <select name="classe" class="form-control-modern">
+                        <option value="">Toutes les classes</option>
+                        {% for classe_num, classe_label in classes_syscohada %}
+                        <option value="{{ classe_num }}" {% if classe == classe_num %}selected{% endif %}>
+                            {{ classe_label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-group-modern">
+                <label class="filter-label-modern">
+                    <i class="bi bi-toggle-on"></i>
+                    Statut
+                </label>
+                <div class="input-with-icon-modern">
+                    <i class="bi bi-toggle-on input-icon-modern"></i>
+                    <select name="statut" class="form-control-modern">
+                        <option value="actif" {% if statut == 'actif' %}selected{% endif %}>Actifs uniquement</option>
+                        <option value="inactif" {% if statut == 'inactif' %}selected{% endif %}>Inactifs uniquement</option>
+                        <option value="tous" {% if statut == 'tous' %}selected{% endif %}>Tous</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-group-modern filter-button-group">
+                <label class="filter-label-modern" style="opacity: 0;">Action</label>
+                <button type="submit" class="btn-primary-gradient">
+                    <i class="bi bi-funnel"></i>
+                    <span>Filtrer</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="row g-4">
+        <!-- Tableau des comptes -->
+        <div class="col-lg-9">
+            <div class="data-card-modern">
+                <div class="data-card-header-modern">
+                    <div class="data-icon-box bg-primary">
+                        <i class="bi bi-list-ul"></i>
+                    </div>
+                    <h6 class="data-title">Liste des comptes ({{ total_comptes }})</h6>
+                </div>
+                <div class="data-card-body-modern">
+                    {% if comptes %}
+                    <div class="table-container">
+                        <table class="data-table-modern">
+                            <thead>
+                                <tr>
+                                    <th style="width: 150px;">Numéro</th>
+                                    <th>Libellé</th>
+                                    <th style="width: 120px;">Type</th>
+                                    <th class="text-center" style="width: 100px;">Statut</th>
+                                    <th class="text-center" style="width: 100px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for compte in comptes %}
+                                <tr>
+                                    <td>
+                                        <div class="compte-numero">
+                                            <i class="bi bi-hash text-primary"></i>
+                                            <strong>{{ compte.numero_compte }}</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="compte-libelle">{{ compte.libelle }}</div>
+                                        {% if compte.compte_parent %}
+                                        <div class="compte-parent">
+                                            <i class="bi bi-arrow-return-right"></i>
+                                            {{ compte.compte_parent.numero_compte }} - {{ compte.compte_parent.libelle[:30] }}
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if compte.type_compte == 'ACTIF' %}
+                                        <span class="type-badge type-actif">
+                                            <i class="bi bi-plus-circle"></i> Actif
+                                        </span>
+                                        {% elif compte.type_compte == 'PASSIF' %}
+                                        <span class="type-badge type-passif">
+                                            <i class="bi bi-minus-circle"></i> Passif
+                                        </span>
+                                        {% elif compte.type_compte == 'CHARGE' %}
+                                        <span class="type-badge type-charge">
+                                            <i class="bi bi-arrow-up-circle"></i> Charge
+                                        </span>
+                                        {% elif compte.type_compte == 'PRODUIT' %}
+                                        <span class="type-badge type-produit">
+                                            <i class="bi bi-arrow-down-circle"></i> Produit
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if compte.est_actif %}
+                                        <span class="status-badge status-active">
+                                            <i class="bi bi-check-circle"></i> Actif
+                                        </span>
+                                        {% else %}
+                                        <span class="status-badge status-inactive">
+                                            <i class="bi bi-x-circle"></i> Inactif
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="action-buttons">
+                                            <a href="/comptabilite/plan-comptable/{{ compte.pk }}/" class="btn-action btn-view" title="Voir">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state-modern">
+                        <div class="empty-state-icon-modern">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+                        <h4 class="empty-state-title-modern">Aucun compte trouvé</h4>
+                        <p class="empty-state-text-modern">Aucun compte ne correspond à vos critères de recherche.</p>
+                        <a href="/comptabilite/plan-comptable/nouveau/" class="btn-primary-gradient mt-3">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Créer un compte</span>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Panneau latéral - Statistiques -->
+        <div class="col-lg-3">
+            <!-- Répartition par type -->
+            <div class="sidebar-card-modern">
+                <div class="sidebar-card-header">
+                    <i class="bi bi-pie-chart"></i>
+                    <span>Par type</span>
+                </div>
+                <div class="sidebar-card-body">
+                    {% for stat in stats_par_type %}
+                    <div class="stat-item-modern">
+                        <div class="stat-item-label">{{ stat.label }}</div>
+                        <div class="stat-item-value">{{ stat.nombre }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Répartition par classe -->
+            <div class="sidebar-card-modern mt-3">
+                <div class="sidebar-card-header">
+                    <i class="bi bi-diagram-3"></i>
+                    <span>Par classe</span>
+                </div>
+                <div class="sidebar-card-body">
+                    {% for stat in stats_par_classe %}
+                    <div class="stat-item-modern">
+                        <div class="stat-item-label">Classe {{ stat.numero }}</div>
+                        <div class="stat-item-value">{{ stat.nombre }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Aide SYSCOHADA -->
+            <div class="sidebar-card-modern mt-3 help-card">
+                <div class="sidebar-card-header">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Aide SYSCOHADA</span>
+                </div>
+                <div class="sidebar-card-body">
+                    <p class="help-text">
+                        <strong>Classes SYSCOHADA :</strong>
+                    </p>
+                    <ul class="help-list">
+                        <li><strong>1-2 :</strong> Bilan</li>
+                        <li><strong>3-5 :</strong> Gestion</li>
+                        <li><strong>6-7 :</strong> Résultat</li>
+                        <li><strong>8 :</strong> Autres</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ==================== EN-TÊTE PAGE ==================== */
+.page-header-modern {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 24px 32px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-icon-box {
+    width: 54px;
+    height: 54px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-icon-box i {
+    font-size: 26px;
+    color: white;
+}
+
+.header-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.header-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.header-right {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-primary-gradient {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f1f5f9;
+}
+
+/* ==================== STATS GRID ==================== */
+.stats-grid-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card-body {
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.stat-icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-icon-box i {
+    font-size: 28px;
+    color: white;
+}
+
+.stat-icon-box.bg-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+.stat-icon-box.bg-success { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
+.stat-icon-box.bg-warning { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); }
+.stat-icon-box.bg-info { background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%); }
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.stat-badge .badge {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-primary-soft { background: #dbeafe; color: #1e40af; }
+.badge-success-soft { background: #dcfce7; color: #166534; }
+.badge-warning-soft { background: #fef3c7; color: #92400e; }
+.badge-info-soft { background: #dbeafe; color: #1e40af; }
+
+/* ==================== FILTRES ==================== */
+.filters-card-modern {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.filters-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    align-items: end;
+}
+
+.filter-group-modern {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-label-modern {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-label-modern i {
+    color: #6366f1;
+}
+
+.input-with-icon-modern {
+    position: relative;
+}
+
+.input-icon-modern {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 16px;
+    pointer-events: none;
+}
+
+.form-control-modern {
+    width: 100%;
+    padding: 10px 16px 10px 44px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-control-modern:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* ==================== CARTE DE DONNÉES ==================== */
+.data-card-modern {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.data-card-header-modern {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.data-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.data-icon-box.bg-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+
+.data-icon-box i {
+    font-size: 20px;
+    color: white;
+}
+
+.data-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.data-card-body-modern {
+    padding: 0;
+}
+
+/* ==================== TABLEAU ==================== */
+.table-container {
+    overflow-x: auto;
+}
+
+.data-table-modern {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table-modern thead {
+    background: #f8fafc;
+}
+
+.data-table-modern th {
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-table-modern tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+
+.data-table-modern tbody tr:hover {
+    background: #f8fafc;
+}
+
+.data-table-modern td {
+    padding: 16px 20px;
+    vertical-align: middle;
+}
+
+.compte-numero {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.compte-libelle {
+    font-size: 14px;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+.compte-parent {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.type-actif { background: #dbeafe; color: #1e40af; }
+.type-passif { background: #fef3c7; color: #92400e; }
+.type-charge { background: #fee2e2; color: #991b1b; }
+.type-produit { background: #dcfce7; color: #166534; }
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-active { background: #dcfce7; color: #166534; }
+.status-inactive { background: #f1f5f9; color: #64748b; }
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-view {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.btn-view:hover {
+    background: #1e40af;
+    color: white;
+}
+
+/* ==================== SIDEBAR ==================== */
+.sidebar-card-modern {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.sidebar-card-header {
+    padding: 16px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar-card-body {
+    padding: 16px;
+}
+
+.stat-item-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.stat-item-modern:last-child {
+    border-bottom: none;
+}
+
+.stat-item-label {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.stat-item-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #6366f1;
+}
+
+.help-card .sidebar-card-header {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+}
+
+.help-text {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+}
+
+.help-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.help-list li {
+    font-size: 12px;
+    color: #64748b;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.help-list li:last-child {
+    border-bottom: none;
+}
+
+/* ==================== ÉTAT VIDE ==================== */
+.empty-state-modern {
+    padding: 60px 40px;
+    text-align: center;
+}
+
+.empty-state-icon-modern {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 20px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #94a3b8;
+}
+
+.empty-state-title-modern {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.empty-state-text-modern {
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .filters-form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid-modern {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

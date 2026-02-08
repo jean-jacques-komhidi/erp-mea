@@ -1,0 +1,1857 @@
+<!-- templates/achats/historique_achats.jinja - VERSION COMPLÈTE AVEC IMPRESSION ET TÉLÉCHARGEMENT -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Historique et Rapports d'Achats{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête moderne -->
+    <div class="page-header-stats">
+        <div class="header-left">
+            <a href="/achats/" class="btn-back-modern">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div class="header-icon-box">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <div>
+                <h4 class="header-title">Historique et Statistiques</h4>
+                <p class="header-subtitle">Analyse complète de vos achats et performances</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <!-- Bouton Imprimer avec menu déroulant -->
+            <div class="export-dropdown-historique">
+                <button class="btn-icon" id="btnPrint" title="Imprimer">
+                    <i class="bi bi-printer"></i>
+                </button>
+                <div class="export-menu-historique" id="printMenu">
+                    <a href="/achats/historique/imprimer/?date_debut={{ date_debut }}&date_fin={{ date_fin }}{% if request.GET.fournisseur %}&fournisseur={{ request.GET.fournisseur }}{% endif %}" 
+                       target="_blank" 
+                       class="export-item-historique">
+                        <i class="bi bi-printer text-primary"></i>
+                        <div class="export-info-historique">
+                            <div class="export-title-historique">Imprimer</div>
+                            <div class="export-desc-historique">Ouvrir la version imprimable</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Bouton Télécharger avec menu déroulant -->
+            <div class="export-dropdown-historique">
+                <button class="btn-icon" id="btnExport" title="Télécharger">
+                    <i class="bi bi-download"></i>
+                </button>
+                <div class="export-menu-historique" id="exportMenu">
+                    <a href="/achats/historique/telecharger-pdf/?date_debut={{ date_debut }}&date_fin={{ date_fin }}{% if request.GET.fournisseur %}&fournisseur={{ request.GET.fournisseur }}{% endif %}" 
+                       class="export-item-historique">
+                        <i class="bi bi-file-earmark-pdf text-danger"></i>
+                        <div class="export-info-historique">
+                            <div class="export-title-historique">PDF (.pdf)</div>
+                            <div class="export-desc-historique">Rapport complet en PDF</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres de période -->
+    <div class="filters-card-modern">
+        <form method="get" class="filters-form-grid">
+            <div class="filter-group-modern">
+                <label class="filter-label-modern">
+                    <i class="bi bi-calendar3"></i>
+                    Date début
+                </label>
+                <div class="input-with-icon-modern">
+                    <i class="bi bi-calendar-event input-icon-modern"></i>
+                    <input type="date" name="date_debut" class="form-control-modern" value="{{ date_debut if date_debut else '' }}">
+                </div>
+            </div>
+
+            <div class="filter-group-modern">
+                <label class="filter-label-modern">
+                    <i class="bi bi-calendar3"></i>
+                    Date fin
+                </label>
+                <div class="input-with-icon-modern">
+                    <i class="bi bi-calendar-event input-icon-modern"></i>
+                    <input type="date" name="date_fin" class="form-control-modern" value="{{ date_fin if date_fin else '' }}">
+                </div>
+            </div>
+
+            <div class="filter-group-modern">
+                <label class="filter-label-modern">
+                    <i class="bi bi-building"></i>
+                    Fournisseur
+                </label>
+                <div class="input-with-icon-modern">
+                    <i class="bi bi-building input-icon-modern"></i>
+                    <select name="fournisseur" class="form-control-modern">
+                        <option value="">Tous les fournisseurs</option>
+                        {% if fournisseurs %}
+                            {% for fournisseur in fournisseurs %}
+                            <option value="{{ fournisseur.id }}">{{ fournisseur.nom }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-group-modern filter-button-group">
+                <label class="filter-label-modern" style="opacity: 0;">Action</label>
+                <button type="submit" class="btn-primary-gradient">
+                    <i class="bi bi-funnel"></i>
+                    <span>Filtrer</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Statistiques globales avec icônes DANS les carrés -->
+    <div class="stats-grid-modern">
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="stat-icon-box bg-primary">
+                    <i class="bi bi-cart"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ stats_globales.nombre_commandes if stats_globales and stats_globales.nombre_commandes else 0 }}</div>
+                    <div class="stat-label">Commandes</div>
+                    <div class="stat-badge">
+                        <span class="badge badge-primary-soft">
+                            <i class="bi bi-check-circle"></i> Total période
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="stat-icon-box bg-success">
+                    <i class="bi bi-currency-dollar"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value stat-value-large">
+                        {% if stats_globales and stats_globales.montant_total %}
+                            {{ "{:,.0f}".format(stats_globales.montant_total) }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </div>
+                    <div class="stat-label">FCFA dépensés</div>
+                    <div class="stat-badge">
+                        <span class="badge badge-success-soft">
+                            <i class="bi bi-graph-up"></i> Montant total
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="stat-icon-box bg-warning">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ stats_globales.nombre_fournisseurs if stats_globales and stats_globales.nombre_fournisseurs else 0 }}</div>
+                    <div class="stat-label">Fournisseurs actifs</div>
+                    <div class="stat-badge">
+                        <span class="badge badge-warning-soft">
+                            <i class="bi bi-people"></i> Partenaires
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-body">
+                <div class="stat-icon-box bg-info">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value stat-value-large">
+                        {% if stats_globales and stats_globales.montant_moyen %}
+                            {{ "{:,.0f}".format(stats_globales.montant_moyen) }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </div>
+                    <div class="stat-label">FCFA moyen / commande</div>
+                    <div class="stat-badge">
+                        <span class="badge badge-info-soft">
+                            <i class="bi bi-calculator"></i> Moyenne
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphique de comparaison mensuelle -->
+    <div class="chart-card-modern">
+        <div class="chart-card-header-modern">
+            <div class="chart-header-left">
+                <div class="chart-icon-box">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div>
+                    <h6 class="chart-title">Comparaison mensuelle</h6>
+                    <p class="chart-subtitle">Évolution des achats : Mois précédent vs Mois en cours</p>
+                </div>
+            </div>
+        </div>
+        <div class="chart-card-body-modern">
+            <canvas id="comparisonChart"></canvas>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Répartition par statut -->
+        <div class="col-lg-8">
+            <div class="data-card-modern">
+                <div class="data-card-header-modern">
+                    <div class="data-icon-box bg-primary">
+                        <i class="bi bi-pie-chart"></i>
+                    </div>
+                    <h6 class="data-title">Répartition par statut</h6>
+                </div>
+                <div class="data-card-body-modern">
+                    {% if stats_par_statut %}
+                    <div class="table-container">
+                        <table class="data-table-modern">
+                            <thead>
+                                <tr>
+                                    <th>Statut</th>
+                                    <th class="text-center">Nombre</th>
+                                    <th class="text-end">Montant total</th>
+                                    <th style="width: 200px;">Pourcentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in stats_par_statut %}
+                                <tr>
+                                    <td>
+                                        {% if stat.statut == 'BROUILLON' %}
+                                        <span class="status-badge status-draft">
+                                            <span class="status-dot"></span>
+                                            Brouillon
+                                        </span>
+                                        {% elif stat.statut == 'CONFIRMEE' %}
+                                        <span class="status-badge status-confirmed">
+                                            <span class="status-dot"></span>
+                                            Confirmée
+                                        </span>
+                                        {% elif stat.statut == 'ENVOYEE' %}
+                                        <span class="status-badge status-sent">
+                                            <span class="status-dot"></span>
+                                            Envoyée
+                                        </span>
+                                        {% elif stat.statut == 'RECUE' %}
+                                        <span class="status-badge status-received">
+                                            <span class="status-dot"></span>
+                                            Reçue
+                                        </span>
+                                        {% elif stat.statut == 'FACTUREE' %}
+                                        <span class="status-badge status-invoiced">
+                                            <span class="status-dot"></span>
+                                            Facturée
+                                        </span>
+                                        {% elif stat.statut == 'ANNULEE' %}
+                                        <span class="status-badge status-cancelled">
+                                            <span class="status-dot"></span>
+                                            Annulée
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="count-badge-modern">{{ stat.nombre if stat.nombre else 0 }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="amount-value-modern">
+                                            {% if stat.montant %}
+                                                {{ "{:,.0f}".format(stat.montant) }} FCFA
+                                            {% else %}
+                                                0 FCFA
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="progress-container-modern">
+                                            <div class="progress-bar-fill-modern" style="width: {{ stat.pourcentage if stat.pourcentage else 0 }}%"></div>
+                                            <div class="progress-label-modern">{{ stat.pourcentage|round|int if stat.pourcentage else 0 }}%</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state-modern">
+                        <div class="empty-state-icon-modern">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+                        <h4 class="empty-state-title-modern">Aucune donnée disponible</h4>
+                        <p class="empty-state-text-modern">Aucune commande trouvée pour la période sélectionnée</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Indicateurs clés -->
+        <div class="col-lg-4">
+            <div class="indicators-card-modern">
+                <div class="indicators-header-modern">
+                    <div class="indicators-icon-box">
+                        <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <h6 class="indicators-title">Indicateurs clés</h6>
+                </div>
+                <div class="indicators-body-modern">
+                    <div class="indicator-item-modern">
+                        <div class="indicator-header-flex">
+                            <div class="indicator-label-modern">Taux de réception</div>
+                            <div class="indicator-value-modern text-success">
+                                {{ stats_globales.taux_reception|round|int if stats_globales and stats_globales.taux_reception else 0 }}%
+                            </div>
+                        </div>
+                        <div class="indicator-progress-modern">
+                            <div class="indicator-progress-fill-modern bg-success" style="width: {{ stats_globales.taux_reception if stats_globales and stats_globales.taux_reception else 0 }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="indicator-item-modern">
+                        <div class="indicator-header-flex">
+                            <div class="indicator-label-modern">Commandes en retard</div>
+                            <div class="indicator-value-modern text-danger">
+                                {{ stats_globales.commandes_retard if stats_globales and stats_globales.commandes_retard else 0 }}
+                            </div>
+                        </div>
+                        <div class="indicator-progress-modern">
+                            {% set nb_commandes = stats_globales.nombre_commandes if stats_globales and stats_globales.nombre_commandes else 0 %}
+                            {% set nb_retard = stats_globales.commandes_retard if stats_globales and stats_globales.commandes_retard else 0 %}
+                            {% set pct_retard = (nb_retard / nb_commandes * 100) if nb_commandes > 0 else 0 %}
+                            <div class="indicator-progress-fill-modern bg-danger" style="width: {{ pct_retard }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="indicator-item-modern">
+                        <div class="indicator-header-flex">
+                            <div class="indicator-label-modern">Taux de confirmation</div>
+                            <div class="indicator-value-modern text-primary">
+                                {{ stats_globales.taux_confirmation|round|int if stats_globales and stats_globales.taux_confirmation else 0 }}%
+                            </div>
+                        </div>
+                        <div class="indicator-progress-modern">
+                            <div class="indicator-progress-fill-modern bg-primary" style="width: {{ stats_globales.taux_confirmation if stats_globales and stats_globales.taux_confirmation else 0 }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="tip-box-modern">
+                        <i class="bi bi-lightbulb"></i>
+                        <div>
+                            <strong>Conseil :</strong> Un taux de réception élevé indique une bonne gestion des commandes.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top fournisseurs et produits -->
+    <div class="row g-4 mt-1">
+        <div class="col-lg-6">
+            <div class="ranking-card-modern">
+                <div class="ranking-header-modern">
+                    <div class="ranking-icon-box bg-warning">
+                        <i class="bi bi-trophy"></i>
+                    </div>
+                    <h6 class="ranking-title">Top 10 Fournisseurs</h6>
+                </div>
+                <div class="ranking-body-modern">
+                    {% if top_fournisseurs %}
+                    <div class="table-container">
+                        <table class="ranking-table-modern">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">#</th>
+                                    <th>Fournisseur</th>
+                                    <th class="text-center">Commandes</th>
+                                    <th class="text-end">Montant total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for fournisseur in top_fournisseurs %}
+                                <tr>
+                                    <td>
+                                        {% if loop.index == 1 %}
+                                        <span class="rank-badge rank-gold">🥇</span>
+                                        {% elif loop.index == 2 %}
+                                        <span class="rank-badge rank-silver">🥈</span>
+                                        {% elif loop.index == 3 %}
+                                        <span class="rank-badge rank-bronze">🥉</span>
+                                        {% else %}
+                                        <span class="rank-number">{{ loop.index }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="entity-display-modern">
+                                            <div class="entity-avatar-modern bg-primary">
+                                                {{ fournisseur.fournisseur__nom[0]|upper if fournisseur.fournisseur__nom else 'F' }}
+                                            </div>
+                                            <div class="entity-name-modern">{{ fournisseur.fournisseur__nom if fournisseur.fournisseur__nom else 'Fournisseur' }}</div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="count-badge-modern">{{ fournisseur.nombre if fournisseur.nombre else 0 }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="amount-value-success-modern">
+                                            {% if fournisseur.montant %}
+                                                {{ "{:,.0f}".format(fournisseur.montant) }} FCFA
+                                            {% else %}
+                                                0 FCFA
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state-modern">
+                        <div class="empty-state-icon-modern">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <p class="empty-state-text-modern">Aucun fournisseur trouvé</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="ranking-card-modern">
+                <div class="ranking-header-modern">
+                    <div class="ranking-icon-box bg-info">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <h6 class="ranking-title">Top 10 Produits achetés</h6>
+                </div>
+                <div class="ranking-body-modern">
+                    {% if top_produits %}
+                    <div class="table-container">
+                        <table class="ranking-table-modern">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">#</th>
+                                    <th>Produit</th>
+                                    <th class="text-center">Quantité</th>
+                                    <th class="text-end">Montant total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for produit in top_produits %}
+                                <tr>
+                                    <td>
+                                        {% if loop.index == 1 %}
+                                        <span class="rank-badge rank-gold">🥇</span>
+                                        {% elif loop.index == 2 %}
+                                        <span class="rank-badge rank-silver">🥈</span>
+                                        {% elif loop.index == 3 %}
+                                        <span class="rank-badge rank-bronze">🥉</span>
+                                        {% else %}
+                                        <span class="rank-number">{{ loop.index }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="entity-display-modern">
+                                            <div class="entity-avatar-modern bg-info">
+                                                {{ produit.produit__nom[0]|upper if produit.produit__nom else 'P' }}
+                                            </div>
+                                            <div>
+                                                <div class="entity-name-modern">{{ produit.produit__nom if produit.produit__nom else 'Produit' }}</div>
+                                                {% if produit.produit__code %}
+                                                <div class="entity-code-modern">{{ produit.produit__code }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="count-badge-modern badge-info-color">{{ produit.quantite_totale if produit.quantite_totale else 0 }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="amount-value-success-modern">
+                                            {% if produit.montant_total %}
+                                                {{ "{:,.0f}".format(produit.montant_total) }} FCFA
+                                            {% else %}
+                                                0 FCFA
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state-modern">
+                        <div class="empty-state-icon-modern">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <p class="empty-state-text-modern">Aucun produit trouvé</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Évolution mensuelle -->
+    {% if evolution_mensuelle %}
+    <div class="evolution-card-modern mt-4">
+        <div class="evolution-header-modern">
+            <div class="evolution-icon-box">
+                <i class="bi bi-calendar2-range"></i>
+            </div>
+            <h6 class="evolution-title">Évolution mensuelle détaillée</h6>
+        </div>
+        <div class="evolution-body-modern">
+            <div class="table-container">
+                <table class="evolution-table-modern">
+                    <thead>
+                        <tr>
+                            <th>Mois</th>
+                            <th class="text-center">Commandes</th>
+                            <th class="text-end">Montant total</th>
+                            <th class="text-end">Montant moyen</th>
+                            <th class="text-center">Taux réception</th>
+                            <th class="text-end">Évolution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mois in evolution_mensuelle %}
+                        <tr>
+                            <td>
+                                <div class="month-display-modern">
+                                    <i class="bi bi-calendar3"></i>
+                                    <span>{{ mois.mois if mois.mois else '-' }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="count-badge-modern">{{ mois.nombre if mois.nombre else 0 }}</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="amount-value-modern">
+                                    {% if mois.montant %}
+                                        {{ "{:,.0f}".format(mois.montant) }} FCFA
+                                    {% else %}
+                                        0 FCFA
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <div class="amount-value-muted-modern">
+                                    {% if mois.montant_moyen %}
+                                        {{ "{:,.0f}".format(mois.montant_moyen) }} FCFA
+                                    {% else %}
+                                        0 FCFA
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="mini-progress-modern">
+                                    {% set tx_recep = mois.taux_reception if mois.taux_reception else 0 %}
+                                    <div class="mini-progress-fill-modern bg-success" style="width: {{ tx_recep }}%"></div>
+                                    <div class="mini-progress-label-modern">{{ tx_recep|round|int }}%</div>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                {% if mois.evolution and mois.evolution > 0 %}
+                                <span class="evolution-badge-modern evolution-up">
+                                    <i class="bi bi-arrow-up"></i> +{{ mois.evolution|round|int }}%
+                                </span>
+                                {% elif mois.evolution and mois.evolution < 0 %}
+                                <span class="evolution-badge-modern evolution-down">
+                                    <i class="bi bi-arrow-down"></i> {{ mois.evolution|round|int }}%
+                                </span>
+                                {% else %}
+                                <span class="evolution-badge-modern evolution-neutral">
+                                    <i class="bi bi-dash"></i> 0%
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Données pour le graphique de comparaison
+    const moisPrecedent = {
+        commandes: {{ mois_precedent_commandes|default(0) }},
+        montant: {{ mois_precedent_montant|default(0) }}
+    };
+    
+    const moisCourant = {
+        commandes: {{ mois_courant_commandes|default(0) }},
+        montant: {{ mois_courant_montant|default(0) }}
+    };
+
+    // Créer le graphique de comparaison
+    const ctx = document.getElementById('comparisonChart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Début', 'Milieu', 'Fin'],
+                datasets: [{
+                    label: 'Mois précédent (FCFA)',
+                    data: [
+                        moisPrecedent.montant * 0.3,
+                        moisPrecedent.montant * 0.65,
+                        moisPrecedent.montant
+                    ],
+                    borderColor: '#94a3b8',
+                    backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#94a3b8',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }, {
+                    label: 'Mois en cours (FCFA)',
+                    data: [
+                        moisCourant.montant * 0.35,
+                        moisCourant.montant * 0.70,
+                        moisCourant.montant
+                    ],
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#6366f1',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: {
+                                size: 13,
+                                weight: '600',
+                                family: 'system-ui'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#1e293b',
+                        bodyColor: '#64748b',
+                        borderColor: '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: true,
+                        bodyFont: {
+                            size: 13
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += new Intl.NumberFormat('fr-FR', {
+                                    maximumFractionDigits: 0
+                                }).format(context.parsed.y) + ' FCFA';
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#f1f5f9',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return new Intl.NumberFormat('fr-FR', {
+                                    notation: 'compact',
+                                    compactDisplay: 'short'
+                                }).format(value);
+                            },
+                            font: {
+                                size: 12
+                            },
+                            color: '#64748b',
+                            padding: 8
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 12
+                            },
+                            color: '#64748b',
+                            padding: 8
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // ========== GESTION DES MENUS D'EXPORT ET D'IMPRESSION ==========
+    
+    // Menu d'impression
+    const btnPrint = document.getElementById('btnPrint');
+    const printMenu = document.getElementById('printMenu');
+    
+    if (btnPrint && printMenu) {
+        btnPrint.addEventListener('click', function(e) {
+            e.stopPropagation();
+            printMenu.classList.toggle('show');
+            // Fermer le menu d'export si ouvert
+            const exportMenu = document.getElementById('exportMenu');
+            if (exportMenu) exportMenu.classList.remove('show');
+        });
+    }
+    
+    // Menu d'export
+    const btnExport = document.getElementById('btnExport');
+    const exportMenu = document.getElementById('exportMenu');
+    
+    if (btnExport && exportMenu) {
+        btnExport.addEventListener('click', function(e) {
+            e.stopPropagation();
+            exportMenu.classList.toggle('show');
+            // Fermer le menu d'impression si ouvert
+            if (printMenu) printMenu.classList.remove('show');
+        });
+    }
+    
+    // Fermer les menus en cliquant ailleurs
+    document.addEventListener('click', function() {
+        if (printMenu) printMenu.classList.remove('show');
+        if (exportMenu) exportMenu.classList.remove('show');
+    });
+    
+    // Empêcher la fermeture en cliquant dans les menus
+    if (printMenu) {
+        printMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+    
+    if (exportMenu) {
+        exportMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+});
+</script>
+
+<style>
+/* ==================== EN-TÊTE PAGE STATISTIQUES ==================== */
+.page-header-stats {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 24px 32px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back-modern {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-back-modern:hover {
+    background: #6366f1;
+    color: white;
+}
+
+.header-icon-box {
+    width: 54px;
+    height: 54px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-icon-box i {
+    font-size: 26px;
+    color: white;
+}
+
+.header-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.header-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.header-right {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f1f5f9;
+}
+
+/* ==================== MENU EXPORT HISTORIQUE ==================== */
+.export-dropdown-historique {
+    position: relative;
+}
+
+.export-menu-historique {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    padding: 8px;
+    min-width: 250px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.export-menu-historique.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.export-item-historique {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+    color: #1e293b;
+}
+
+.export-item-historique:hover {
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+.export-item-historique i {
+    font-size: 24px;
+    width: 32px;
+    text-align: center;
+}
+
+.export-info-historique {
+    flex: 1;
+}
+
+.export-title-historique {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 2px;
+}
+
+.export-desc-historique {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* ==================== FILTRES MODERNES ==================== */
+.filters-card-modern {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.filters-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    align-items: end;
+}
+
+.filter-group-modern {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-label-modern {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-label-modern i {
+    color: #6366f1;
+}
+
+.input-with-icon-modern {
+    position: relative;
+}
+
+.input-icon-modern {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 16px;
+    pointer-events: none;
+}
+
+.form-control-modern {
+    width: 100%;
+    padding: 10px 16px 10px 44px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-control-modern:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.btn-primary-gradient {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+}
+
+/* ==================== CARTES STATISTIQUES ==================== */
+.stats-grid-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card-body {
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.stat-icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-icon-box i {
+    font-size: 28px;
+    color: white;
+}
+
+.stat-icon-box.bg-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+.stat-icon-box.bg-success { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
+.stat-icon-box.bg-warning { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); }
+.stat-icon-box.bg-info { background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%); }
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+    margin-bottom: 4px;
+    word-break: break-word;
+}
+
+.stat-value-large {
+    font-size: 22px;
+    letter-spacing: -0.5px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.stat-badge .badge {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-primary-soft { background: #dbeafe; color: #1e40af; }
+.badge-success-soft { background: #dcfce7; color: #166534; }
+.badge-warning-soft { background: #fef3c7; color: #92400e; }
+.badge-info-soft { background: #dbeafe; color: #1e40af; }
+
+/* ==================== GRAPHIQUE MODERNE ==================== */
+.chart-card-modern {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.chart-card-header-modern {
+    padding: 24px 32px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.chart-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.chart-icon-box {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-icon-box i {
+    font-size: 22px;
+    color: white;
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.chart-subtitle {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+}
+
+.chart-card-body-modern {
+    padding: 32px;
+    height: 320px;
+}
+
+/* ==================== CARTES DE DONNÉES ==================== */
+.data-card-modern {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.data-card-header-modern {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.data-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.data-icon-box.bg-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+
+.data-icon-box i {
+    font-size: 20px;
+    color: white;
+}
+
+.data-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.data-card-body-modern {
+    padding: 0;
+}
+
+.data-table-modern {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table-modern thead {
+    background: #f8fafc;
+}
+
+.data-table-modern th {
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-table-modern tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+
+.data-table-modern tbody tr:hover {
+    background: #f8fafc;
+}
+
+.data-table-modern td {
+    padding: 16px 20px;
+    vertical-align: middle;
+}
+
+/* Statut badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-draft {
+    background: #f1f5f9;
+    color: #475569;
+}
+.status-draft .status-dot { background: #64748b; }
+
+.status-confirmed {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.status-confirmed .status-dot { background: #3b82f6; }
+
+.status-sent {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+.status-sent .status-dot { background: #6366f1; }
+
+.status-received {
+    background: #dcfce7;
+    color: #166534;
+}
+.status-received .status-dot { background: #16a34a; }
+
+.status-invoiced {
+    background: #d1fae5;
+    color: #065f46;
+}
+.status-invoiced .status-dot { background: #10b981; }
+
+.status-cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.status-cancelled .status-dot { background: #dc2626; }
+
+.count-badge-modern {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.badge-info-color {
+    background: #dbeafe;
+    color: #0ea5e9;
+}
+
+.amount-value-modern {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.progress-container-modern {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f1f5f9;
+    border-radius: 20px;
+    padding: 4px;
+    position: relative;
+}
+
+.progress-bar-fill-modern {
+    height: 24px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 16px;
+    transition: width 0.3s ease;
+}
+
+.progress-label-modern {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* ==================== INDICATEURS CLÉS ==================== */
+.indicators-card-modern {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    height: 100%;
+}
+
+.indicators-header-modern {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.indicators-icon-box {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.indicators-icon-box i {
+    font-size: 20px;
+    color: white;
+}
+
+.indicators-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.indicators-body-modern {
+    padding: 24px;
+}
+
+.indicator-item-modern {
+    margin-bottom: 20px;
+}
+
+.indicator-item-modern:last-of-type {
+    margin-bottom: 24px;
+}
+
+.indicator-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.indicator-label-modern {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.indicator-value-modern {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.indicator-progress-modern {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.indicator-progress-fill-modern {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.indicator-progress-fill-modern.bg-success { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
+.indicator-progress-fill-modern.bg-danger { background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); }
+.indicator-progress-fill-modern.bg-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+
+.tip-box-modern {
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    border-left: 4px solid #6366f1;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.tip-box-modern i {
+    font-size: 20px;
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.tip-box-modern div {
+    font-size: 13px;
+    color: #1e293b;
+}
+
+/* ==================== CARTES DE CLASSEMENT ==================== */
+.ranking-card-modern {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.ranking-header-modern {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ranking-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ranking-icon-box.bg-warning { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); }
+.ranking-icon-box.bg-info { background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%); }
+
+.ranking-icon-box i {
+    font-size: 20px;
+    color: white;
+}
+
+.ranking-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.ranking-body-modern {
+    padding: 0;
+}
+
+.ranking-table-modern {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ranking-table-modern thead {
+    background: #f8fafc;
+}
+
+.ranking-table-modern th {
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ranking-table-modern tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+
+.ranking-table-modern tbody tr:hover {
+    background: #f8fafc;
+}
+
+.ranking-table-modern td {
+    padding: 16px 20px;
+    vertical-align: middle;
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.rank-gold { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
+.rank-silver { background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); }
+.rank-bronze { background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%); }
+
+.rank-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.entity-display-modern {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.entity-avatar-modern {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+}
+
+.entity-avatar-modern.bg-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+.entity-avatar-modern.bg-info { background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%); }
+
+.entity-name-modern {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.entity-code-modern {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.amount-value-success-modern {
+    font-size: 14px;
+    font-weight: 700;
+    color: #16a34a;
+}
+
+/* ==================== ÉVOLUTION MENSUELLE ==================== */
+.evolution-card-modern {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.evolution-header-modern {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.evolution-icon-box {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.evolution-icon-box i {
+    font-size: 20px;
+    color: white;
+}
+
+.evolution-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.evolution-body-modern {
+    padding: 0;
+}
+
+.evolution-table-modern {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.evolution-table-modern thead {
+    background: #f8fafc;
+}
+
+.evolution-table-modern th {
+    padding: 14px 20px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.evolution-table-modern tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+
+.evolution-table-modern tbody tr:hover {
+    background: #f8fafc;
+}
+
+.evolution-table-modern td {
+    padding: 16px 20px;
+    vertical-align: middle;
+}
+
+.month-display-modern {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.month-display-modern i {
+    color: #6366f1;
+}
+
+.amount-value-muted-modern {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.mini-progress-modern {
+    width: 80px;
+    height: 20px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    display: inline-block;
+}
+
+.mini-progress-fill-modern {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.mini-progress-fill-modern.bg-success { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
+
+.mini-progress-label-modern {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.evolution-badge-modern {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.evolution-up {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.evolution-down {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.evolution-neutral {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+/* ==================== ÉTAT VIDE ==================== */
+.empty-state-modern {
+    padding: 60px 40px;
+    text-align: center;
+}
+
+.empty-state-icon-modern {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 20px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #94a3b8;
+}
+
+.empty-state-title-modern {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.empty-state-text-modern {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 1200px) {
+    .filters-form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+}
+
+@media (max-width: 992px) {
+    .page-header-stats {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .header-right {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 768px) {
+    .filters-form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid-modern {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+    
+    .chart-card-body-modern {
+        height: 250px;
+        padding: 20px;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+    }
+}
+
+/* ==================== IMPRESSION ==================== */
+@media print {
+    .btn-icon,
+    .header-right,
+    .filters-card-modern {
+        display: none !important;
+    }
+    
+    .stat-card,
+    .chart-card-modern,
+    .data-card-modern,
+    .indicators-card-modern,
+    .ranking-card-modern,
+    .evolution-card-modern {
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+}
+</style>
+
+{% endblock %}

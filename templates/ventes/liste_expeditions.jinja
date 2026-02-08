@@ -1,0 +1,332 @@
+<!-- templates/ventes/liste_expeditions.jinja - DESIGN MODERNE INSPIRÉ DE LISTE COMMANDES -->
+{% extends "base_principale.jinja" %}
+{% block titre_page %}Gestion des expéditions{% endblock %}
+{% block contenu %}
+<div class="container-fluid">
+    <!-- Statistiques en-tête avec icônes DANS les carrés -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-card-body">
+                    <div class="stat-icon-box bg-warning">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ stats.a_expedier }}</div>
+                        <div class="stat-label">À expédier</div>
+                        <div class="stat-badge">
+                            <span class="badge badge-warning-soft">
+                                <i class="bi bi-exclamation-circle"></i> Urgent
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-card-body">
+                    <div class="stat-icon-box bg-info">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ stats.en_cours }}</div>
+                        <div class="stat-label">En transit</div>
+                        <div class="stat-badge">
+                            <span class="badge badge-info-soft">
+                                <i class="bi bi-arrow-right"></i> En cours
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-card-body">
+                    <div class="stat-icon-box bg-success">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ stats.livrees }}</div>
+                        <div class="stat-label">Livrées</div>
+                        <div class="stat-badge">
+                            <span class="badge badge-success-soft">
+                                <i class="bi bi-check-all"></i> Terminé
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-card-body">
+                    <div class="stat-icon-box bg-primary">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value stat-value-large">{{ "{:,.0f}".format(total_expeditions) }}</div>
+                        <div class="stat-label">Valeur totale (FCFA)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Carte principale du tableau -->
+    <div class="main-card">
+        <!-- En-tête de la carte -->
+        <div class="card-header-modern">
+            <div class="header-left">
+                <div class="header-icon-box">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <div>
+                    <h5 class="header-title">Gestion des expéditions</h5>
+                    <p class="header-subtitle">Suivez vos commandes et expéditions</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <!-- Recherche avancée -->
+                <form method="get" class="search-form">
+                    <div class="search-input-group">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" 
+                               name="search" 
+                               value="{{ search_query }}" 
+                               placeholder="Rechercher par n° commande, client..." 
+                               class="search-input">
+                        {% if search_query %}
+                        <a href="?" class="search-clear">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+                
+                <!-- Boutons d'action -->
+                <div class="action-buttons">
+                    <!-- Filtre statut -->
+                    <div class="filter-dropdown">
+                        <select name="statut" class="form-select-modern" onchange="window.location.href='?statut=' + this.value + '{% if search_query %}&search={{ search_query }}{% endif %}'">
+                            <option value="">Tous les statuts</option>
+                            <option value="CONFIRME" {% if statut_filtre == 'CONFIRME' %}selected{% endif %}>⏳ À expédier</option>
+                            <option value="EXPEDIE" {% if statut_filtre == 'EXPEDIE' %}selected{% endif %}>🚚 En transit</option>
+                            <option value="LIVRE" {% if statut_filtre == 'LIVRE' %}selected{% endif %}>✅ Livrées</option>
+                        </select>
+                    </div>
+                    
+                    <a href="/ventes/commandes/" class="btn-primary-modern">
+                        <i class="bi bi-cart-check"></i>
+                        <span>Toutes les commandes</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filtres rapides -->
+        <div class="filters-bar">
+            <div class="filters-group">
+                <button class="filter-chip {% if not statut_filtre %}active{% endif %}" onclick="window.location.href='?{% if search_query %}search={{ search_query }}{% endif %}'">
+                    <i class="bi bi-truck"></i> Toutes ({{ expeditions|length }})
+                </button>
+                <button class="filter-chip {% if statut_filtre == 'CONFIRME' %}active{% endif %}" onclick="window.location.href='?statut=CONFIRME{% if search_query %}&search={{ search_query }}{% endif %}'">
+                    <i class="bi bi-clock-history"></i> À expédier
+                </button>
+                <button class="filter-chip {% if statut_filtre == 'EXPEDIE' %}active{% endif %}" onclick="window.location.href='?statut=EXPEDIE{% if search_query %}&search={{ search_query }}{% endif %}'">
+                    <i class="bi bi-truck"></i> En transit
+                </button>
+                <button class="filter-chip {% if statut_filtre == 'LIVRE' %}active{% endif %}" onclick="window.location.href='?statut=LIVRE{% if search_query %}&search={{ search_query }}{% endif %}'">
+                    <i class="bi bi-check-circle"></i> Livrées
+                </button>
+            </div>
+            {% if search_query or statut_filtre or date_debut or date_fin %}
+            <div class="search-result-info">
+                <i class="bi bi-funnel"></i>
+                Filtres actifs
+                {% if statut_filtre %}<span class="badge bg-primary ms-2">{{ statut_filtre }}</span>{% endif %}
+                {% if search_query %}<span class="badge bg-secondary ms-2">{{ search_query }}</span>{% endif %}
+                <a href="?" class="ms-2">Effacer</a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Tableau moderne -->
+        <div class="table-container">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th style="width: 180px;">N° Commande</th>
+                        <th style="width: 250px;">Client</th>
+                        <th style="width: 120px;">Date</th>
+                        <th style="width: 150px;">Montant</th>
+                        <th style="width: 140px;">Statut</th>
+                        <th style="width: 140px;" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exp in expeditions %}
+                    <tr class="table-row-hover">
+                        <td>
+                            <div class="commande-cell">
+                                <div class="commande-numero">{{ exp.numero_commande }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="client-cell">
+                                <div class="client-avatar">
+                                    {{ exp.client.nom[0]|upper if exp.client.nom else 'C' }}
+                                </div>
+                                <div class="client-info">
+                                    <div class="client-name">{{ exp.client.nom }}</div>
+                                    <div class="client-code">
+                                        <i class="bi bi-telephone"></i> {{ exp.client.telephone if exp.client.telephone else '-' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="date-cell">
+                                <i class="bi bi-calendar3"></i>
+                                {{ exp.date_commande.strftime('%d/%m/%Y') }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="amount-cell">
+                                <div class="amount-value">{{ "{:,.0f}".format(exp.total) }}</div>
+                                <div class="amount-currency">FCFA</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="status-cell">
+                                {% if exp.statut == 'CONFIRME' %}
+                                <span class="status-badge status-confirmed">
+                                    <span class="status-dot"></span>
+                                    À expédier
+                                </span>
+                                {% elif exp.statut == 'EXPEDIE' %}
+                                <span class="status-badge status-shipped">
+                                    <span class="status-dot"></span>
+                                    En transit
+                                </span>
+                                {% elif exp.statut == 'LIVRE' %}
+                                <span class="status-badge status-delivered">
+                                    <span class="status-dot"></span>
+                                    Livrée
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <div class="action-buttons-table">
+                                <a href="/ventes/commandes/{{ exp.pk }}/" class="btn-action btn-action-primary" title="Voir les détails">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if exp.statut == 'CONFIRME' %}
+                                <a href="/ventes/commandes/{{ exp.pk }}/expedier/" class="btn-action btn-action-success" title="Expédier">
+                                    <i class="bi bi-send"></i>
+                                </a>
+                                {% endif %}
+                                <a href="/ventes/commandes/{{ exp.pk }}/imprimer/" class="btn-action btn-action-secondary" title="Imprimer" target="_blank">
+                                    <i class="bi bi-printer"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-state-content">
+                                <div class="empty-state-icon">
+                                    <i class="bi bi-truck"></i>
+                                </div>
+                                <h4 class="empty-state-title">Aucune expédition trouvée</h4>
+                                <p class="empty-state-text">
+                                    {% if search_query or statut_filtre %}
+                                    Aucune expédition ne correspond à vos critères de recherche
+                                    {% else %}
+                                    Il n'y a aucune commande à expédier ou en cours de livraison pour le moment.
+                                    {% endif %}
+                                </p>
+                                <a href="/ventes/commandes/" class="btn-primary-modern">
+                                    <i class="bi bi-cart-check"></i>
+                                    <span>Voir toutes les commandes</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pied de page -->
+        <div class="card-footer-modern">
+            <div class="footer-left">
+                <div class="results-info">
+                    Affichage de {{ expeditions|length }} expédition(s)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animation hover des lignes
+    document.querySelectorAll('.table-row-hover').forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(4px)';
+        });
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0)';
+        });
+    });
+});
+</script>
+
+<style>
+/* ==================== CARTES STATISTIQUES ==================== */
+.stat-card{background:white;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:all .3s ease;overflow:hidden}.stat-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.12)}.stat-card-body{padding:24px;display:flex;align-items:flex-start;gap:16px}.stat-icon-box{width:60px;height:60px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.stat-icon-box i{font-size:28px;color:white}.stat-icon-box.bg-primary{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)}.stat-icon-box.bg-success{background:linear-gradient(135deg,#10b981 0%,#34d399 100%)}.stat-icon-box.bg-warning{background:linear-gradient(135deg,#f59e0b 0%,#fbbf24 100%)}.stat-icon-box.bg-info{background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%)}.stat-content{flex:1}.stat-value{font-size:28px;font-weight:700;color:#1e293b;line-height:1.2;margin-bottom:4px;word-break:break-word;overflow-wrap:break-word}.stat-value-large{font-size:22px;letter-spacing:-.5px}.stat-label{font-size:13px;color:#64748b;margin-bottom:8px}.stat-badge .badge{padding:4px 10px;font-size:11px;font-weight:600}.badge-success-soft{background:#dcfce7;color:#166534}.badge-warning-soft{background:#fef3c7;color:#92400e}.badge-info-soft{background:#dbeafe;color:#1e40af}.badge-secondary-soft{background:#f1f5f9;color:#475569}
+
+/* ==================== CARTE PRINCIPALE ==================== */
+.main-card{background:white;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden}.card-header-modern{padding:24px 32px;background:linear-gradient(135deg,#f8fafc 0%,#fff 100%);border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}.header-left{display:flex;align-items:center;gap:16px}.header-icon-box{width:54px;height:54px;background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%);border-radius:14px;display:flex;align-items:center;justify-content:center}.header-icon-box i{font-size:26px;color:white}.header-title{font-size:20px;font-weight:700;color:#1e293b;margin:0}.header-subtitle{font-size:13px;color:#64748b;margin:0}.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.search-form{position:relative}.search-input-group{position:relative;display:flex;align-items:center}.search-icon{position:absolute;left:16px;color:#94a3b8;font-size:16px;pointer-events:none}.search-input{width:320px;padding:10px 40px 10px 44px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;transition:all .3s ease;background:white}.search-input:focus{outline:none;border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.1)}.search-clear{position:absolute;right:12px;color:#94a3b8;font-size:16px;cursor:pointer}.search-clear:hover{color:#0ea5e9}.action-buttons{display:flex;gap:8px}.filter-dropdown select{min-width:180px}.form-select-modern{padding:10px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;background:white;cursor:pointer;transition:all .2s}.form-select-modern:focus{outline:none;border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.1)}.btn-primary-modern{padding:10px 20px;background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .3s ease;text-decoration:none}.btn-primary-modern:hover{transform:translateY(-2px);box-shadow:0 8px 16px rgba(14,165,233,.3);color:white}
+
+/* ==================== FILTRES ==================== */
+.filters-bar{padding:16px 32px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}.filters-group{display:flex;gap:8px;flex-wrap:wrap}.filter-chip{padding:8px 16px;background:white;border:2px solid #e2e8f0;border-radius:20px;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;gap:6px}.filter-chip:hover{border-color:#0ea5e9;color:#0ea5e9}.filter-chip.active{background:#0ea5e9;border-color:#0ea5e9;color:white}.search-result-info{font-size:13px;color:#64748b}.search-result-info a{color:#0ea5e9;text-decoration:none;font-weight:600}
+
+/* ==================== TABLEAU MODERNE ==================== */
+.table-container{overflow-x:auto}.modern-table{width:100%;border-collapse:collapse}.modern-table thead{background:#f8fafc;border-bottom:2px solid #e2e8f0}.modern-table th{padding:16px 20px;text-align:left;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px}.modern-table tbody tr{border-bottom:1px solid #f1f5f9;transition:all .2s ease}.modern-table tbody tr:hover{background:#f8fafc}.modern-table td{padding:20px;vertical-align:middle}
+
+/* Cellule commande */
+.commande-cell{display:flex;flex-direction:column;gap:4px}.commande-numero{font-size:14px;font-weight:600;color:#1e293b}
+
+/* Cellule client */
+.client-cell{display:flex;align-items:center;gap:12px}.client-avatar{width:48px;height:48px;background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:white;flex-shrink:0}.client-info{flex:1;min-width:0}.client-name{font-size:14px;font-weight:600;color:#1e293b;margin-bottom:4px}.client-code{font-size:12px;color:#0ea5e9;font-weight:600;display:flex;align-items:center;gap:4px}
+
+/* Date */
+.date-cell{display:flex;flex-direction:column;gap:4px;font-size:13px;color:#475569}.date-cell i{color:#94a3b8;margin-right:4px}
+
+/* Montant */
+.amount-cell{display:flex;flex-direction:column;gap:4px}.amount-value{font-size:14px;font-weight:700;color:#1e293b}.amount-currency{font-size:11px;color:#94a3b8}
+
+/* Statut */
+.status-cell{display:flex;flex-direction:column;gap:6px}.status-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;width:fit-content}.status-dot{width:6px;height:6px;border-radius:50%;animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}.status-confirmed{background:#dbeafe;color:#1e40af}.status-confirmed .status-dot{background:#3b82f6}.status-shipped{background:#e0e7ff;color:#4338ca}.status-shipped .status-dot{background:#6366f1}.status-delivered{background:#dcfce7;color:#166534}.status-delivered .status-dot{background:#16a34a}
+
+/* Actions */
+.action-buttons-table{display:flex;gap:6px;justify-content:flex-end}.btn-action{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:all .2s ease;text-decoration:none}.btn-action-primary{background:#dbeafe;color:#1e40af}.btn-action-primary:hover{background:#1e40af;color:white}.btn-action-secondary{background:#f1f5f9;color:#64748b}.btn-action-secondary:hover{background:#64748b;color:white}.btn-action-success{background:#dcfce7;color:#166534}.btn-action-success:hover{background:#16a34a;color:white}
+
+/* État vide */
+.empty-state{padding:80px 40px;text-align:center}.empty-state-icon{width:80px;height:80px;margin:0 auto 24px;background:#f1f5f9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;color:#94a3b8}.empty-state-title{font-size:20px;font-weight:700;color:#1e293b;margin-bottom:12px}.empty-state-text{font-size:14px;color:#64748b;margin-bottom:24px}
+
+/* Pied de page */
+.card-footer-modern{padding:20px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}.footer-left{display:flex;align-items:center;gap:20px;flex-wrap:wrap}.results-info{font-size:13px;color:#64748b}
+
+/* Responsive */
+@media(max-width:1200px){.search-input{width:250px}.stat-value{font-size:24px}}@media(max-width:992px){.card-header-modern{flex-direction:column;align-items:flex-start}.header-right{width:100%}.search-input{width:100%}}@media(max-width:768px){.stat-value{font-size:24px}.card-footer-modern{flex-direction:column;align-items:flex-start}}
+</style>
+{% endblock %}

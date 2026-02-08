@@ -1,0 +1,248 @@
+{% extends "base_principale.jinja" %}
+
+{% block title %}{{ titre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .formset-row {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background-color: #f8f9fa;
+    }
+    .delete-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .total-preview {
+        position: sticky;
+        top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{% url 'achats:details_commande_achat' commande.pk %}" class="btn btn-link text-muted p-0 mb-2">
+                <i class="fas fa-arrow-left me-2"></i>Retour aux détails
+            </a>
+            <h2>{{ titre }}</h2>
+        </div>
+    </div>
+
+    <form method="post" id="commande-form">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Informations générales -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Informations générales</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.fournisseur.id_for_label }}" class="form-label">
+                                    Fournisseur <span class="text-danger">*</span>
+                                </label>
+                                {{ form.fournisseur }}
+                                {% if form.fournisseur.errors %}
+                                <div class="invalid-feedback d-block">{{ form.fournisseur.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.entrepot.id_for_label }}" class="form-label">
+                                    Entrepôt <span class="text-danger">*</span>
+                                </label>
+                                {{ form.entrepot }}
+                                {% if form.entrepot.errors %}
+                                <div class="invalid-feedback d-block">{{ form.entrepot.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.date_livraison_prevue.id_for_label }}" class="form-label">
+                                    Date de livraison prévue
+                                </label>
+                                {{ form.date_livraison_prevue }}
+                                {% if form.date_livraison_prevue.errors %}
+                                <div class="invalid-feedback d-block">{{ form.date_livraison_prevue.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                                {{ form.notes }}
+                                {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">{{ form.notes.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lignes de commande -->
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Articles</h5>
+                        <button type="button" class="btn btn-sm btn-primary" id="add-ligne">
+                            <i class="fas fa-plus me-2"></i>Ajouter un article
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        {{ formset.management_form }}
+                        
+                        <div id="lignes-container">
+                            {% for form in formset %}
+                            <div class="formset-row" data-form-index="{{ forloop.counter0 }}">
+                                <div class="row align-items-start">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Produit <span class="text-danger">*</span></label>
+                                        {{ form.produit }}
+                                        {% if form.produit.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.produit.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="form-label">Quantité <span class="text-danger">*</span></label>
+                                        {{ form.quantite }}
+                                        {% if form.quantite.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.quantite.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="form-label">Prix unitaire <span class="text-danger">*</span></label>
+                                        {{ form.prix_unitaire }}
+                                        {% if form.prix_unitaire.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.prix_unitaire.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label class="form-label">TVA (%)</label>
+                                        {{ form.taux_tva }}
+                                        {% if form.taux_tva.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.taux_tva.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-2 mb-3 delete-row">
+                                        <button type="button" class="btn btn-danger btn-sm remove-ligne" title="Supprimer">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {{ form.DELETE }}
+                                        {{ form.id }}
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="text-end">
+                                            <small class="text-muted">Total ligne: <span class="ligne-total fw-bold">0.00 FCFA</span></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Récapitulatif -->
+            <div class="col-lg-4">
+                <div class="card total-preview">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Récapitulatif</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Sous-total HT</span>
+                            <span class="fw-bold" id="sous-total">0.00 FCFA</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>TVA</span>
+                            <span class="fw-bold" id="montant-tva">0.00 FCFA</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <span class="fs-5 fw-bold">Total TTC</span>
+                            <span class="fs-4 fw-bold text-primary" id="total">0.00 FCFA</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                            </button>
+                            <a href="{% url 'achats:details_commande_achat' commande.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Annuler
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculer les totaux
+    function calculerTotaux() {
+        let sousTotal = 0;
+        let montantTVA = 0;
+        
+        document.querySelectorAll('.formset-row').forEach(function(row) {
+            const deleteCheckbox = row.querySelector('input[name$="-DELETE"]');
+            if (!deleteCheckbox || !deleteCheckbox.checked) {
+                const quantite = parseFloat(row.querySelector('.quantite').value) || 0;
+                const prixUnitaire = parseFloat(row.querySelector('.prix-unitaire').value) || 0;
+                const tauxTVA = parseFloat(row.querySelector('.taux-tva').value) || 0;
+                
+                const totalHT = quantite * prixUnitaire;
+                const tva = totalHT * tauxTVA / 100;
+                const totalTTC = totalHT + tva;
+                
+                row.querySelector('.ligne-total').textContent = totalTTC.toFixed(2) + ' FCFA';
+                
+                sousTotal += totalHT;
+                montantTVA += tva;
+            }
+        });
+        
+        const total = sousTotal + montantTVA;
+        
+        document.getElementById('sous-total').textContent = sousTotal.toFixed(2) + ' FCFA';
+        document.getElementById('montant-tva').textContent = montantTVA.toFixed(2) + ' FCFA';
+        document.getElementById('total').textContent = total.toFixed(2) + ' FCFA';
+    }
+    
+    // Supprimer une ligne
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-ligne')) {
+            const row = e.target.closest('.formset-row');
+            const deleteInput = row.querySelector('input[name$="-DELETE"]');
+            
+            if (deleteInput) {
+                deleteInput.checked = true;
+                row.style.opacity = '0.5';
+                row.style.textDecoration = 'line-through';
+            }
+            
+            calculerTotaux();
+        }
+    });
+    
+    // Écouter les changements sur les champs
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('.quantite, .prix-unitaire, .taux-tva')) {
+            calculerTotaux();
+        }
+    });
+    
+    // Calcul initial
+    calculerTotaux();
+});
+</script>
+{% endblock %}

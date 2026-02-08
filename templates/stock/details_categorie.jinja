@@ -1,0 +1,135 @@
+<!-- templates/stock/details_categorie.jinja -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}{{ categorie.nom }}{% endblock %}
+
+{% block contenu %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <div>
+        <h1 style="font-size: 32px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">{{ categorie.nom }}</h1>
+        {% if categorie.parent %}
+            <p style="color: #64748b; font-size: 15px;">Sous-catégorie de : {{ categorie.parent.nom }}</p>
+        {% endif %}
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <a href="/stock/categories/{{ categorie.pk }}/modifier/" class="btn btn_secondary">Modifier</a>
+        <a href="/stock/categories/" class="btn btn_secondary">Retour</a>
+    </div>
+</div>
+
+<div class="stats_grid" style="margin-bottom: 32px;">
+    <div class="stat_card">
+        <div class="stat_label">Nombre de produits</div>
+        <div class="stat_value">{{ nombre_produits }}</div>
+    </div>
+    
+    <div class="stat_card">
+        <div class="stat_label">Sous-catégories</div>
+        <div class="stat_value">{{ sous_categories|length }}</div>
+    </div>
+    
+    <div class="stat_card">
+        <div class="stat_label">Valeur stock total</div>
+        <div class="stat_value">{{ "{:,.0f}".format(valeur_stock) }}</div>
+        <div style="font-size: 14px; color: #64748b; margin-top: 4px;">FCFA</div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 16px; font-weight: 600; color: #f8fafc; margin-bottom: 20px;">Informations</h3>
+    
+    <div style="margin-bottom: 16px;">
+        <div style="color: #64748b; font-size: 13px; margin-bottom: 6px;">Nom de la catégorie</div>
+        <div style="color: #cbd5e1; font-size: 15px; font-weight: 600;">{{ categorie.nom }}</div>
+    </div>
+    
+    {% if categorie.description %}
+    <div style="margin-bottom: 16px;">
+        <div style="color: #64748b; font-size: 13px; margin-bottom: 6px;">Description</div>
+        <div style="color: #cbd5e1; font-size: 15px; line-height: 1.6;">{{ categorie.description }}</div>
+    </div>
+    {% endif %}
+    
+    <div>
+        <div style="color: #64748b; font-size: 13px; margin-bottom: 6px;">Catégorie parente</div>
+        <div style="color: #cbd5e1; font-size: 15px;">
+            {% if categorie.parent %}
+                <a href="/stock/categories/{{ categorie.parent.pk }}/" style="color: #60a5fa; text-decoration: none;">
+                    {{ categorie.parent.nom }}
+                </a>
+            {% else %}
+                Aucune (catégorie principale)
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if sous_categories %}
+<div class="card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 18px; font-weight: 600; color: #f8fafc; margin-bottom: 24px;">Sous-catégories</h3>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
+        {% for sous_cat in sous_categories %}
+        <a href="/stock/categories/{{ sous_cat.pk }}/" style="text-decoration: none;">
+            <div style="padding: 16px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; transition: all 0.2s;">
+                <div style="color: #f8fafc; font-weight: 600; margin-bottom: 4px;">{{ sous_cat.nom }}</div>
+                <div style="color: #64748b; font-size: 13px;">{{ sous_cat.nombre_produits }} produit(s)</div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h3 style="font-size: 18px; font-weight: 600; color: #f8fafc;">Produits de cette catégorie</h3>
+        <a href="/stock/produits/nouveau/" class="btn btn_primary">Ajouter un produit</a>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Nom</th>
+                <th>Prix de vente</th>
+                <th>Stock</th>
+                <th>Statut</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for produit in produits %}
+            <tr>
+                <td style="font-family: monospace; color: #94a3b8;">{{ produit.code }}</td>
+                <td style="font-weight: 600; color: #f8fafc;">{{ produit.nom }}</td>
+                <td>{{ "{:,.0f}".format(produit.prix_vente) }} FCFA</td>
+                <td style="font-weight: 600; {% if produit.stock_actuel <= produit.seuil_reapprovisionnement %}color: #f87171;{% elif produit.stock_actuel <= produit.stock_min %}color: #fb923c;{% else %}color: #4ade80;{% endif %}">
+                    {{ produit.stock_actuel or 0 }}
+                </td>
+                <td>
+                    {% if produit.stock_actuel <= produit.seuil_reapprovisionnement %}
+                        <span class="badge badge_danger">Rupture</span>
+                    {% elif produit.stock_actuel <= produit.stock_min %}
+                        <span class="badge badge_warning">Bas</span>
+                    {% else %}
+                        <span class="badge badge_success">OK</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/stock/produits/{{ produit.pk }}/" class="action_btn">Voir →</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 48px; color: #64748b;">
+                    Aucun produit dans cette catégorie
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+

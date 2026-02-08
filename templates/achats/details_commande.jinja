@@ -1,0 +1,1505 @@
+<!-- templates/achats/details_commande.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Commande {{ commande.numero_commande }}{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête moderne avec actions -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/achats/" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">Commande {{ commande.numero_commande }}</h4>
+                <p class="page-subtitle">Détails et lignes de la commande fournisseur</p>
+            </div>
+        </div>
+        <div class="page-header-right">
+            <!-- Actions selon le statut -->
+            {% if commande.statut == 'BROUILLON' %}
+            <a href="/achats/{{ commande.pk }}/confirmer/" class="btn-action-primary">
+                <i class="bi bi-check-circle"></i>
+                <span>Confirmer</span>
+            </a>
+            <a href="/achats/{{ commande.pk }}/modifier/" class="btn-action-secondary">
+                <i class="bi bi-pencil"></i>
+                <span>Modifier</span>
+            </a>
+            {% elif commande.statut == 'CONFIRMEE' %}
+            <a href="/achats/{{ commande.pk }}/envoyer/" class="btn-action-primary">
+                <i class="bi bi-send"></i>
+                <span>Envoyer au fournisseur</span>
+            </a>
+            <a href="/achats/{{ commande.pk }}/recevoir/" class="btn-action-success">
+                <i class="bi bi-box-seam"></i>
+                <span>Recevoir</span>
+            </a>
+            {% elif commande.statut == 'ENVOYEE' %}
+            <a href="/achats/{{ commande.pk }}/recevoir/" class="btn-action-primary">
+                <i class="bi bi-box-seam"></i>
+                <span>Recevoir</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Colonne principale (gauche) -->
+        <div class="col-lg-8">
+            <!-- Carte informations principales -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-icon bg-primary">
+                        <i class="bi bi-info-circle"></i>
+                    </div>
+                    <h6>Informations de la commande</h6>
+                </div>
+                <div class="info-card-body">
+                    <div class="row g-3">
+                        <!-- Fournisseur -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Fournisseur</div>
+                                <div class="info-content">
+                                    <div class="fournisseur-display">
+                                        <div class="fournisseur-avatar">
+                                            {{ commande.fournisseur.nom[0]|upper if commande.fournisseur.nom else 'F' }}
+                                        </div>
+                                        <div>
+                                            <div class="fournisseur-name">{{ commande.fournisseur.nom }}</div>
+                                            <div class="fournisseur-code">{{ commande.fournisseur.code|default('') }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Entrepôt -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Entrepôt de destination</div>
+                                <div class="info-content">
+                                    <div class="info-value">
+                                        <i class="bi bi-house-door"></i>
+                                        {{ commande.entrepot.nom }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date commande -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Date de commande</div>
+                                <div class="info-content">
+                                    <div class="info-value">
+                                        <i class="bi bi-calendar3"></i>
+                                        {{ commande.date_commande.strftime('%d/%m/%Y à %H:%M') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date livraison -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Livraison prévue</div>
+                                <div class="info-content">
+                                    {% if commande.date_livraison_prevue %}
+                                    <div class="info-value">
+                                        <i class="bi bi-truck"></i>
+                                        {{ commande.date_livraison_prevue.strftime('%d/%m/%Y') }}
+                                    </div>
+                                    {% if commande.date_livraison_prevue < aujourdhui and commande.statut not in ['RECUE', 'FACTUREE', 'ANNULEE'] %}
+                                    <div class="delay-badge">
+                                        <i class="bi bi-clock-history"></i> En retard
+                                    </div>
+                                    {% endif %}
+                                    {% else %}
+                                    <div class="info-value text-muted">Non définie</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statut -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Statut</div>
+                                <div class="info-content">
+                                    {% if commande.statut == 'BROUILLON' %}
+                                    <span class="status-badge-large status-draft">
+                                        <span class="status-dot"></span>
+                                        Brouillon
+                                    </span>
+                                    {% elif commande.statut == 'CONFIRMEE' %}
+                                    <span class="status-badge-large status-confirmed">
+                                        <span class="status-dot"></span>
+                                        Confirmée
+                                    </span>
+                                    {% elif commande.statut == 'ENVOYEE' %}
+                                    <span class="status-badge-large status-sent">
+                                        <span class="status-dot"></span>
+                                        Envoyée
+                                    </span>
+                                    {% elif commande.statut == 'RECUE' %}
+                                    <span class="status-badge-large status-received">
+                                        <span class="status-dot"></span>
+                                        Reçue
+                                    </span>
+                                    {% elif commande.statut == 'FACTUREE' %}
+                                    <span class="status-badge-large status-invoiced">
+                                        <span class="status-dot"></span>
+                                        Facturée
+                                    </span>
+                                    {% elif commande.statut == 'ANNULEE' %}
+                                    <span class="status-badge-large status-cancelled">
+                                        <span class="status-dot"></span>
+                                        Annulée
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Créée par -->
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <div class="info-label">Créée par</div>
+                                <div class="info-content">
+                                    <div class="user-display">
+                                        <div class="user-avatar">
+                                            {{ commande.cree_par.username[0]|upper if commande.cree_par and commande.cree_par.username else 'S' }}
+                                        </div>
+                                        <div class="user-name">
+                                            {{ commande.cree_par.username if commande.cree_par else 'Système' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lignes de commande -->
+            <div class="lines-card">
+                <div class="lines-card-header">
+                    <div class="lines-icon">
+                        <i class="bi bi-list-check"></i>
+                    </div>
+                    <h6>Lignes de commande</h6>
+                    <div class="badge-count">{{ lignes|length }}</div>
+                </div>
+                <div class="lines-card-body">
+                    <div class="table-container">
+                        <table class="lines-table">
+                            <thead>
+                                <tr>
+                                    <th>Produit</th>
+                                    <th class="text-center" style="width: 100px;">Qté cmd.</th>
+                                    <th class="text-center" style="width: 100px;">Qté reçue</th>
+                                    <th class="text-end" style="width: 130px;">Prix HT</th>
+                                    <th class="text-center" style="width: 80px;">TVA</th>
+                                    <th class="text-end" style="width: 130px;">Total TTC</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ligne in lignes %}
+                                <tr {% if ligne.est_completement_recue() %}class="ligne-complete"{% endif %}>
+                                    <td>
+                                        <div class="product-display">
+                                            <div class="product-avatar">
+                                                {{ ligne.produit.nom[0]|upper if ligne.produit and ligne.produit.nom else 'P' }}
+                                            </div>
+                                            <div>
+                                                <div class="product-name">{{ ligne.produit.nom if ligne.produit else 'Produit supprimé' }}</div>
+                                                {% if ligne.produit and ligne.produit.code %}
+                                                <div class="product-code">{{ ligne.produit.code }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="quantity-display">{{ ligne.quantite }}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="received-display {% if ligne.est_completement_recue() %}received-complete{% elif ligne.quantite_recue > 0 %}received-partial{% endif %}">
+                                            {{ ligne.quantite_recue|default(0) }}
+                                        </div>
+                                        {% if ligne.quantite_recue > 0 and not ligne.est_completement_recue() %}
+                                        <div class="remaining-badge">Reste: {{ ligne.quantite_restante() }}</div>
+                                        {% elif ligne.est_completement_recue() %}
+                                        <div class="complete-badge">
+                                            <i class="bi bi-check-circle"></i> Complet
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="price-display">{{ "{:,.0f}".format(ligne.prix_unitaire) }}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="tax-badge">{{ ligne.taux_tva|default(0) }}%</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="total-display">{{ "{:,.0f}".format(ligne.total) }}</div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes (si présentes) -->
+            {% if commande.notes %}
+            <div class="notes-card">
+                <div class="notes-header">
+                    <i class="bi bi-chat-left-text"></i>
+                    <span>Notes</span>
+                </div>
+                <div class="notes-body">
+                    <i class="bi bi-info-circle notes-icon"></i>
+                    <p>{{ commande.notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Raison d'annulation -->
+            {% if commande.statut == 'ANNULEE' and commande.raison_annulation %}
+            <div class="cancel-card">
+                <div class="cancel-header">
+                    <i class="bi bi-x-octagon"></i>
+                    <span>Raison de l'annulation</span>
+                </div>
+                <div class="cancel-body">
+                    <i class="bi bi-exclamation-triangle cancel-icon"></i>
+                    <p>{{ commande.raison_annulation }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Timeline -->
+            <div class="timeline-card">
+                <div class="timeline-header">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Historique</span>
+                </div>
+                <div class="timeline-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Commande créée</div>
+                                <div class="timeline-date">{{ commande.date_creation.strftime('%d/%m/%Y à %H:%M') }}</div>
+                                <div class="timeline-desc">Par {{ commande.cree_par.username if commande.cree_par else 'Système' }}</div>
+                            </div>
+                        </div>
+                        {% if commande.statut in ['CONFIRMEE', 'ENVOYEE', 'RECUE', 'FACTUREE'] %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Commande confirmée</div>
+                                <div class="timeline-date">{{ commande.date_modification.strftime('%d/%m/%Y à %H:%M') }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if commande.statut in ['ENVOYEE', 'RECUE', 'FACTUREE'] %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Envoyée par le fournisseur</div>
+                                <div class="timeline-date">{{ commande.date_modification.strftime('%d/%m/%Y à %H:%M') }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if commande.date_reception %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Marchandise réceptionnée</div>
+                                <div class="timeline-date">{{ commande.date_reception.strftime('%d/%m/%Y à %H:%M') }}</div>
+                                <div class="timeline-desc">Dans l'entrepôt {{ commande.entrepot.nom }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if commande.piece_comptable %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Écriture comptable créée</div>
+                                <div class="timeline-date">{{ commande.piece_comptable.date_piece.strftime('%d/%m/%Y à %H:%M') }}</div>
+                                <div class="timeline-desc">Pièce n° {{ commande.piece_comptable.numero_piece }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if commande.statut == 'ANNULEE' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-danger"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Commande annulée</div>
+                                <div class="timeline-date">{{ commande.date_modification.strftime('%d/%m/%Y à %H:%M') }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne latérale (droite) -->
+        <div class="col-lg-4">
+            <div class="sticky-sidebar">
+                <!-- Résumé financier -->
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <i class="bi bi-calculator"></i>
+                        <h6>Résumé financier</h6>
+                    </div>
+                    <div class="summary-body">
+                        <div class="summary-row">
+                            <span class="summary-label">Sous-total HT</span>
+                            <span class="summary-value">{{ "{:,.0f}".format(commande.sous_total) }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span class="summary-label">TVA</span>
+                            <span class="summary-value">{{ "{:,.0f}".format(commande.montant_tva) }}</span>
+                        </div>
+                        <div class="summary-divider"></div>
+                        <div class="summary-row summary-total">
+                            <span class="summary-label">Total TTC</span>
+                            <span class="summary-amount">{{ "{:,.0f}".format(commande.total) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progression de réception -->
+                {% if commande.statut in ['CONFIRMEE', 'ENVOYEE', 'RECUE'] %}
+                <div class="reception-card">
+                    <div class="reception-header">
+                        <i class="bi bi-box-seam"></i>
+                        <span>Réception</span>
+                    </div>
+                    <div class="reception-body">
+                        {% set taux = commande.taux_reception() %}
+                        <div class="reception-progress">
+                            <div class="progress-circle {% if taux == 100 %}progress-complete{% endif %}">
+                                <svg viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="45"></circle>
+                                    <circle cx="50" cy="50" r="45" 
+                                            style="stroke-dasharray: {{ 283 * taux / 100 }} 283"></circle>
+                                </svg>
+                                <div class="progress-value">{{ taux|round|int }}%</div>
+                            </div>
+                            <div class="progress-text">
+                                {% if taux == 100 %}
+                                <i class="bi bi-check-circle"></i> Commande complète
+                                {% elif taux > 0 %}
+                                <i class="bi bi-hourglass-split"></i> Réception partielle
+                                {% else %}
+                                <i class="bi bi-clock"></i> En attente
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if taux < 100 and commande.statut in ['CONFIRMEE', 'ENVOYEE'] %}
+                        <a href="/achats/{{ commande.pk }}/recevoir/" class="btn-receive">
+                            <i class="bi bi-box-arrow-in-down"></i>
+                            <span>Recevoir la marchandise</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Paiements -->
+                {% if paiements %}
+                <div class="payment-card">
+                    <div class="payment-header">
+                        <i class="bi bi-credit-card"></i>
+                        <span>Paiements</span>
+                    </div>
+                    <div class="payment-body">
+                        {% for paiement in paiements %}
+                        <div class="payment-item">
+                            <div class="payment-info">
+                                <div class="payment-number">{{ paiement.numero_paiement }}</div>
+                                <div class="payment-date">{{ paiement.date_paiement.strftime('%d/%m/%Y') }}</div>
+                            </div>
+                            <div class="payment-amount">{{ "{:,.0f}".format(paiement.montant) }}</div>
+                        </div>
+                        {% endfor %}
+                        <div class="payment-summary">
+                            <div class="payment-summary-row">
+                                <span>Total payé</span>
+                                <span class="text-success">{{ "{:,.0f}".format(total_paye|default(0)) }} FCFA</span>
+                            </div>
+                            <div class="payment-summary-row payment-summary-total">
+                                <span>Solde restant</span>
+                                <span class="text-danger">{{ "{:,.0f}".format(solde_restant|default(commande.total)) }} FCFA</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ==================== PAGE HEADER ==================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+.page-header-right {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-action-primary {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-action-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+.btn-action-secondary {
+    padding: 10px 20px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-action-secondary:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+.btn-action-success {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-action-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+    color: white;
+}
+
+/* ==================== INFO CARD ==================== */
+.info-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.info-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.info-icon.bg-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.info-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.info-card-body {
+    padding: 24px;
+}
+
+.info-box {
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 10px;
+    height: 100%;
+}
+
+.info-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.info-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-value i {
+    color: #94a3b8;
+}
+
+.fournisseur-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.fournisseur-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+}
+
+.fournisseur-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.fournisseur-code {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.user-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    background: #e2e8f0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.delay-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge-large {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-draft {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status-draft .status-dot {
+    background: #64748b;
+}
+
+.status-confirmed {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-confirmed .status-dot {
+    background: #3b82f6;
+}
+
+.status-sent {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.status-sent .status-dot {
+    background: #6366f1;
+}
+
+.status-received {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-received .status-dot {
+    background: #16a34a;
+}
+
+.status-invoiced {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-invoiced .status-dot {
+    background: #10b981;
+}
+
+.status-cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-cancelled .status-dot {
+    background: #dc2626;
+}
+
+/* ==================== LINES CARD ==================== */
+.lines-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.lines-card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lines-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.lines-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    flex: 1;
+}
+
+.badge-count {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #6366f1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.lines-card-body {
+    padding: 0;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.lines-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.lines-table thead {
+    background: #f8fafc;
+}
+
+.lines-table th {
+    padding: 16px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.lines-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s;
+}
+
+.lines-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.lines-table tbody tr.ligne-complete {
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.lines-table td {
+    padding: 20px;
+    vertical-align: middle;
+}
+
+.product-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.product-avatar {
+    width: 40px;
+    height: 40px;
+    background: #e0e7ff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.product-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.product-code {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.quantity-display {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.received-display {
+    font-size: 16px;
+    font-weight: 700;
+    color: #94a3b8;
+}
+
+.received-display.received-partial {
+    color: #f59e0b;
+}
+
+.received-display.received-complete {
+    color: #10b981;
+}
+
+.remaining-badge {
+    font-size: 11px;
+    color: #f59e0b;
+    margin-top: 4px;
+}
+
+.complete-badge {
+    font-size: 11px;
+    color: #10b981;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.price-display {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.price-display::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+.tax-badge {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.total-display {
+    font-size: 16px;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.total-display::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+/* ==================== NOTES CARD ==================== */
+.notes-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.notes-header {
+    padding: 16px 20px;
+    background: rgba(245, 158, 11, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #92400e;
+}
+
+.notes-body {
+    padding: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.notes-icon {
+    font-size: 20px;
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+.notes-body p {
+    font-size: 14px;
+    color: #78350f;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ==================== CANCEL CARD ==================== */
+.cancel-card {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.cancel-header {
+    padding: 16px 20px;
+    background: rgba(220, 38, 38, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #991b1b;
+}
+
+.cancel-body {
+    padding: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.cancel-icon {
+    font-size: 20px;
+    color: #dc2626;
+    flex-shrink: 0;
+}
+
+.cancel-body p {
+    font-size: 14px;
+    color: #7f1d1d;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ==================== TIMELINE CARD ==================== */
+.timeline-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.timeline-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.timeline-body {
+    padding: 24px;
+}
+
+.timeline {
+    position: relative;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 36px;
+    padding-bottom: 24px;
+    border-left: 2px solid #e2e8f0;
+}
+
+.timeline-item:last-child {
+    border-left: 2px solid transparent;
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -9px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 0 0 1px #e2e8f0;
+}
+
+.timeline-marker.bg-primary {
+    background: #6366f1;
+}
+
+.timeline-marker.bg-success {
+    background: #10b981;
+}
+
+.timeline-marker.bg-info {
+    background: #0ea5e9;
+}
+
+.timeline-marker.bg-warning {
+    background: #f59e0b;
+}
+
+.timeline-marker.bg-danger {
+    background: #dc2626;
+}
+
+.timeline-content {
+    padding-left: 12px;
+}
+
+.timeline-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.timeline-date {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.timeline-desc {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* ==================== SIDEBAR ==================== */
+.sticky-sidebar {
+    position: sticky;
+    top: 24px;
+}
+
+.summary-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.summary-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.summary-header i {
+    font-size: 20px;
+    color: #6366f1;
+}
+
+.summary-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.summary-body {
+    padding: 24px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.summary-label {
+    font-size: 14px;
+    color: #64748b;
+}
+
+.summary-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.summary-value::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+.summary-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 20px 0;
+}
+
+.summary-total .summary-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.summary-amount {
+    font-size: 24px;
+    font-weight: 700;
+    color: #6366f1;
+}
+
+.summary-amount::after {
+    content: ' FCFA';
+    font-size: 12px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+/* ==================== RECEPTION CARD ==================== */
+.reception-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.reception-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.reception-body {
+    padding: 24px;
+}
+
+.reception-progress {
+    text-align: center;
+}
+
+.progress-circle {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 16px;
+    position: relative;
+}
+
+.progress-circle svg {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+}
+
+.progress-circle circle {
+    fill: none;
+    stroke-width: 8;
+}
+
+.progress-circle circle:first-child {
+    stroke: #e2e8f0;
+}
+
+.progress-circle circle:last-child {
+    stroke: #0ea5e9;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.3s;
+}
+
+.progress-circle.progress-complete circle:last-child {
+    stroke: #10b981;
+}
+
+.progress-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.progress-text {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-receive {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-receive:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+    color: white;
+}
+
+/* ==================== PAYMENT CARD ==================== */
+.payment-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.payment-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.payment-body {
+    padding: 20px;
+}
+
+.payment-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.payment-number {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.payment-date {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.payment-amount {
+    font-size: 14px;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.payment-amount::after {
+    content: ' FCFA';
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: 4px;
+}
+
+.payment-summary {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.payment-summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.payment-summary-total {
+    font-weight: 700;
+    padding-top: 8px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* ==================== ACTIONS CARD ==================== */
+.actions-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.actions-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.actions-body {
+    padding: 12px;
+}
+
+.action-item {
+    width: 100%;
+    padding: 12px 16px;
+    background: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 4px;
+}
+
+.action-item:hover {
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+.action-danger {
+    color: #dc2626;
+}
+
+.action-danger:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 992px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .page-header-right {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .sticky-sidebar {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .btn-action-primary,
+    .btn-action-secondary,
+    .btn-action-success {
+        flex: 1;
+    }
+}
+</style>
+
+{% endblock %}

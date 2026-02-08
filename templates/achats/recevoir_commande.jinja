@@ -1,0 +1,568 @@
+<!-- templates/achats/recevoir_commande.jinja -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Réceptionner la commande {{ commande.numero_commande }}{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Carte d'information -->
+            <div class="card border-success shadow-sm mb-4">
+                <div class="card-header bg-success text-white border-0 py-3">
+                    <h5 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-box-seam me-2"></i>Réception de la commande
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info bg-info bg-opacity-10 border-info border-opacity-25">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-info-circle text-info fs-4"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="fw-bold mb-2">Réception partielle ou totale</h6>
+                                <p class="mb-0">
+                                    Vous pouvez réceptionner tout ou partie de la commande. 
+                                    Saisissez les quantités réellement reçues pour chaque produit. 
+                                    Les mouvements de stock seront automatiquement enregistrés.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informations de la commande -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-receipt me-2"></i>Informations de la commande
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center p-3 bg-light rounded">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-hash text-primary fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">N° Commande</small>
+                                    <h6 class="mb-0 fw-semibold">{{ commande.numero_commande }}</h6>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center p-3 bg-light rounded">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-building text-info fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">Fournisseur</small>
+                                    <h6 class="mb-0 fw-semibold">{{ commande.fournisseur.nom }}</h6>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center p-3 bg-light rounded">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-shop text-success fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">Entrepôt</small>
+                                    <h6 class="mb-0 fw-semibold">{{ commande.entrepot.nom }}</h6>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center p-3 bg-light rounded">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-calendar text-warning fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <small class="text-muted d-block">Date commande</small>
+                                    <h6 class="mb-0 fw-semibold">{{ commande.date_commande.strftime('%d/%m/%Y') }}</h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progression globale -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-graph-up me-2"></i>Progression de la réception
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% set taux = commande.taux_reception() %}
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="progress" style="height: 30px;">
+                                <div class="progress-bar {% if taux == 100 %}bg-success{% else %}bg-info{% endif %}" 
+                                     role="progressbar"
+                                     style="width: {{ taux }}%">
+                                    <span class="fw-semibold">{{ taux|round|int }}% réceptionné</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            {% if taux == 100 %}
+                                <span class="badge bg-success fs-6 px-3 py-2">
+                                    <i class="bi bi-check-circle me-1"></i>Complet
+                                </span>
+                            {% elif taux > 0 %}
+                                <span class="badge bg-warning fs-6 px-3 py-2">
+                                    <i class="bi bi-hourglass-split me-1"></i>Partiel
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6 px-3 py-2">
+                                    <i class="bi bi-inbox me-1"></i>Aucune réception
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Formulaire de réception -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-list-check me-2"></i>Quantités à réceptionner
+                    </h6>
+                </div>
+                <form method="post" class="needs-validation" novalidate id="formReception">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="tableReception">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th scope="col" class="ps-4" style="width: 40%;">Produit</th>
+                                        <th scope="col" class="text-center" style="width: 12%;">Commandé</th>
+                                        <th scope="col" class="text-center" style="width: 12%;">Déjà reçu</th>
+                                        <th scope="col" class="text-center" style="width: 12%;">Reste</th>
+                                        <th scope="col" class="text-center" style="width: 18%;">Qté à recevoir</th>
+                                        <th scope="col" class="text-center pe-4" style="width: 6%;">État</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ligne in lignes %}
+                                    {% if not ligne.est_completement_recue() %}
+                                    <tr class="ligne-reception" data-ligne-id="{{ ligne.pk }}">
+                                        <td class="ps-4">
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm me-2 flex-shrink-0">
+                                                    <div class="avatar-title bg-info bg-opacity-10 text-info rounded-circle">
+                                                        {{ ligne.produit.nom[0]|upper if ligne.produit and ligne.produit.nom else 'P' }}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold">{{ ligne.produit.nom if ligne.produit else 'Produit supprimé' }}</div>
+                                                    {% if ligne.produit and ligne.produit.code %}
+                                                    <small class="text-muted">Réf: {{ ligne.produit.code }}</small>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">
+                                                {{ ligne.quantite }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success bg-opacity-10 text-success px-3 py-2">
+                                                {{ ligne.quantite_recue }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 reste-qty">
+                                                {{ ligne.quantite_restante() }}
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="hidden" name="ligne_id[]" value="{{ ligne.pk }}">
+                                            <input type="number" 
+                                                   name="quantite_recue[]" 
+                                                   class="form-control form-control-lg text-center fw-bold quantite-input" 
+                                                   min="0" 
+                                                   max="{{ ligne.quantite_restante() }}" 
+                                                   value="0"
+                                                   data-max="{{ ligne.quantite_restante() }}"
+                                                   data-ligne="{{ ligne.pk }}"
+                                                   placeholder="0">
+                                            <small class="text-muted d-block mt-1">Max: {{ ligne.quantite_restante() }}</small>
+                                        </td>
+                                        <td class="text-center pe-4">
+                                            <span class="status-icon">
+                                                <i class="bi bi-circle text-secondary fs-5"></i>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot class="bg-light">
+                                    <tr>
+                                        <td colspan="4" class="text-end fw-bold ps-4">Total à réceptionner :</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-success fs-6 px-4 py-2" id="totalReception">0</span>
+                                        </td>
+                                        <td class="pe-4"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions rapides -->
+                    <div class="card-body border-top">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold mb-2">Actions rapides :</h6>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnTout">
+                                        <i class="bi bi-check-all me-1"></i>Tout recevoir
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnRien">
+                                        <i class="bi bi-x me-1"></i>Tout effacer
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block mb-2">Produits à réceptionner</small>
+                                <h4 class="mb-0 text-primary" id="countProduits">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes de réception -->
+                    <div class="card-body border-top">
+                        <h6 class="fw-bold mb-3">
+                            <i class="bi bi-chat-left-text me-2"></i>Notes de réception (optionnel)
+                        </h6>
+                        <textarea name="notes_reception" 
+                                  class="form-control" 
+                                  rows="3" 
+                                  placeholder="Observations sur l'état des produits, problèmes constatés, etc."></textarea>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Signalez tout problème de qualité, casse, ou écart constaté lors de la réception
+                        </small>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="card-footer bg-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="/achats/{{ commande.pk }}/" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Retour à la commande
+                            </a>
+                            <div class="d-flex gap-2">
+                                <a href="/achats/" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle me-2"></i>Annuler
+                                </a>
+                                <button type="submit" class="btn btn-custom-primary" id="btnValider" disabled>
+                                    <i class="bi bi-box-seam me-2"></i>Valider la réception
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Informations complémentaires -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-warning bg-opacity-10 text-warning rounded p-2 me-2">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <h6 class="mb-0 fw-bold">Informations importantes</h6>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                </div>
+                                <div class="ms-2">
+                                    <small class="fw-semibold d-block">Mise à jour du stock</small>
+                                    <small class="text-muted">Le stock sera automatiquement mis à jour dans l'entrepôt</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                </div>
+                                <div class="ms-2">
+                                    <small class="fw-semibold d-block">Réception partielle</small>
+                                    <small class="text-muted">Vous pouvez réceptionner en plusieurs fois</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                </div>
+                                <div class="ms-2">
+                                    <small class="fw-semibold d-block">Écriture comptable</small>
+                                    <small class="text-muted">Générée automatiquement si réception complète</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('.quantite-input');
+    const btnTout = document.getElementById('btnTout');
+    const btnRien = document.getElementById('btnRien');
+    const btnValider = document.getElementById('btnValider');
+    const totalDisplay = document.getElementById('totalReception');
+    const countDisplay = document.getElementById('countProduits');
+    
+    // Fonction pour calculer le total
+    function calculerTotal() {
+        let total = 0;
+        let count = 0;
+        
+        inputs.forEach(input => {
+            const val = parseInt(input.value) || 0;
+            total += val;
+            if (val > 0) count++;
+            
+            // Mettre à jour l'icône de statut
+            const row = input.closest('tr');
+            const statusIcon = row.querySelector('.status-icon i');
+            
+            if (val > 0) {
+                statusIcon.className = 'bi bi-check-circle-fill text-success fs-5';
+                row.classList.add('table-success');
+            } else {
+                statusIcon.className = 'bi bi-circle text-secondary fs-5';
+                row.classList.remove('table-success');
+            }
+        });
+        
+        totalDisplay.textContent = total;
+        countDisplay.textContent = count;
+        
+        // Activer/désactiver le bouton
+        btnValider.disabled = total === 0;
+        if (total > 0) {
+            btnValider.classList.remove('btn-secondary');
+            btnValider.classList.add('btn-custom-primary');
+        } else {
+            btnValider.classList.remove('btn-custom-primary');
+            btnValider.classList.add('btn-secondary');
+        }
+    }
+    
+    // Écouter les changements sur les inputs
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const max = parseInt(this.getAttribute('data-max'));
+            const val = parseInt(this.value) || 0;
+            
+            // Limiter à la valeur max
+            if (val > max) {
+                this.value = max;
+            }
+            
+            // Ne pas accepter de valeurs négatives
+            if (val < 0) {
+                this.value = 0;
+            }
+            
+            calculerTotal();
+        });
+        
+        // Sélectionner le contenu au focus
+        input.addEventListener('focus', function() {
+            this.select();
+        });
+    });
+    
+    // Bouton "Tout recevoir"
+    btnTout.addEventListener('click', function() {
+        inputs.forEach(input => {
+            input.value = input.getAttribute('data-max');
+        });
+        calculerTotal();
+    });
+    
+    // Bouton "Tout effacer"
+    btnRien.addEventListener('click', function() {
+        if (confirm('Êtes-vous sûr de vouloir effacer toutes les quantités ?')) {
+            inputs.forEach(input => {
+                input.value = 0;
+            });
+            calculerTotal();
+        }
+    });
+    
+    // Validation du formulaire
+    const form = document.getElementById('formReception');
+    form.addEventListener('submit', function(event) {
+        const total = parseInt(totalDisplay.textContent);
+        
+        if (total === 0) {
+            event.preventDefault();
+            alert('Veuillez saisir au moins une quantité à réceptionner.');
+            return;
+        }
+        
+        // Vérifier que les quantités sont valides
+        let erreur = false;
+        inputs.forEach(input => {
+            const val = parseInt(input.value) || 0;
+            const max = parseInt(input.getAttribute('data-max'));
+            
+            if (val > max) {
+                erreur = true;
+                input.classList.add('is-invalid');
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+        
+        if (erreur) {
+            event.preventDefault();
+            alert('Certaines quantités dépassent le maximum autorisé.');
+            return;
+        }
+        
+        // Confirmation finale
+        if (!confirm(`Confirmer la réception de ${total} article(s) ?\n\nLe stock sera mis à jour automatiquement.`)) {
+            event.preventDefault();
+        }
+    });
+    
+    // Calcul initial
+    calculerTotal();
+});
+</script>
+
+<style>
+.btn-custom-primary {
+    background-color: #1e40af;
+    border-color: #1e40af;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+}
+
+.btn-custom-primary:hover {
+    background-color: #1e3a8a;
+    border-color: #1e3a8a;
+    color: white;
+}
+
+.btn-custom-primary:disabled {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.avatar-sm {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.avatar-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.quantite-input {
+    font-size: 1.1rem;
+    border: 2px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.quantite-input:focus {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 0.25rem rgba(30, 64, 175, 0.25);
+}
+
+.ligne-reception {
+    transition: background-color 0.2s ease;
+}
+
+.ligne-reception.table-success {
+    background-color: rgba(25, 135, 84, 0.05);
+}
+
+.status-icon {
+    transition: all 0.2s ease;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.alert-info.bg-info.bg-opacity-10 {
+    border-left: 4px solid #0dcaf0;
+}
+
+/* Animation */
+.card {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card-footer .d-flex {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .card-footer .btn {
+        width: 100%;
+    }
+    
+    .quantite-input {
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}

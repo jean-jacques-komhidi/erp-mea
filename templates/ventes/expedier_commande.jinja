@@ -1,0 +1,341 @@
+<!-- templates/ventes/expedier_commande.jinja - DESIGN MODERNE -->
+{% extends "base_principale.jinja" %}
+{% block titre_page %}Expédier la commande{% endblock %}
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête moderne -->
+    <div class="page-header-expedition">
+        <div class="header-content">
+            <div class="header-icon-box">
+                <i class="bi bi-truck"></i>
+            </div>
+            <div>
+                <h4 class="header-title">Expédier la commande {{ commande.numero_commande }}</h4>
+                <p class="header-subtitle">Vérifiez et confirmez l'expédition</p>
+            </div>
+        </div>
+        <div class="header-badges">
+            <span class="status-badge-header status-pending">
+                <i class="bi bi-clock-history"></i>
+                À expédier
+            </span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Colonne gauche : Informations -->
+        <div class="col-lg-4">
+            <!-- Carte Informations commande -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="bi bi-receipt"></i>
+                    <h5>Informations commande</h5>
+                </div>
+                <div class="info-card-body">
+                    <div class="info-row">
+                        <span class="info-label">N° Commande</span>
+                        <span class="info-value">{{ commande.numero_commande }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Client</span>
+                        <span class="info-value">{{ commande.client.nom }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Entrepôt</span>
+                        <span class="info-value">{{ commande.entrepot.nom }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Date livraison</span>
+                        <span class="info-value {% if commande.date_livraison < aujourdhui %}text-danger{% endif %}">
+                            {{ commande.date_livraison.strftime('%d/%m/%Y') }}
+                            {% if commande.date_livraison < aujourdhui %}
+                                <span class="badge-danger-mini">En retard</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carte Totaux -->
+            <div class="info-card mt-3">
+                <div class="info-card-header">
+                    <i class="bi bi-calculator"></i>
+                    <h5>Totaux</h5>
+                </div>
+                <div class="info-card-body">
+                    <div class="info-row">
+                        <span class="info-label">Sous-total HT</span>
+                        <span class="info-value">{{ "{:,.0f}".format(commande.sous_total) }} FCFA</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">TVA</span>
+                        <span class="info-value">{{ "{:,.0f}".format(commande.montant_tva) }} FCFA</span>
+                    </div>
+                    <div class="info-row total-row">
+                        <span class="info-label">Total TTC</span>
+                        <span class="info-value-total">{{ "{:,.0f}".format(commande.total) }} FCFA</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            {% if commande.notes %}
+            <div class="alert-info-custom mt-3">
+                <div class="alert-icon">
+                    <i class="bi bi-chat-text"></i>
+                </div>
+                <div class="alert-content">
+                    <h6>Notes de la commande</h6>
+                    <p>{{ commande.notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Colonne droite : Articles -->
+        <div class="col-lg-8">
+            <!-- Carte Articles -->
+            <div class="products-card">
+                <div class="products-card-header">
+                    <div class="header-left">
+                        <i class="bi bi-box-seam"></i>
+                        <h5>Articles à expédier</h5>
+                    </div>
+                    <div class="products-count">
+                        {{ lignes|length }} article(s)
+                    </div>
+                </div>
+
+                <div class="products-table-container">
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th width="5%">#</th>
+                                <th width="35%">Produit</th>
+                                <th width="12%" class="text-center">Stock</th>
+                                <th width="12%" class="text-center">Commandé</th>
+                                <th width="15%" class="text-center">À expédier</th>
+                                <th width="21%" class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ligne in lignes %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    <div class="product-cell">
+                                        <div class="product-name">{{ ligne.produit.nom }}</div>
+                                        <div class="product-ref">Réf: {{ ligne.produit.code }}</div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    {% set stock_disponible = ligne.produit.stock_actuel %}
+                                    {% if stock_disponible >= ligne.quantite %}
+                                        <span class="stock-badge stock-ok">
+                                            <i class="bi bi-check-circle"></i>
+                                            {{ stock_disponible }}
+                                        </span>
+                                    {% else %}
+                                        <span class="stock-badge stock-low">
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                            {{ stock_disponible }}
+                                        </span>
+                                        <small class="stock-warning">Insuffisant</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="quantity-badge">{{ ligne.quantite }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <input type="number" 
+                                           name="quantite_expediee_{{ ligne.pk }}" 
+                                           class="quantity-input"
+                                           value="{{ ligne.quantite }}"
+                                           min="0"
+                                           max="{{ ligne.quantite }}"
+                                           onchange="verifierStock({{ ligne.produit.pk }}, this.value, {{ ligne.produit.stock_actuel }})">
+                                </td>
+                                <td class="text-end">
+                                    <div class="price-cell">
+                                        <div class="unit-price">{{ "{:,.0f}".format(ligne.prix_unitaire) }} FCFA × {{ ligne.quantite }}</div>
+                                        <div class="total-price">{{ "{:,.0f}".format(ligne.prix_unitaire * ligne.quantite) }} FCFA</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Avertissement -->
+            <div class="alert-warning-custom mt-4">
+                <div class="alert-icon">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div class="alert-content">
+                    <h6>Attention - Action irréversible</h6>
+                    <p>L'expédition de cette commande entraînera la sortie de stock des produits et ne pourra pas être annulée. Veuillez vérifier les quantités avant de confirmer.</p>
+                    <div class="confirmation-checkbox">
+                        <input type="checkbox" id="confirmation" class="custom-checkbox">
+                        <label for="confirmation">
+                            Je confirme que les quantités à expédier sont correctes et que le stock est disponible.
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="action-buttons-bottom">
+                <a href="/ventes/commandes/{{ commande.pk }}/" class="btn-secondary-modern">
+                    <i class="bi bi-arrow-left"></i>
+                    <span>Retour aux détails</span>
+                </a>
+                <form method="post" id="formExpedition" onsubmit="return validerExpedition()">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    <button type="submit" class="btn-success-modern" id="btnExpedier" disabled>
+                        <i class="bi bi-truck"></i>
+                        <span>Confirmer l'expédition</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Fonction pour vérifier le stock
+function verifierStock(produitId, quantiteDemandee, stockDisponible) {
+    const input = document.querySelector(`input[name="quantite_expediee_${produitId}"]`);
+    if (parseInt(quantiteDemandee) > stockDisponible) {
+        input.classList.add('is-invalid');
+        input.classList.remove('is-valid');
+        
+        const stockBadge = input.closest('tr').querySelector('.stock-badge');
+        if (stockBadge) {
+            stockBadge.classList.remove('stock-ok');
+            stockBadge.classList.add('stock-low');
+        }
+    } else {
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+        
+        const stockBadge = input.closest('tr').querySelector('.stock-badge');
+        if (stockBadge) {
+            stockBadge.classList.remove('stock-low');
+            stockBadge.classList.add('stock-ok');
+        }
+    }
+    
+    verifierTousLesStocks();
+}
+
+function verifierTousLesStocks() {
+    const inputs = document.querySelectorAll('input[name^="quantite_expediee_"]');
+    let tousValides = true;
+    
+    inputs.forEach(input => {
+        const quantiteDemandee = parseInt(input.value);
+        const stockCellule = input.closest('tr').querySelector('.stock-badge');
+        const stockDisponible = parseInt(stockCellule.textContent.trim());
+        
+        if (quantiteDemandee > stockDisponible) {
+            tousValides = false;
+        }
+    });
+    
+    const confirmation = document.getElementById('confirmation');
+    const bouton = document.getElementById('btnExpedier');
+    
+    if (tousValides && confirmation.checked) {
+        bouton.disabled = false;
+    } else {
+        bouton.disabled = true;
+    }
+}
+
+function validerExpedition() {
+    const confirmation = document.getElementById('confirmation');
+    if (!confirmation.checked) {
+        alert('Veuillez confirmer que les quantités sont correctes.');
+        return false;
+    }
+    
+    const inputs = document.querySelectorAll('input[name^="quantite_expediee_"]');
+    let stocksInsuffisants = [];
+    
+    inputs.forEach(input => {
+        const quantiteDemandee = parseInt(input.value);
+        const stockCellule = input.closest('tr').querySelector('.stock-badge');
+        const stockDisponible = parseInt(stockCellule.textContent.trim());
+        const nomProduit = input.closest('tr').querySelector('.product-name').textContent;
+        
+        if (quantiteDemandee > stockDisponible) {
+            stocksInsuffisants.push(nomProduit);
+        }
+    });
+    
+    if (stocksInsuffisants.length > 0) {
+        alert('Certains produits ont un stock insuffisant:\n' + stocksInsuffisants.join('\n'));
+        return false;
+    }
+    
+    return confirm('Êtes-vous sûr de vouloir expédier cette commande ? Cette action est irréversible.');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    verifierTousLesStocks();
+    
+    const confirmation = document.getElementById('confirmation');
+    if (confirmation) {
+        confirmation.addEventListener('change', verifierTousLesStocks);
+    }
+    
+    const inputs = document.querySelectorAll('input[name^="quantite_expediee_"]');
+    inputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const maxQuantite = parseInt(this.max);
+            if (parseInt(this.value) > maxQuantite) {
+                this.value = maxQuantite;
+            }
+            verifierTousLesStocks();
+        });
+    });
+});
+</script>
+
+<style>
+/* ==================== HEADER ==================== */
+.page-header-expedition{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);padding:24px 32px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}.header-content{display:flex;align-items:center;gap:16px}.header-icon-box{width:54px;height:54px;background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%);border-radius:14px;display:flex;align-items:center;justify-content:center}.header-icon-box i{font-size:26px;color:#fff}.header-title{font-size:20px;font-weight:700;color:#1e293b;margin:0}.header-subtitle{font-size:13px;color:#64748b;margin:0}.header-badges{display:flex;gap:8px}.status-badge-header{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}.status-pending{background:#fef3c7;color:#92400e}
+
+/* ==================== CARTES INFO ==================== */
+.info-card{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}.info-card-header{padding:16px 20px;background:linear-gradient(135deg,#f8fafc 0%,#fff 100%);border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:12px}.info-card-header i{font-size:18px;color:#0ea5e9}.info-card-header h5{margin:0;font-size:15px;font-weight:700;color:#1e293b}.info-card-body{padding:20px}.info-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f1f5f9}.info-row:last-child{border-bottom:none}.info-label{font-size:13px;color:#64748b;font-weight:500}.info-value{font-size:14px;color:#1e293b;font-weight:600;text-align:right}.info-value.text-danger{color:#dc2626}.badge-danger-mini{padding:2px 8px;background:#fee2e2;color:#dc2626;border-radius:12px;font-size:10px;font-weight:600;margin-left:8px}.total-row{background:#f8fafc;margin:0 -20px -20px;padding:16px 20px!important;border-bottom:none}.info-value-total{font-size:18px;font-weight:700;color:#0ea5e9}
+
+/* ==================== ALERTES CUSTOM ==================== */
+.alert-info-custom,.alert-warning-custom{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.04);padding:20px;display:flex;gap:16px}.alert-info-custom{border-left:4px solid #0ea5e9}.alert-warning-custom{border-left:4px solid #f59e0b}.alert-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.alert-info-custom .alert-icon{background:#dbeafe;color:#0ea5e9}.alert-warning-custom .alert-icon{background:#fef3c7;color:#f59e0b}.alert-icon i{font-size:20px}.alert-content{flex:1}.alert-content h6{font-size:14px;font-weight:700;color:#1e293b;margin:0 0 8px}.alert-content p{font-size:13px;color:#64748b;margin:0;line-height:1.6}.confirmation-checkbox{margin-top:16px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:12px}.custom-checkbox{width:20px;height:20px;border:2px solid #cbd5e1;border-radius:6px;cursor:pointer;transition:all .2s}.custom-checkbox:checked{background:#10b981;border-color:#10b981}.confirmation-checkbox label{font-size:13px;color:#1e293b;font-weight:500;cursor:pointer;user-select:none}
+
+/* ==================== CARTE PRODUITS ==================== */
+.products-card{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}.products-card-header{padding:20px 24px;background:linear-gradient(135deg,#f8fafc 0%,#fff 100%);border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}.products-card-header .header-left{display:flex;align-items:center;gap:12px}.products-card-header i{font-size:20px;color:#0ea5e9}.products-card-header h5{margin:0;font-size:16px;font-weight:700;color:#1e293b}.products-count{padding:6px 14px;background:#dbeafe;color:#1e40af;border-radius:20px;font-size:12px;font-weight:600}.products-table-container{overflow-x:auto}.products-table{width:100%;border-collapse:collapse}.products-table thead{background:#f8fafc}.products-table th{padding:16px 20px;text-align:left;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e2e8f0}.products-table tbody tr{border-bottom:1px solid #f1f5f9;transition:all .2s}.products-table tbody tr:hover{background:#f8fafc}.products-table td{padding:16px 20px;vertical-align:middle}
+
+/* Cellule produit */
+.product-cell{display:flex;flex-direction:column;gap:4px}.product-name{font-size:14px;font-weight:600;color:#1e293b}.product-ref{font-size:12px;color:#64748b}
+
+/* Stock badge */
+.stock-badge{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px}.stock-ok{background:#dcfce7;color:#166534}.stock-low{background:#fee2e2;color:#dc2626}.stock-warning{display:block;font-size:10px;color:#dc2626;margin-top:4px;font-weight:600}
+
+/* Quantity badge */
+.quantity-badge{padding:6px 12px;background:#f1f5f9;color:#475569;border-radius:12px;font-size:13px;font-weight:600}
+
+/* Input quantité */
+.quantity-input{width:80px;padding:8px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:14px;font-weight:600;text-align:center;transition:all .2s}.quantity-input:focus{outline:none;border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.1)}.quantity-input.is-valid{border-color:#10b981}.quantity-input.is-invalid{border-color:#dc2626}
+
+/* Prix */
+.price-cell{display:flex;flex-direction:column;gap:4px}.unit-price{font-size:12px;color:#64748b}.total-price{font-size:14px;font-weight:700;color:#1e293b}
+
+/* ==================== BOUTONS ACTION ==================== */
+.action-buttons-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:24px;padding:24px;background:#f8fafc;border-radius:12px}.btn-secondary-modern,.btn-success-modern{padding:12px 24px;border:none;border-radius:10px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .3s;text-decoration:none}.btn-secondary-modern{background:#fff;border:2px solid #e2e8f0;color:#475569}.btn-secondary-modern:hover{background:#f1f5f9;border-color:#cbd5e1;transform:translateY(-2px)}.btn-success-modern{background:linear-gradient(135deg,#10b981 0%,#34d399 100%);color:#fff;min-width:200px;justify-content:center}.btn-success-modern:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 16px rgba(16,185,129,.3)}.btn-success-modern:disabled{background:#cbd5e1;cursor:not-allowed;transform:none}
+
+/* ==================== RESPONSIVE ==================== */
+@media(max-width:992px){.action-buttons-bottom{flex-direction:column}.btn-secondary-modern,.btn-success-modern{width:100%}.products-table{font-size:13px}.quantity-input{width:60px}}
+</style>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Erreur de confirmation - Stock insuffisant{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-3">
+            <div>
+                <h5 class="card-title mb-0 fw-bold text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Stock insuffisant
+                </h5>
+                <small class="text-muted">Impossible de confirmer la commande {{ commande.numero_commande }}</small>
+            </div>
+            <a href="/ventes/commandes/{{ commande.pk }}/" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Retour à la commande
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger" role="alert">
+                <h4 class="alert-heading">Stock insuffisant pour certains produits</h4>
+                <p>Les produits suivants n'ont pas un stock suffisant pour satisfaire la commande :</p>
+                <hr>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Quantité requise</th>
+                                <th>Stock disponible</th>
+                                <th>Manquant</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in stocks_insuffisants %}
+                            <tr>
+                                <td>{{ item.produit }}</td>
+                                <td>{{ item.requis }}</td>
+                                <td>{{ item.disponible }}</td>
+                                <td class="text-danger fw-bold">{{ item.requis - item.disponible }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="mb-0">Veuillez ajuster les quantités ou réapprovisionner les produits avant de confirmer la commande.</p>
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+                <a href="/ventes/commandes/{{ commande.pk }}/modifier/" class="btn btn-warning">
+                    <i class="bi bi-pencil me-2"></i>Modifier la commande
+                </a>
+                <a href="/stock/mouvements/nouveau/" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Réapprovisionner
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

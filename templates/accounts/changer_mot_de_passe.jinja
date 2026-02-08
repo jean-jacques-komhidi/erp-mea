@@ -1,0 +1,62 @@
+<!-- templates/accounts/changer_mot_de_passe.jinja -->
+{% extends "base_principale.jinja" %}
+{% block titre_page %}Changer mon mot de passe{% endblock %}
+{% block contenu %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="password-change-card">
+                <div class="password-header">
+                    <a href="/accounts/profil/" class="btn-back-mini"><i class="bi bi-arrow-left"></i></a>
+                    <div class="password-icon"><i class="bi bi-key"></i></div>
+                    <h4>Changer mon mot de passe</h4>
+                    <p>Sécurisez votre compte avec un nouveau mot de passe</p>
+                </div>
+                <div class="password-body">
+                    {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }}"><i class="bi bi-{{ 'check-circle' if message.tags == 'success' else 'exclamation-circle' }}"></i><span>{{ message }}</span></div>{% endfor %}{% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group-pwd">
+                            <label class="form-label-pwd"><i class="bi bi-lock"></i>Mot de passe actuel</label>
+                            <div class="input-pwd-wrapper">
+                                <i class="bi bi-lock input-icon-pwd"></i>
+                                <input type="password" name="old_password" id="old_password" class="form-control-pwd" placeholder="Entrez votre mot de passe actuel" required>
+                                <button type="button" class="pwd-toggle" onclick="togglePwd('old_password','icon_old')"><i class="bi bi-eye" id="icon_old"></i></button>
+                            </div>
+                        </div>
+                        <div class="form-group-pwd">
+                            <label class="form-label-pwd"><i class="bi bi-lock-fill"></i>Nouveau mot de passe</label>
+                            <div class="input-pwd-wrapper">
+                                <i class="bi bi-lock-fill input-icon-pwd"></i>
+                                <input type="password" name="new_password1" id="new_password1" class="form-control-pwd" placeholder="Min. 8 caractères" required minlength="8" oninput="checkStrength()">
+                                <button type="button" class="pwd-toggle" onclick="togglePwd('new_password1','icon_new1')"><i class="bi bi-eye" id="icon_new1"></i></button>
+                            </div>
+                            <div class="pwd-strength"><div class="strength-bar" id="strengthBar"></div></div>
+                            <p class="pwd-help"><i class="bi bi-info-circle"></i>Au moins 8 caractères, incluez majuscules, minuscules et chiffres</p>
+                        </div>
+                        <div class="form-group-pwd">
+                            <label class="form-label-pwd"><i class="bi bi-shield-check"></i>Confirmer le nouveau mot de passe</label>
+                            <div class="input-pwd-wrapper">
+                                <i class="bi bi-shield-check input-icon-pwd"></i>
+                                <input type="password" name="new_password2" id="new_password2" class="form-control-pwd" placeholder="Répétez le mot de passe" required>
+                                <button type="button" class="pwd-toggle" onclick="togglePwd('new_password2','icon_new2')"><i class="bi bi-eye" id="icon_new2"></i></button>
+                            </div>
+                        </div>
+                        <div class="pwd-actions">
+                            <a href="/accounts/profil/" class="btn-cancel-pwd"><i class="bi bi-x-circle"></i>Annuler</a>
+                            <button type="submit" class="btn-submit-pwd"><i class="bi bi-check-circle"></i>Changer le mot de passe</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+.password-change-card{background:#fff;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,.1);overflow:hidden;margin-top:40px}.password-header{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);padding:40px 30px;text-align:center;color:#fff;position:relative}.btn-back-mini{position:absolute;top:20px;left:20px;width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;transition:all .2s}.btn-back-mini:hover{background:rgba(255,255,255,.3);color:#fff}.password-icon{width:80px;height:80px;background:rgba(255,255,255,.2);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;backdrop-filter:blur(10px)}.password-icon i{font-size:40px}.password-header h4{font-size:24px;font-weight:700;margin:0 0 8px}.password-header p{font-size:14px;opacity:.9;margin:0}.password-body{padding:40px 30px}.form-group-pwd{margin-bottom:24px}.form-label-pwd{font-size:14px;font-weight:600;color:#475569;margin-bottom:8px;display:flex;align-items:center;gap:6px}.form-label-pwd i{color:#6366f1}.input-pwd-wrapper{position:relative}.input-icon-pwd{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:18px;pointer-events:none}.form-control-pwd{width:100%;padding:14px 48px 14px 48px;border:2px solid #e2e8f0;border-radius:12px;font-size:15px;transition:all .3s}.form-control-pwd:focus{outline:0;border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,.1)}.pwd-toggle{position:absolute;right:16px;top:50%;transform:translateY(-50%);background:0 0;border:0;color:#94a3b8;cursor:pointer;font-size:18px;padding:4px}.pwd-toggle:hover{color:#6366f1}.pwd-strength{margin-top:8px;height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden}.strength-bar{height:100%;width:0;transition:all .3s;border-radius:2px}.strength-weak{background:#ef4444;width:33%}.strength-medium{background:#f59e0b;width:66%}.strength-strong{background:#10b981;width:100%}.pwd-help{font-size:12px;color:#64748b;margin-top:6px;display:flex;align-items:center;gap:4px}.pwd-help i{color:#6366f1;font-size:14px}.pwd-actions{display:flex;gap:12px;margin-top:32px}.btn-cancel-pwd,.btn-submit-pwd{flex:1;padding:14px;border-radius:12px;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .3s;text-decoration:none}.btn-cancel-pwd{background:#f1f5f9;color:#64748b;border:2px solid #e2e8f0}.btn-cancel-pwd:hover{background:#fff;color:#475569;border-color:#94a3b8}.btn-submit-pwd{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);color:#fff;border:0}.btn-submit-pwd:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.4)}.alert{padding:12px 16px;border-radius:10px;margin-bottom:20px;font-size:14px;display:flex;align-items:center;gap:10px}.alert-success{background:#dcfce7;color:#166534;border:1px solid #86efac}.alert-error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}.alert i{font-size:18px}@media(max-width:576px){.password-body{padding:30px 20px}.pwd-actions{flex-direction:column}}
+</style>
+<script>
+function togglePwd(id,iconId){const input=document.getElementById(id);const icon=document.getElementById(iconId);if(input.type==='password'){input.type='text';icon.classList.remove('bi-eye');icon.classList.add('bi-eye-slash')}else{input.type='password';icon.classList.remove('bi-eye-slash');icon.classList.add('bi-eye')}}
+function checkStrength(){const pwd=document.getElementById('new_password1').value;const bar=document.getElementById('strengthBar');bar.className='strength-bar';if(pwd.length===0){bar.style.width='0';return}let strength=0;if(pwd.length>=8)strength++;if(pwd.match(/[a-z]/)&&pwd.match(/[A-Z]/))strength++;if(pwd.match(/\d/))strength++;if(pwd.match(/[^a-zA-Z\d]/))strength++;if(strength<=1)bar.classList.add('strength-weak');else if(strength<=3)bar.classList.add('strength-medium');else bar.classList.add('strength-strong')}
+</script>
+{% endblock %}

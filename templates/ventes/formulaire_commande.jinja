@@ -1,0 +1,994 @@
+<!-- templates/ventes/formulaire_commande.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}{{ action }} une commande{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête moderne avec retour -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/ventes/commandes/" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">{{ action }} une commande</h4>
+                <p class="page-subtitle">
+                    {% if action == "Modifier" %}
+                    Modifier la commande {{ commande.numero_commande|default('') }}
+                    {% else %}
+                    Créer une nouvelle commande de vente
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="page-header-right">
+            <span class="status-indicator status-draft">
+                <i class="bi bi-pencil"></i> Brouillon
+            </span>
+        </div>
+    </div>
+
+    <form method="post" id="commandeForm">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        
+        <div class="row g-4">
+            <!-- Colonne principale (gauche) -->
+            <div class="col-lg-8">
+                <!-- Informations client -->
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <div class="form-card-icon bg-primary">
+                            <i class="bi bi-person-badge"></i>
+                        </div>
+                        <div>
+                            <h6 class="form-card-title">Informations client</h6>
+                            <p class="form-card-subtitle">Sélectionnez le client et l'entrepôt</p>
+                        </div>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label-modern">
+                                    Client <span class="required">*</span>
+                                </label>
+                                <div class="input-with-icon">
+                                    <i class="bi bi-person input-icon"></i>
+                                    <select name="client" class="form-control-modern" required>
+                                        <option value="">Sélectionner un client</option>
+                                        {% for client in clients %}
+                                        <option value="{{ client.id }}" {% if commande and commande.client.id == client.id %}selected{% endif %}>
+                                            {{ client.nom }} ({{ client.code }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label-modern">
+                                    Entrepôt <span class="required">*</span>
+                                </label>
+                                <div class="input-with-icon">
+                                    <i class="bi bi-building input-icon"></i>
+                                    <select name="entrepot" class="form-control-modern" required>
+                                        <option value="">Sélectionner un entrepôt</option>
+                                        {% for entrepot in entrepots %}
+                                        <option value="{{ entrepot.id }}" {% if commande and commande.entrepot.id == entrepot.id %}selected{% endif %}>
+                                            {{ entrepot.nom }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label-modern">
+                                    Date de livraison <span class="required">*</span>
+                                </label>
+                                <div class="input-with-icon">
+                                    <i class="bi bi-calendar3 input-icon"></i>
+                                    <input type="date" name="date_livraison" class="form-control-modern" 
+                                           value="{% if commande %}{{ commande.date_livraison.strftime('%Y-%m-%d') }}{% else %}{{ date_livraison_defaut }}{% endif %}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label-modern">Notes additionnelles</label>
+                                <div class="input-with-icon">
+                                    <i class="bi bi-pencil input-icon"></i>
+                                    <textarea name="notes" class="form-control-modern" rows="3" placeholder="Instructions spéciales ou informations supplémentaires...">{% if commande %}{{ commande.notes }}{% endif %}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Produits commandés -->
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <div class="form-card-icon bg-warning">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="form-card-title">Produits commandés</h6>
+                            <p class="form-card-subtitle">Ajoutez les produits à la commande</p>
+                        </div>
+                        <div class="badge-count">
+                            <span id="ligne-count">{{ lignes|length if lignes else 1 }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-card-body">
+                        <!-- En-tête du tableau (desktop seulement) -->
+                        <div class="table-header d-none d-lg-grid">
+                            <div>Produit</div>
+                            <div class="text-center">Quantité</div>
+                            <div class="text-center">Prix unitaire</div>
+                            <div class="text-end">Total</div>
+                            <div></div>
+                        </div>
+
+                        <!-- Lignes de produits -->
+                        <div id="lignes_commande">
+                            {% if lignes %}
+                                {% for ligne in lignes %}
+                                <div class="product-line">
+                                    <div class="product-line-content">
+                                        <div class="product-select-wrapper">
+                                            <label class="mobile-label">Produit</label>
+                                            <select name="produit[]" class="form-control-modern produit-select" required>
+                                                <option value="">Sélectionner un produit</option>
+                                                {% for produit in produits %}
+                                                <option value="{{ produit.id }}" 
+                                                        data-prix="{{ produit.prix_vente }}"
+                                                        {% if ligne.produit.id == produit.id %}selected{% endif %}>
+                                                    {{ produit.nom }} - {{ "{:,.0f}".format(produit.prix_vente) }} FCFA
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="quantity-wrapper">
+                                            <label class="mobile-label">Quantité</label>
+                                            <input type="number" name="quantite[]" class="form-control-modern text-center quantite-input" 
+                                                   value="{{ ligne.quantite }}" required min="1" placeholder="Qté">
+                                        </div>
+                                        
+                                        <div class="price-wrapper">
+                                            <label class="mobile-label">Prix unitaire</label>
+                                            <div class="input-with-currency">
+                                                <input type="number" name="prix_unitaire[]" class="form-control-modern text-end prix-input" 
+                                                       value="{{ ligne.prix_unitaire }}" step="0.01" required>
+                                                <span class="currency-label">FCFA</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="total-wrapper">
+                                            <label class="mobile-label">Total</label>
+                                            <div class="line-total">
+                                                {{ "{:,.0f}".format(ligne.quantite * ligne.prix_unitaire) }}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="action-wrapper">
+                                            <button type="button" class="btn-delete" onclick="supprimerLigne(this)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="product-line">
+                                    <div class="product-line-content">
+                                        <div class="product-select-wrapper">
+                                            <label class="mobile-label">Produit</label>
+                                            <select name="produit[]" class="form-control-modern produit-select" required>
+                                                <option value="">Sélectionner un produit</option>
+                                                {% for produit in produits %}
+                                                <option value="{{ produit.id }}" data-prix="{{ produit.prix_vente }}">
+                                                    {{ produit.nom }} - {{ "{:,.0f}".format(produit.prix_vente) }} FCFA
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="quantity-wrapper">
+                                            <label class="mobile-label">Quantité</label>
+                                            <input type="number" name="quantite[]" class="form-control-modern text-center quantite-input" 
+                                                   required min="1" placeholder="Qté" value="1">
+                                        </div>
+                                        
+                                        <div class="price-wrapper">
+                                            <label class="mobile-label">Prix unitaire</label>
+                                            <div class="input-with-currency">
+                                                <input type="number" name="prix_unitaire[]" class="form-control-modern text-end prix-input" 
+                                                       step="0.01" required value="0">
+                                                <span class="currency-label">FCFA</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="total-wrapper">
+                                            <label class="mobile-label">Total</label>
+                                            <div class="line-total">0</div>
+                                        </div>
+                                        
+                                        <div class="action-wrapper">
+                                            <button type="button" class="btn-delete" onclick="supprimerLigne(this)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Bouton ajouter produit -->
+                        <button type="button" class="btn-add-line" onclick="ajouterLigne()">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Ajouter un produit</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne latérale (droite) -->
+            <div class="col-lg-4">
+                <!-- Résumé de la commande (sticky) -->
+                <div class="sticky-sidebar">
+                    <div class="summary-card">
+                        <div class="summary-header">
+                            <i class="bi bi-calculator"></i>
+                            <h6>Résumé de la commande</h6>
+                        </div>
+                        
+                        <div class="summary-body">
+                            <div class="summary-row">
+                                <span class="summary-label">Produits</span>
+                                <span class="summary-value" id="nombre-produits">0</span>
+                            </div>
+                            <div class="summary-row">
+                                <span class="summary-label">Quantité totale</span>
+                                <span class="summary-value" id="quantite-totale">0</span>
+                            </div>
+                            <div class="summary-divider"></div>
+                            <div class="summary-row summary-total">
+                                <span class="summary-label">Total</span>
+                                <span class="summary-amount" id="total-general">0 FCFA</span>
+                            </div>
+                        </div>
+                        
+                        <div class="summary-footer">
+                            <button type="submit" class="btn-primary-gradient">
+                                <i class="bi bi-save"></i>
+                                <span>Enregistrer la commande</span>
+                            </button>
+                            <a href="/ventes/commandes/" class="btn-secondary-outline">
+                                <i class="bi bi-x-circle"></i>
+                                <span>Annuler</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Conseils -->
+                    <div class="tips-card">
+                        <div class="tips-header">
+                            <i class="bi bi-lightbulb"></i>
+                            <span>Conseils</span>
+                        </div>
+                        <div class="tips-body">
+                            <div class="tip-item">
+                                <i class="bi bi-check-circle"></i>
+                                <span>Vérifiez la disponibilité en stock avant de commander</span>
+                            </div>
+                            <div class="tip-item">
+                                <i class="bi bi-check-circle"></i>
+                                <span>Fixez des dates de livraison réalistes</span>
+                            </div>
+                            <div class="tip-item">
+                                <i class="bi bi-check-circle"></i>
+                                <span>Ajoutez des notes pour les instructions spéciales</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fonction pour ajouter une ligne de produit
+    window.ajouterLigne = function() {
+        const container = document.getElementById('lignes_commande');
+        const premiereLigne = document.querySelector('.product-line');
+        const nouvelleLigne = premiereLigne.cloneNode(true);
+        
+        // Réinitialiser les valeurs
+        nouvelleLigne.querySelector('.produit-select').selectedIndex = 0;
+        nouvelleLigne.querySelector('.quantite-input').value = 1;
+        nouvelleLigne.querySelector('.prix-input').value = 0;
+        nouvelleLigne.querySelector('.line-total').textContent = '0';
+        
+        // Insérer la nouvelle ligne
+        container.appendChild(nouvelleLigne);
+        mettreAJourCompteur();
+        calculerResume();
+        ajouterEcouteursEvenements(nouvelleLigne);
+    };
+    
+    // Fonction pour supprimer une ligne
+    window.supprimerLigne = function(btn) {
+        const lignes = document.querySelectorAll('.product-line');
+        if (lignes.length > 1) {
+            if (confirm('Voulez-vous vraiment supprimer cette ligne ?')) {
+                btn.closest('.product-line').remove();
+                mettreAJourCompteur();
+                calculerResume();
+            }
+        } else {
+            alert('Vous devez garder au moins une ligne de produit');
+        }
+    };
+    
+    // Mettre à jour le compteur de lignes
+    function mettreAJourCompteur() {
+        const count = document.querySelectorAll('.product-line').length;
+        document.getElementById('ligne-count').textContent = count;
+    }
+    
+    // Calculer le total d'une ligne
+    function calculerTotalLigne(ligne) {
+        const quantite = parseFloat(ligne.querySelector('.quantite-input').value) || 0;
+        const prix = parseFloat(ligne.querySelector('.prix-input').value) || 0;
+        const total = quantite * prix;
+        
+        // Formater le total avec séparateurs de milliers
+        ligne.querySelector('.line-total').textContent = 
+            new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0}).format(total);
+        
+        return total;
+    }
+    
+    // Calculer le résumé de la commande
+    function calculerResume() {
+        let totalGeneral = 0;
+        let quantiteTotale = 0;
+        let nombreProduits = 0;
+        
+        document.querySelectorAll('.product-line').forEach(ligne => {
+            const quantite = parseFloat(ligne.querySelector('.quantite-input').value) || 0;
+            const prix = parseFloat(ligne.querySelector('.prix-input').value) || 0;
+            const produitSelectionne = ligne.querySelector('.produit-select').value;
+            
+            if (produitSelectionne && quantite > 0 && prix > 0) {
+                nombreProduits++;
+                quantiteTotale += quantite;
+                totalGeneral += quantite * prix;
+            }
+        });
+        
+        // Mettre à jour les affichages
+        document.getElementById('nombre-produits').textContent = nombreProduits;
+        document.getElementById('quantite-totale').textContent = 
+            new Intl.NumberFormat('fr-FR').format(quantiteTotale);
+        document.getElementById('total-general').textContent = 
+            new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 0}).format(totalGeneral) + ' FCFA';
+    }
+    
+    // Ajouter les écouteurs d'événements à une ligne
+    function ajouterEcouteursEvenements(ligne) {
+        // Lorsque le produit change, mettre à jour le prix
+        ligne.querySelector('.produit-select').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const prixParDefaut = selectedOption.getAttribute('data-prix');
+            if (prixParDefaut && parseFloat(prixParDefaut) > 0) {
+                ligne.querySelector('.prix-input').value = prixParDefaut;
+                ligne.querySelector('.prix-input').dispatchEvent(new Event('input'));
+            }
+            calculerResume();
+        });
+        
+        // Lorsque la quantité ou le prix change
+        ligne.querySelector('.quantite-input').addEventListener('input', function() {
+            calculerTotalLigne(ligne);
+            calculerResume();
+        });
+        
+        ligne.querySelector('.prix-input').addEventListener('input', function() {
+            calculerTotalLigne(ligne);
+            calculerResume();
+        });
+    }
+    
+    // Initialisation
+    document.querySelectorAll('.product-line').forEach(ligne => {
+        ajouterEcouteursEvenements(ligne);
+    });
+    
+    calculerResume();
+    mettreAJourCompteur();
+    
+    // Validation du formulaire
+    const form = document.getElementById('commandeForm');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            let toutesLignesValides = true;
+            document.querySelectorAll('.produit-select').forEach(select => {
+                if (!select.value) {
+                    toutesLignesValides = false;
+                    select.classList.add('is-invalid');
+                } else {
+                    select.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!form.checkValidity() || !toutesLignesValides) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                if (!toutesLignesValides) {
+                    alert('Veuillez sélectionner un produit pour toutes les lignes');
+                }
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* ==================== PAGE HEADER ==================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-draft {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* ==================== FORM CARD ==================== */
+.form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.form-card-header {
+    padding: 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.form-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.form-card-icon.bg-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.form-card-icon.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.form-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.form-card-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+.form-card-body {
+    padding: 24px;
+}
+
+.badge-count {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #6366f1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* ==================== FORM CONTROLS ==================== */
+.form-label-modern {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 16px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+textarea.form-control-modern + .input-icon {
+    top: 16px;
+    transform: none;
+}
+
+.form-control-modern {
+    width: 100%;
+    padding: 12px 16px 12px 44px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #1e293b;
+    transition: all 0.2s;
+    background: white;
+}
+
+.form-control-modern:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+textarea.form-control-modern {
+    resize: vertical;
+}
+
+/* ==================== TABLE HEADER ==================== */
+.table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.2fr 1fr 0.5fr;
+    gap: 16px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ==================== PRODUCT LINES ==================== */
+.product-line {
+    margin-bottom: 16px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.product-line-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.2fr 1fr 0.5fr;
+    gap: 16px;
+    padding: 16px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.product-line-content:hover {
+    border-color: #6366f1;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.mobile-label {
+    display: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.product-select-wrapper select,
+.quantity-wrapper input,
+.price-wrapper input {
+    padding: 10px 14px;
+}
+
+.input-with-currency {
+    position: relative;
+}
+
+.input-with-currency input {
+    padding-right: 60px;
+}
+
+.currency-label {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.line-total {
+    font-size: 16px;
+    font-weight: 700;
+    color: #10b981;
+    text-align: right;
+}
+
+.line-total::after {
+    content: ' FCFA';
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-left: 4px;
+}
+
+.btn-delete {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #fee2e2;
+    border: none;
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-delete:hover {
+    background: #dc2626;
+    color: white;
+}
+
+/* ==================== ADD LINE BUTTON ==================== */
+.btn-add-line {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    color: #6366f1;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 16px;
+}
+
+.btn-add-line:hover {
+    background: #f8fafc;
+    border-color: #6366f1;
+}
+
+.btn-add-line i {
+    font-size: 18px;
+}
+
+/* ==================== STICKY SIDEBAR ==================== */
+.sticky-sidebar {
+    position: sticky;
+    top: 24px;
+}
+
+/* ==================== SUMMARY CARD ==================== */
+.summary-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+
+.summary-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.summary-header i {
+    font-size: 20px;
+    color: #6366f1;
+}
+
+.summary-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.summary-body {
+    padding: 24px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.summary-label {
+    font-size: 14px;
+    color: #64748b;
+}
+
+.summary-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.summary-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 20px 0;
+}
+
+.summary-total .summary-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.summary-amount {
+    font-size: 24px;
+    font-weight: 700;
+    color: #6366f1;
+}
+
+.summary-footer {
+    padding: 24px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-primary-gradient {
+    width: 100%;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-primary-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+}
+
+.btn-secondary-outline {
+    width: 100%;
+    padding: 12px 24px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.btn-secondary-outline:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+/* ==================== TIPS CARD ==================== */
+.tips-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.tips-header {
+    padding: 16px 20px;
+    background: rgba(245, 158, 11, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #92400e;
+}
+
+.tips-header i {
+    font-size: 18px;
+}
+
+.tips-body {
+    padding: 20px;
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #78350f;
+}
+
+.tip-item:last-child {
+    margin-bottom: 0;
+}
+
+.tip-item i {
+    color: #f59e0b;
+    font-size: 16px;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 992px) {
+    .table-header {
+        display: none;
+    }
+    
+    .product-line-content {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .mobile-label {
+        display: block;
+    }
+    
+    .line-total {
+        text-align: left;
+    }
+    
+    .action-wrapper {
+        justify-self: stretch;
+    }
+    
+    .btn-delete {
+        width: 100%;
+    }
+    
+    .sticky-sidebar {
+        position: static;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .btn-back {
+        align-self: flex-start;
+    }
+}
+</style>
+
+{% endblock %}

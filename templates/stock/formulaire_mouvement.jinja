@@ -1,0 +1,944 @@
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}{{ action|default('Créer') }} un mouvement de stock{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête de page -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="{{ url('stock:liste_mouvements') }}" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h4 class="page-title">Nouveau mouvement de stock</h4>
+                <p class="page-subtitle">
+                    Enregistrer une entrée, sortie ou ajustement de stock
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <form method="post" id="mouvementForm">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                
+                <div class="row g-4">
+                    <!-- Colonne principale (gauche) -->
+                    <div class="col-lg-8">
+                        <!-- Produit et Localisation -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-primary">
+                                    <i class="bi bi-box-seam"></i>
+                                </div>
+                                <h6>Produit et localisation</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-box"></i>
+                                                Produit
+                                                <span class="required">*</span>
+                                            </label>
+                                            {{ formulaire.produit }}
+                                            {% if formulaire.produit.errors %}
+                                            <div class="error-message">{{ formulaire.produit.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Sélectionnez le produit concerné</div>
+                                            
+                                            <!-- Affichage du stock actuel -->
+                                            <div id="stockActuel" style="display: none; margin-top: 12px;">
+                                                <div class="stock-alert">
+                                                    <i class="bi bi-info-circle"></i>
+                                                    <div>
+                                                        <div class="stock-label">Stock actuel</div>
+                                                        <div class="stock-value" id="stockValue">-</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-building"></i>
+                                                Entrepôt
+                                                <span class="required">*</span>
+                                            </label>
+                                            {{ formulaire.entrepot }}
+                                            {% if formulaire.entrepot.errors %}
+                                            <div class="error-message">{{ formulaire.entrepot.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Lieu de stockage</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Détails du mouvement -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-success">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </div>
+                                <h6>Détails du mouvement</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-arrow-left-right"></i>
+                                                Type de mouvement
+                                                <span class="required">*</span>
+                                            </label>
+                                            {{ formulaire.type_mouvement }}
+                                            {% if formulaire.type_mouvement.errors %}
+                                            <div class="error-message">{{ formulaire.type_mouvement.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help" id="typeHelp">
+                                                Sélectionnez le type de mouvement
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-calculator"></i>
+                                                Quantité
+                                                <span class="required">*</span>
+                                            </label>
+                                            <div class="quantity-input-wrapper">
+                                                <button class="quantity-btn decrease" type="button" id="decrementBtn">
+                                                    <i class="bi bi-dash"></i>
+                                                </button>
+                                                {{ formulaire.quantite }}
+                                                <button class="quantity-btn increase" type="button" id="incrementBtn">
+                                                    <i class="bi bi-plus"></i>
+                                                </button>
+                                            </div>
+                                            {% if formulaire.quantite.errors %}
+                                            <div class="error-message">{{ formulaire.quantite.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help" id="quantiteHelp">
+                                                Quantité à déplacer
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Informations complémentaires -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="header-icon bg-info">
+                                    <i class="bi bi-file-text"></i>
+                                </div>
+                                <h6>Informations complémentaires</h6>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-hash"></i>
+                                                Référence / N° de document
+                                            </label>
+                                            {{ formulaire.reference }}
+                                            {% if formulaire.reference.errors %}
+                                            <div class="error-message">{{ formulaire.reference.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help">N° de commande, bon de livraison, etc.</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <div class="form-group-modern">
+                                            <label class="form-label-modern">
+                                                <i class="bi bi-pencil"></i>
+                                                Notes / Commentaires
+                                            </label>
+                                            {{ formulaire.notes }}
+                                            {% if formulaire.notes.errors %}
+                                            <div class="error-message">{{ formulaire.notes.errors|join(", ") }}</div>
+                                            {% endif %}
+                                            <div class="form-help">Informations additionnelles sur ce mouvement</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Colonne latérale (droite) -->
+                    <div class="col-lg-4">
+                        <!-- Récapitulatif du mouvement -->
+                        <div class="preview-card" id="recapMouvement" style="display: none;">
+                            <div class="preview-header">
+                                <i class="bi bi-check-circle"></i>
+                                <h6>Récapitulatif</h6>
+                            </div>
+                            <div class="preview-body">
+                                <div class="recap-content">
+                                    <div class="recap-item">
+                                        <div class="recap-label">Action</div>
+                                        <div class="recap-value" id="recapAction">-</div>
+                                    </div>
+                                    <div class="recap-divider"></div>
+                                    <div class="recap-item">
+                                        <div class="recap-label">Nouveau stock</div>
+                                        <div class="recap-value" id="recapNouveauStock">
+                                            <span class="text-muted">Calculé après validation</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Aide contextuelle -->
+                        <div class="tips-card">
+                            <div class="tips-header">
+                                <i class="bi bi-lightbulb"></i>
+                                <span>Types de mouvements</span>
+                            </div>
+                            <div class="tips-list">
+                                <div class="tip-item">
+                                    <i class="bi bi-arrow-down-circle text-success"></i>
+                                    <p><strong>Entrée :</strong> Réception de marchandises, production, retour client</p>
+                                </div>
+                                <div class="tip-item">
+                                    <i class="bi bi-arrow-up-circle text-danger"></i>
+                                    <p><strong>Sortie :</strong> Vente, livraison, consommation, retour fournisseur</p>
+                                </div>
+                                <div class="tip-item">
+                                    <i class="bi bi-arrow-repeat text-warning"></i>
+                                    <p><strong>Ajustement :</strong> Correction d'inventaire, perte, casse</p>
+                                </div>
+                                <div class="tip-item">
+                                    <i class="bi bi-arrow-left-right text-info"></i>
+                                    <p><strong>Transfert :</strong> Déplacement entre entrepôts</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions du formulaire -->
+                <div class="form-actions-bar">
+                    <div class="actions-left">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span>Les champs marqués d'un * sont obligatoires</span>
+                    </div>
+                    <div class="actions-right">
+                        <a href="{{ url('stock:liste_mouvements') }}" class="btn-cancel">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annuler</span>
+                        </a>
+                        <button type="submit" class="btn-submit" id="submitBtn">
+                            <i class="bi bi-save"></i>
+                            <span>Enregistrer le mouvement</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('mouvementForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const produitSelect = document.getElementById('id_produit');
+    const typeMouvementSelect = document.getElementById('id_type_mouvement');
+    const quantiteInput = document.getElementById('id_quantite');
+    const incrementBtn = document.getElementById('incrementBtn');
+    const decrementBtn = document.getElementById('decrementBtn');
+    
+    // Boutons +/-
+    if (incrementBtn && quantiteInput) {
+        incrementBtn.addEventListener('click', function() {
+            const currentValue = parseInt(quantiteInput.value) || 0;
+            quantiteInput.value = currentValue + 1;
+            updateRecap();
+        });
+    }
+    
+    if (decrementBtn && quantiteInput) {
+        decrementBtn.addEventListener('click', function() {
+            const currentValue = parseInt(quantiteInput.value) || 0;
+            if (currentValue > 0) {
+                quantiteInput.value = currentValue - 1;
+                updateRecap();
+            }
+        });
+    }
+    
+    // Mise à jour du texte d'aide selon le type de mouvement
+    if (typeMouvementSelect) {
+        typeMouvementSelect.addEventListener('change', function() {
+            const typeHelp = document.getElementById('typeHelp');
+            const quantiteHelp = document.getElementById('quantiteHelp');
+            
+            switch(this.value) {
+                case 'entree':
+                    typeHelp.innerHTML = '<i class="bi bi-arrow-down-circle text-success me-1"></i>Stock va augmenter';
+                    quantiteHelp.innerHTML = '<i class="bi bi-plus-circle text-success me-1"></i>Quantité à ajouter au stock';
+                    break;
+                case 'sortie':
+                    typeHelp.innerHTML = '<i class="bi bi-arrow-up-circle text-danger me-1"></i>Stock va diminuer';
+                    quantiteHelp.innerHTML = '<i class="bi bi-dash-circle text-danger me-1"></i>Quantité à retirer du stock';
+                    break;
+                case 'ajustement':
+                    typeHelp.innerHTML = '<i class="bi bi-arrow-repeat text-warning me-1"></i>Correction du stock';
+                    quantiteHelp.innerHTML = '<i class="bi bi-pencil text-warning me-1"></i>Quantité d\'ajustement (+ ou -)';
+                    break;
+                case 'transfert':
+                    typeHelp.innerHTML = '<i class="bi bi-arrow-left-right text-info me-1"></i>Déplacement entre entrepôts';
+                    quantiteHelp.innerHTML = '<i class="bi bi-boxes text-info me-1"></i>Quantité à transférer';
+                    break;
+                default:
+                    typeHelp.textContent = 'Sélectionnez le type de mouvement';
+                    quantiteHelp.textContent = 'Quantité à déplacer';
+            }
+            
+            updateRecap();
+        });
+    }
+    
+    // Mise à jour du récapitulatif
+    function updateRecap() {
+        const type = typeMouvementSelect ? typeMouvementSelect.value : '';
+        const quantite = quantiteInput ? parseInt(quantiteInput.value) || 0 : 0;
+        const recapDiv = document.getElementById('recapMouvement');
+        const recapAction = document.getElementById('recapAction');
+        
+        if (type && quantite > 0 && recapDiv) {
+            recapDiv.style.display = 'block';
+            
+            let actionHTML = '';
+            
+            switch(type) {
+                case 'entree':
+                    actionHTML = `<span class="badge-success">+ ${quantite} unité(s)</span>`;
+                    break;
+                case 'sortie':
+                    actionHTML = `<span class="badge-danger">- ${quantite} unité(s)</span>`;
+                    break;
+                case 'ajustement':
+                    actionHTML = `<span class="badge-warning">±${quantite} unité(s)</span>`;
+                    break;
+                case 'transfert':
+                    actionHTML = `<span class="badge-info">↔ ${quantite} unité(s)</span>`;
+                    break;
+            }
+            
+            recapAction.innerHTML = actionHTML;
+        } else {
+            if (recapDiv) {
+                recapDiv.style.display = 'none';
+            }
+        }
+    }
+    
+    // Écouter les changements
+    if (quantiteInput) {
+        quantiteInput.addEventListener('input', updateRecap);
+    }
+    
+    // Validation du formulaire
+    if (form && submitBtn) {
+        form.addEventListener('submit', function(e) {
+            const produit = produitSelect ? produitSelect.value : '';
+            const entrepot = document.getElementById('id_entrepot') ? document.getElementById('id_entrepot').value : '';
+            const type = typeMouvementSelect ? typeMouvementSelect.value : '';
+            const quantite = quantiteInput ? parseInt(quantiteInput.value) || 0 : 0;
+            
+            if (!produit) {
+                e.preventDefault();
+                alert('⚠️ Veuillez sélectionner un produit');
+                produitSelect.focus();
+                return;
+            }
+            
+            if (!entrepot) {
+                e.preventDefault();
+                alert('⚠️ Veuillez sélectionner un entrepôt');
+                document.getElementById('id_entrepot').focus();
+                return;
+            }
+            
+            if (!type) {
+                e.preventDefault();
+                alert('⚠️ Veuillez sélectionner le type de mouvement');
+                typeMouvementSelect.focus();
+                return;
+            }
+            
+            if (quantite <= 0) {
+                e.preventDefault();
+                alert('⚠️ La quantité doit être supérieure à 0');
+                quantiteInput.focus();
+                return;
+            }
+            
+            // Désactiver le bouton pour éviter les doubles soumissions
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span><span>Enregistrement...</span>';
+        });
+    }
+    
+    // Confirmation avant d'annuler si le formulaire a été modifié
+    let formModified = false;
+    const formInputs = form.querySelectorAll('input, select, textarea');
+    
+    formInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            formModified = true;
+        });
+    });
+    
+    const cancelBtn = document.querySelector('.btn-cancel');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function(e) {
+            if (formModified) {
+                if (!confirm('⚠️ Vous avez des modifications non enregistrées.\n\nVoulez-vous vraiment quitter ?')) {
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-back {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+/* Form Card */
+.form-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.form-card-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.header-icon.bg-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.header-icon.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.header-icon.bg-info {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+}
+
+.form-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.form-card-body {
+    padding: 24px;
+}
+
+/* Form Groups */
+.form-group-modern {
+    margin-bottom: 0;
+}
+
+.form-label-modern {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 10px;
+}
+
+.form-label-modern i {
+    color: #6366f1;
+    font-size: 16px;
+}
+
+.required {
+    color: #dc2626;
+    margin-left: 4px;
+}
+
+.form-group-modern input[type="text"],
+.form-group-modern input[type="number"],
+.form-group-modern select,
+.form-group-modern textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: white;
+}
+
+.form-group-modern input:focus,
+.form-group-modern select:focus,
+.form-group-modern textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-group-modern textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-help {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.error-message {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #dc2626;
+    font-weight: 500;
+}
+
+/* Quantity Input */
+.quantity-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quantity-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.quantity-btn:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.quantity-input-wrapper input[type="number"] {
+    text-align: center;
+    font-weight: 700;
+    font-size: 18px;
+    flex: 1;
+}
+
+/* Stock Alert */
+.stock-alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-radius: 10px;
+    animation: slideDown 0.3s ease-in-out;
+}
+
+.stock-alert i {
+    font-size: 24px;
+    color: #0ea5e9;
+    flex-shrink: 0;
+}
+
+.stock-label {
+    font-size: 12px;
+    color: #1e40af;
+    margin-bottom: 4px;
+}
+
+.stock-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Preview Card */
+.preview-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+    overflow: hidden;
+    animation: slideDown 0.3s ease-in-out;
+}
+
+.preview-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.preview-header i {
+    font-size: 24px;
+    color: #10b981;
+}
+
+.preview-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.preview-body {
+    padding: 24px;
+}
+
+.recap-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.recap-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.recap-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.recap-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.recap-divider {
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.badge-success,
+.badge-danger,
+.badge-warning,
+.badge-info {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+}
+
+.badge-danger {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+}
+
+.badge-warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+}
+
+.badge-info {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+}
+
+/* Tips Card */
+.tips-card {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tips-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    color: #92400e;
+}
+
+.tips-header i {
+    font-size: 24px;
+}
+
+.tips-header span {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tip-item {
+    display: flex;
+    gap: 10px;
+}
+
+.tip-item i {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.tip-item p {
+    font-size: 13px;
+    color: #78350f;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.tip-item strong {
+    color: #92400e;
+}
+
+/* Form Actions Bar */
+.form-actions-bar {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 20px 24px;
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.actions-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.actions-left i {
+    color: #f59e0b;
+    font-size: 18px;
+}
+
+.actions-right {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-cancel,
+.btn-submit {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-cancel {
+    background: white;
+    border: 2px solid #e2e8f0;
+    color: #64748b;
+}
+
+.btn-cancel:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+    display: inline-block;
+    border: 0.15em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to { transform: rotate(360deg); }
+}
+
+/* Utilities */
+.text-muted {
+    color: #94a3b8;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-card-body {
+        padding: 20px 16px;
+    }
+    
+    .form-actions-bar {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .actions-right {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .btn-cancel,
+    .btn-submit {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .quantity-input-wrapper {
+        width: 100%;
+    }
+}
+</style>
+
+{% endblock %}

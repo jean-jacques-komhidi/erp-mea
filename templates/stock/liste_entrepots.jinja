@@ -1,0 +1,1397 @@
+<!-- templates/stock/liste_entrepots.jinja - VERSION COMPLÈTE AVEC CARTE GÉOGRAPHIQUE -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Liste des entrepôts{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête de page -->
+    <div class="page-header">
+        <div class="page-header-left">
+            <h4 class="page-title">🏢 Gestion des Entrepôts</h4>
+            <p class="page-subtitle">Gérez vos sites de stockage</p>
+        </div>
+        <div class="page-header-right">
+            <a href="{{ url('stock:creer_entrepot') }}" class="btn-primary">
+                <i class="bi bi-plus-circle"></i>
+                <span>Nouvel entrepôt</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Cartes de statistiques -->
+    <div class="stats-grid">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon">
+                <i class="bi bi-building"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ entrepots|length|default(0) }}</div>
+                <div class="stat-label">Entrepôts totaux</div>
+                <div class="stat-badge">Sites de stockage</div>
+            </div>
+        </div>
+
+        <div class="stat-card stat-success">
+            <div class="stat-icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ entrepots_actifs|default(entrepots|selectattr('est_actif')|list|length) }}</div>
+                <div class="stat-label">Entrepôts actifs</div>
+                <div class="stat-badge">En service</div>
+            </div>
+        </div>
+
+        <div class="stat-card stat-info">
+            <div class="stat-icon">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_produits|default(0) }}</div>
+                <div class="stat-label">Produits stockés</div>
+                <div class="stat-badge">Dans tous les sites</div>
+            </div>
+        </div>
+
+        <div class="stat-card stat-warning">
+            <div class="stat-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ responsables_uniques|default(0) }}</div>
+                <div class="stat-label">Responsables</div>
+                <div class="stat-badge">Gestionnaires</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carte répartition géographique -->
+    <div class="geo-card">
+        <div class="geo-header">
+            <div class="geo-header-left">
+                <i class="bi bi-geo-alt-fill"></i>
+                <h6>Répartition géographique</h6>
+            </div>
+            <div class="geo-header-right">
+                <button class="btn-toggle-map" id="toggleMapBtn">
+                    <i class="bi bi-eye"></i>
+                    <span>Afficher la carte</span>
+                </button>
+            </div>
+        </div>
+        <div class="geo-body" id="geoBody" style="display: none;">
+            <!-- Liste des entrepôts par localisation -->
+            <div class="warehouse-locations" id="warehouseLocations">
+                {% if entrepots %}
+                    {% set locations_dict = {} %}
+                    {% for entrepot in entrepots %}
+                        {% set location_key = entrepot.adresse|default('Non définie') %}
+                        {% if location_key not in locations_dict %}
+                            {% set _ = locations_dict.update({location_key: []}) %}
+                        {% endif %}
+                        {% set _ = locations_dict[location_key].append(entrepot) %}
+                    {% endfor %}
+                    
+                    {% for location, warehouses in locations_dict.items() %}
+                    <div class="location-group">
+                        <div class="location-header">
+                            <div class="location-icon">
+                                <i class="bi bi-geo-alt-fill"></i>
+                            </div>
+                            <div class="location-info">
+                                <div class="location-name">{{ location if location != 'Non définie' else 'Localisation non définie' }}</div>
+                                <div class="location-count">{{ warehouses|length }} entrepôt(s)</div>
+                            </div>
+                        </div>
+                        <div class="location-warehouses">
+                            {% for warehouse in warehouses %}
+                            <div class="warehouse-item">
+                                <div class="warehouse-item-icon">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                                <div class="warehouse-item-info">
+                                    <div class="warehouse-item-name">{{ warehouse.nom }}</div>
+                                    <div class="warehouse-item-code">{{ warehouse.code|default('N/A') }}</div>
+                                </div>
+                                <div class="warehouse-item-stats">
+                                    <span class="stat-badge-small stat-{{ 'success' if warehouse.est_actif else 'secondary' }}">
+                                        {{ 'Actif' if warehouse.est_actif else 'Inactif' }}
+                                    </span>
+                                    <span class="stat-badge-small stat-info">
+                                        {{ warehouse.nombre_produits|default(0) }} produits
+                                    </span>
+                                </div>
+                                <a href="{{ url('stock:details_entrepot', pk=warehouse.pk) }}" class="warehouse-item-link">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="geo-empty">
+                    <i class="bi bi-geo-alt"></i>
+                    <h6>Aucun entrepôt à localiser</h6>
+                    <p>Créez votre premier entrepôt pour voir sa localisation</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Carte principale -->
+    <div class="main-card">
+        <!-- Barre de filtres et recherche -->
+        <div class="filters-bar">
+            <form method="get" class="filters-form">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" 
+                           name="recherche" 
+                           value="{{ recherche|default('') }}" 
+                           placeholder="Rechercher un entrepôt..."
+                           class="search-input">
+                </div>
+
+                <button type="submit" class="btn-filter">
+                    <i class="bi bi-funnel"></i>
+                    <span>Rechercher</span>
+                </button>
+
+                {% if recherche %}
+                <a href="?" class="btn-clear">
+                    <i class="bi bi-x-circle"></i>
+                    <span>Effacer</span>
+                </a>
+                {% endif %}
+            </form>
+
+            {% if recherche %}
+            <div class="active-filters">
+                <span class="active-filters-label">Recherche :</span>
+                <span class="filter-chip chip-secondary">
+                    <i class="bi bi-search"></i>
+                    "{{ recherche }}"
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Tableau des entrepôts -->
+        <div class="table-container">
+            <table class="warehouses-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="selectAll" class="checkbox-modern">
+                        </th>
+                        <th style="width: 100px;">Code</th>
+                        <th style="min-width: 200px;">Entrepôt</th>
+                        <th style="width: 200px;">Localisation</th>
+                        <th style="width: 180px;">Responsable</th>
+                        <th style="width: 120px;">Contact</th>
+                        <th style="width: 140px;">Occupation</th>
+                        <th style="width: 100px;">Statut</th>
+                        <th style="width: 130px;" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entrepot in entrepots %}
+                    <tr class="warehouse-row">
+                        <td>
+                            <input type="checkbox" name="entrepot_ids" value="{{ entrepot.pk }}" class="checkbox-modern">
+                        </td>
+                        <td>
+                            <div class="warehouse-code">{{ entrepot.code|default('SANS CODE') }}</div>
+                        </td>
+                        <td>
+                            <div class="warehouse-info">
+                                <div class="warehouse-avatar">
+                                    {{ entrepot.nom[0]|upper if entrepot.nom else 'E' }}
+                                </div>
+                                <div class="warehouse-details">
+                                    <div class="warehouse-name">{{ entrepot.nom }}</div>
+                                    {% if entrepot.ville %}
+                                    <div class="warehouse-location">
+                                        <i class="bi bi-geo-alt"></i>
+                                        {{ entrepot.ville }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="location-cell">
+                                {% if entrepot.adresse %}
+                                <div class="location-address" title="{{ entrepot.adresse }}">
+                                    {{ entrepot.adresse|truncate(40) }}
+                                </div>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if entrepot.responsable %}
+                            <div class="manager-cell">
+                                <div class="manager-avatar">
+                                    {{ entrepot.responsable.first_name.0|upper if entrepot.responsable.first_name else entrepot.responsable.username.0|upper }}
+                                </div>
+                                <div class="manager-details">
+                                    <div class="manager-name">
+                                        {{ entrepot.responsable.get_full_name()|default(entrepot.responsable.username) }}
+                                    </div>
+                                    {% if entrepot.responsable.email %}
+                                    <div class="manager-email" title="{{ entrepot.responsable.email }}">
+                                        {{ entrepot.responsable.email|truncate(25) }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if entrepot.telephone %}
+                            <a href="tel:{{ entrepot.telephone }}" class="contact-link">
+                                <i class="bi bi-telephone"></i>
+                                {{ entrepot.telephone }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="occupation-cell">
+                                <div class="occupation-info">
+                                    <span class="occupation-value">{{ entrepot.nombre_produits|default(0) }}</span>
+                                    <span class="occupation-label">produits</span>
+                                </div>
+                                {% if entrepot.capacite_totale and entrepot.capacite_totale > 0 %}
+                                {% set taux = (entrepot.capacite_utilisee|default(0) / entrepot.capacite_totale * 100)|round|int %}
+                                <div class="occupation-bar">
+                                    <div class="occupation-fill 
+                                        {% if taux > 90 %}fill-danger
+                                        {% elif taux > 70 %}fill-warning
+                                        {% else %}fill-success{% endif %}"
+                                        style="width: {{ taux }}%">
+                                    </div>
+                                </div>
+                                <div class="occupation-percent">{{ taux }}%</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if entrepot.est_actif %}
+                            <span class="status-badge status-success">
+                                <span class="status-dot"></span>
+                                Actif
+                            </span>
+                            {% else %}
+                            <span class="status-badge status-inactive">
+                                <span class="status-dot"></span>
+                                Inactif
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="action-buttons">
+                                <a href="{{ url('stock:details_entrepot', pk=entrepot.pk) }}" class="action-btn action-btn-view" title="Voir détails">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url('stock:modifier_entrepot', pk=entrepot.pk) }}" class="action-btn action-btn-edit" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{{ url('stock:supprimer_entrepot', pk=entrepot.pk) }}" class="action-btn action-btn-delete" title="Supprimer">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <div class="empty-state-content">
+                                    <i class="bi bi-building"></i>
+                                    <h5>Aucun entrepôt trouvé</h5>
+                                    <p>
+                                        {% if recherche %}
+                                        Aucun entrepôt ne correspond à votre recherche.
+                                        {% else %}
+                                        Commencez par créer votre premier entrepôt.
+                                        {% endif %}
+                                    </p>
+                                    <a href="{{ url('stock:creer_entrepot') }}" class="btn-primary">
+                                        <i class="bi bi-plus-circle"></i>
+                                        <span>Créer un entrepôt</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer avec actions -->
+        <div class="table-footer">
+            <div class="bulk-actions">
+                <select class="bulk-select">
+                    <option value="">Actions groupées</option>
+                    <option value="activer">✅ Activer entrepôts</option>
+                    <option value="desactiver">⏸️ Désactiver entrepôts</option>
+                    <option value="exporter">📊 Exporter sélection</option>
+                    <option value="supprimer">🗑️ Supprimer entrepôts</option>
+                </select>
+                <button class="btn-apply" id="applyBulkAction">Appliquer</button>
+            </div>
+
+            <div class="pagination-info">
+                <span class="info-text">
+                    Total: {{ entrepots|length }} entrepôt(s)
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle carte géographique
+    const toggleBtn = document.getElementById('toggleMapBtn');
+    const geoBody = document.getElementById('geoBody');
+    let mapVisible = false;
+    
+    if (toggleBtn && geoBody) {
+        toggleBtn.addEventListener('click', function() {
+            mapVisible = !mapVisible;
+            
+            if (mapVisible) {
+                geoBody.style.display = 'block';
+                toggleBtn.innerHTML = '<i class="bi bi-eye-slash"></i><span>Masquer la carte</span>';
+                toggleBtn.classList.add('active');
+                
+                // Animation d'apparition
+                setTimeout(() => {
+                    geoBody.style.opacity = '1';
+                    geoBody.style.transform = 'translateY(0)';
+                }, 10);
+            } else {
+                geoBody.style.opacity = '0';
+                geoBody.style.transform = 'translateY(-10px)';
+                
+                setTimeout(() => {
+                    geoBody.style.display = 'none';
+                }, 300);
+                
+                toggleBtn.innerHTML = '<i class="bi bi-eye"></i><span>Afficher la carte</span>';
+                toggleBtn.classList.remove('active');
+            }
+        });
+    }
+    
+    // Sélection multiple
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('input[name="entrepot_ids"]');
+    
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+    }
+    
+    // Actions groupées
+    const applyBtn = document.getElementById('applyBulkAction');
+    const bulkSelect = document.querySelector('.bulk-select');
+    
+    if (applyBtn && bulkSelect) {
+        applyBtn.addEventListener('click', function() {
+            const action = bulkSelect.value;
+            const selected = Array.from(checkboxes).filter(cb => cb.checked);
+            
+            if (!action) {
+                alert('⚠️ Veuillez sélectionner une action');
+                return;
+            }
+            
+            if (selected.length === 0) {
+                alert('⚠️ Veuillez sélectionner au moins un entrepôt');
+                return;
+            }
+            
+            const count = selected.length;
+            let message = '';
+            
+            switch(action) {
+                case 'activer':
+                    message = `✅ Activer ${count} entrepôt(s) ?`;
+                    break;
+                case 'desactiver':
+                    message = `⏸️ Désactiver ${count} entrepôt(s) ?`;
+                    break;
+                case 'exporter':
+                    message = `📊 Exporter ${count} entrepôt(s) ?`;
+                    break;
+                case 'supprimer':
+                    message = `🗑️ ATTENTION ! Supprimer ${count} entrepôt(s) ?\n\nCette action est IRRÉVERSIBLE !`;
+                    break;
+            }
+            
+            if (confirm(message)) {
+                alert(`Action "${action}" appliquée à ${count} entrepôt(s)`);
+                // TODO: Implémenter l'action côté serveur
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* ==================== PAGE HEADER ==================== */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.page-header-left {
+    flex: 1;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+.page-header-right {
+    display: flex;
+    gap: 12px;
+}
+
+/* ==================== BUTTONS ==================== */
+.btn-primary {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+/* ==================== STATS GRID ==================== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.stat-primary .stat-icon {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+.stat-success .stat-icon {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    color: white;
+}
+
+.stat-info .stat-icon {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    color: white;
+}
+
+.stat-warning .stat-icon {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.stat-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+/* ==================== GEO CARD (CARTE GÉOGRAPHIQUE) ==================== */
+.geo-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    margin-bottom: 32px;
+}
+
+.geo-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.geo-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.geo-header-left i {
+    font-size: 24px;
+    color: #6366f1;
+}
+
+.geo-header-left h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.btn-toggle-map {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-toggle-map:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-toggle-map.active {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+.geo-body {
+    padding: 24px;
+    transition: all 0.3s;
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+/* Warehouse Locations */
+.warehouse-locations {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.location-group {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid #6366f1;
+}
+
+.location-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.location-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.location-info {
+    flex: 1;
+}
+
+.location-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.location-count {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.location-warehouses {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+}
+
+.warehouse-item {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.warehouse-item:hover {
+    border-color: #6366f1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.warehouse-item-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #6366f1;
+    flex-shrink: 0;
+}
+
+.warehouse-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.warehouse-item-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.warehouse-item-code {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.warehouse-item-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+}
+
+.stat-badge-small {
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.stat-badge-small.stat-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.stat-badge-small.stat-secondary {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.stat-badge-small.stat-info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.warehouse-item-link {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.warehouse-item-link:hover {
+    transform: scale(1.1);
+}
+
+.geo-empty {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.geo-empty i {
+    font-size: 64px;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.geo-empty h6 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.geo-empty p {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ==================== MAIN CARD ==================== */
+.main-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    margin-bottom: 32px;
+}
+
+/* ==================== FILTERS BAR ==================== */
+.filters-bar {
+    padding: 24px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #f8fafc;
+}
+
+.filters-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 300px;
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 18px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 16px 12px 48px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.btn-filter {
+    padding: 12px 20px;
+    background: #6366f1;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.btn-filter:hover {
+    background: #5558e3;
+}
+
+.btn-clear {
+    padding: 12px 20px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-clear:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.active-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.active-filters-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.chip-secondary {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* ==================== TABLE ==================== */
+.table-container {
+    overflow-x: auto;
+}
+
+.warehouses-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.warehouses-table thead {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.warehouses-table th {
+    padding: 16px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.warehouses-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s;
+}
+
+.warehouses-table tbody tr:hover {
+    background: #f8fafc;
+    transform: translateX(4px);
+}
+
+.warehouses-table td {
+    padding: 16px 12px;
+    vertical-align: middle;
+}
+
+/* ==================== TABLE ELEMENTS ==================== */
+.checkbox-modern {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #6366f1;
+}
+
+.warehouse-code {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.warehouse-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.warehouse-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.warehouse-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.warehouse-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.warehouse-location {
+    font-size: 12px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.location-cell {
+    font-size: 13px;
+}
+
+.location-address {
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.text-muted {
+    color: #94a3b8;
+}
+
+.manager-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.manager-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #0ea5e9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.manager-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.manager-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.manager-email {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    color: #6366f1;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.contact-link:hover {
+    background: #e0e7ff;
+}
+
+.occupation-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.occupation-info {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.occupation-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.occupation-label {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.occupation-bar {
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.occupation-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+
+.fill-success {
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+.fill-warning {
+    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.fill-danger {
+    background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+}
+
+.occupation-percent {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-inactive {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-success .status-dot {
+    background: #10b981;
+}
+
+.status-inactive .status-dot {
+    background: #64748b;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn-view:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.action-btn-edit:hover {
+    border-color: #10b981;
+    color: #10b981;
+    background: #f0fdf4;
+}
+
+.action-btn-delete:hover {
+    border-color: #dc2626;
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+/* ==================== EMPTY STATE ==================== */
+.empty-state {
+    padding: 80px 20px !important;
+    text-align: center;
+}
+
+.empty-state-content i {
+    font-size: 64px;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.empty-state-content h5 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.empty-state-content p {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 24px;
+}
+
+/* ==================== TABLE FOOTER ==================== */
+.table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-top: 1px solid #f1f5f9;
+    background: #f8fafc;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.bulk-select {
+    padding: 10px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+}
+
+.btn-apply {
+    padding: 10px 20px;
+    background: #6366f1;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.btn-apply:hover {
+    background: #5558e3;
+}
+
+.pagination-info {
+    display: flex;
+    align-items: center;
+}
+
+.info-text {
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .location-warehouses {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .geo-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .filters-form {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .search-box {
+        min-width: 100%;
+    }
+    
+    .table-footer {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .bulk-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .bulk-select {
+        width: 100%;
+    }
+    
+    .warehouse-item {
+        flex-wrap: wrap;
+    }
+    
+    .warehouse-item-stats {
+        flex-direction: row;
+        width: 100%;
+    }
+}
+</style>
+
+{% endblock %}

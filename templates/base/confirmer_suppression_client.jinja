@@ -1,0 +1,1023 @@
+<!-- templates/base/confirmer_suppression_client.jinja - Design Professionnel -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Supprimer un client{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb-modern">
+                    <li class="breadcrumb-item">
+                        <a href="/"><i class="bi bi-house-door"></i> Accueil</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/clients/">Clients</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/clients/{{ client.pk }}/">{{ client.nom }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">Désactivation</li>
+                </ol>
+            </nav>
+
+            <!-- Carte principale de confirmation -->
+            <div class="confirmation-card">
+                <!-- En-tête avec icône d'alerte -->
+                <div class="confirmation-header">
+                    <div class="alert-icon-wrapper">
+                        <div class="alert-icon-pulse"></div>
+                        <div class="alert-icon">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                    </div>
+                    
+                    <h1 class="confirmation-title">Confirmer la désactivation</h1>
+                    <p class="confirmation-subtitle">
+                        Cette action désactivera le compte client. Il ne pourra plus passer de nouvelles commandes,
+                        mais son historique sera intégralement conservé.
+                    </p>
+                </div>
+
+                <!-- Informations du client -->
+                <div class="client-info-card">
+                    <div class="client-info-header">
+                        <div class="client-avatar-large">
+                            {{ client.nom[0]|upper if client.nom else 'C' }}
+                        </div>
+                        <div class="client-info-main">
+                            <h3 class="client-name">{{ client.nom }}</h3>
+                            <div class="client-meta">
+                                <span class="client-code">
+                                    <i class="bi bi-hash"></i>{{ client.code }}
+                                </span>
+                                <span class="status-badge {% if client.est_actif %}status-active{% else %}status-inactive{% endif %}">
+                                    <span class="status-dot"></span>
+                                    {% if client.est_actif %}Actif{% else %}Inactif{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="client-details-grid">
+                        <div class="detail-item">
+                            <div class="detail-icon">
+                                <i class="bi bi-envelope-fill"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">{{ client.email }}</div>
+                            </div>
+                        </div>
+
+                        <div class="detail-item">
+                            <div class="detail-icon">
+                                <i class="bi bi-telephone-fill"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">Téléphone</div>
+                                <div class="detail-value">{{ client.telephone }}</div>
+                            </div>
+                        </div>
+
+                        {% if client.ville %}
+                        <div class="detail-item">
+                            <div class="detail-icon">
+                                <i class="bi bi-geo-alt-fill"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">Ville</div>
+                                <div class="detail-value">{{ client.ville }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if client.pays %}
+                        <div class="detail-item">
+                            <div class="detail-icon">
+                                <i class="bi bi-flag-fill"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">Pays</div>
+                                <div class="detail-value">{{ client.pays }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if client.limite_credit %}
+                        <div class="detail-item highlight">
+                            <div class="detail-icon">
+                                <i class="bi bi-credit-card-fill"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">Limite de crédit</div>
+                                <div class="detail-value credit-amount">
+                                    {{ "{:,.0f}".format(client.limite_credit) }} FCFA
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if client.solde_actuel %}
+                        <div class="detail-item highlight">
+                            <div class="detail-icon">
+                                <i class="bi bi-wallet2"></i>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-label">Solde actuel</div>
+                                <div class="detail-value {% if client.solde_actuel > 0 %}text-warning{% else %}text-success{% endif %}">
+                                    {{ "{:,.0f}".format(client.solde_actuel or 0) }} FCFA
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Alertes conditionnelles -->
+                <div class="alerts-section">
+                    {% if commandes_actives %}
+                    <div class="alert-modern alert-warning">
+                        <div class="alert-icon">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">Commandes actives détectées</div>
+                            <div class="alert-text">
+                                Ce client possède des commandes en cours ou un historique récent. 
+                                La désactivation empêchera uniquement la création de nouvelles commandes.
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if client.limite_credit and client.limite_credit > 100000 %}
+                    <div class="alert-modern alert-info">
+                        <div class="alert-icon">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">Client à crédit important</div>
+                            <div class="alert-text">
+                                Ce client bénéficie d'une limite de crédit élevée ({{ "{:,.0f}".format(client.limite_credit) }} FCFA).
+                                Assurez-vous que tous les paiements sont à jour avant la désactivation.
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert-modern alert-neutral">
+                        <div class="alert-icon">
+                            <i class="bi bi-info-circle-fill"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">Qu'est-ce que la désactivation ?</div>
+                            <div class="alert-text">
+                                Le client sera marqué comme inactif mais toutes ses données (profil, historique, commandes, factures) 
+                                resteront intégralement conservées. Vous pourrez le réactiver à tout moment depuis la fiche client.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Impacts de la désactivation -->
+                <div class="impacts-section">
+                    <h3 class="impacts-title">
+                        <i class="bi bi-diagram-3-fill"></i>
+                        Conséquences de la désactivation
+                    </h3>
+                    
+                    <div class="impacts-grid">
+                        <div class="impact-card impact-negative">
+                            <div class="impact-icon">
+                                <i class="bi bi-cart-x-fill"></i>
+                            </div>
+                            <div class="impact-label">Nouvelles commandes</div>
+                            <div class="impact-status">Bloquées</div>
+                            <div class="impact-description">
+                                Le client ne pourra plus créer de nouvelles commandes
+                            </div>
+                        </div>
+
+                        <div class="impact-card impact-negative">
+                            <div class="impact-icon">
+                                <i class="bi bi-person-x-fill"></i>
+                            </div>
+                            <div class="impact-label">Accès espace client</div>
+                            <div class="impact-status">Suspendu</div>
+                            <div class="impact-description">
+                                L'accès au compte sera désactivé
+                            </div>
+                        </div>
+
+                        <div class="impact-card impact-positive">
+                            <div class="impact-icon">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="impact-label">Historique</div>
+                            <div class="impact-status">Conservé</div>
+                            <div class="impact-description">
+                                Toutes les données historiques restent accessibles
+                            </div>
+                        </div>
+
+                        <div class="impact-card impact-positive">
+                            <div class="impact-icon">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </div>
+                            <div class="impact-label">Réactivation</div>
+                            <div class="impact-status">Possible</div>
+                            <div class="impact-description">
+                                Le compte peut être réactivé à tout moment
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Checklist de recommandations -->
+                <div class="checklist-section">
+                    <h3 class="checklist-title">
+                        <i class="bi bi-list-check"></i>
+                        Vérifications recommandées
+                    </h3>
+                    
+                    <div class="checklist-grid">
+                        <div class="checklist-item">
+                            <div class="checklist-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="checklist-content">
+                                <div class="checklist-label">Commandes en cours</div>
+                                <div class="checklist-desc">Aucune commande non finalisée</div>
+                            </div>
+                        </div>
+
+                        <div class="checklist-item">
+                            <div class="checklist-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="checklist-content">
+                                <div class="checklist-label">Factures impayées</div>
+                                <div class="checklist-desc">Tous les paiements à jour</div>
+                            </div>
+                        </div>
+
+                        <div class="checklist-item">
+                            <div class="checklist-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="checklist-content">
+                                <div class="checklist-label">Solde créditeur</div>
+                                <div class="checklist-desc">Vérifier et régulariser si besoin</div>
+                            </div>
+                        </div>
+
+                        <div class="checklist-item">
+                            <div class="checklist-icon">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <div class="checklist-content">
+                                <div class="checklist-label">Notification client</div>
+                                <div class="checklist-desc">Prévenir le client si nécessaire</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulaire de confirmation -->
+                <form method="post" class="confirmation-form">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    
+                    <div class="form-actions">
+                        <a href="/clients/{{ client.pk }}/" class="btn-cancel">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annuler</span>
+                        </a>
+                        <button type="submit" class="btn-confirm-danger">
+                            <i class="bi bi-person-x-fill"></i>
+                            <span>Confirmer la désactivation</span>
+                        </button>
+                    </div>
+
+                    <div class="form-footer">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Cette action est réversible. Vous pourrez réactiver ce client à tout moment.</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.confirmation-form');
+    
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Modal de confirmation personnalisée
+            const confirmed = confirm(
+                '⚠️ CONFIRMATION FINALE\n\n' +
+                'Êtes-vous absolument certain de vouloir désactiver ce client ?\n\n' +
+                'Client: {{ client.nom }}\n' +
+                'Code: {{ client.code }}\n\n' +
+                'Le client ne pourra plus passer de nouvelles commandes.'
+            );
+            
+            if (confirmed) {
+                // Animation de chargement
+                const submitBtn = this.querySelector('.btn-confirm-danger');
+                submitBtn.innerHTML = '<span class="spinner"></span> Désactivation en cours...';
+                submitBtn.disabled = true;
+                
+                // Soumettre le formulaire
+                this.submit();
+            }
+        });
+    }
+    
+    // Animation des cartes d'impact au scroll
+    const impactCards = document.querySelectorAll('.impact-card');
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }, index * 100);
+            }
+        });
+    }, { threshold: 0.1 });
+    
+    impactCards.forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.5s ease';
+        observer.observe(card);
+    });
+});
+</script>
+
+<style>
+/* ==================== BREADCRUMB ==================== */
+.breadcrumb-modern {
+    display: flex;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-size: 13px;
+}
+
+.breadcrumb-modern li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+}
+
+.breadcrumb-modern li::after {
+    content: '/';
+    color: #cbd5e1;
+}
+
+.breadcrumb-modern li:last-child::after {
+    display: none;
+}
+
+.breadcrumb-modern a {
+    color: #64748b;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.breadcrumb-modern a:hover {
+    color: #1e40af;
+}
+
+.breadcrumb-item.active {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* ==================== CONFIRMATION CARD ==================== */
+.confirmation-card {
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+/* ==================== HEADER ==================== */
+.confirmation-header {
+    padding: 48px 40px;
+    text-align: center;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-bottom: 3px solid #fecaca;
+    position: relative;
+}
+
+.alert-icon-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 24px;
+}
+
+.alert-icon-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    background: #ef4444;
+    border-radius: 50%;
+    opacity: 0.2;
+    animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 0.1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.3;
+    }
+}
+
+.alert-icon {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    color: white;
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
+    animation: icon-bounce 2s infinite;
+}
+
+@keyframes icon-bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.confirmation-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #991b1b;
+    margin: 0 0 16px 0;
+}
+
+.confirmation-subtitle {
+    font-size: 15px;
+    color: #7f1d1d;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* ==================== CLIENT INFO CARD ==================== */
+.client-info-card {
+    padding: 32px 40px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.client-info-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.client-avatar-large {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 8px 16px rgba(30, 64, 175, 0.2);
+    flex-shrink: 0;
+}
+
+.client-info-main {
+    flex: 1;
+}
+
+.client-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px 0;
+}
+
+.client-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.client-code {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.status-inactive {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* ==================== CLIENT DETAILS GRID ==================== */
+.client-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.detail-item:hover {
+    background: #f1f5f9;
+    transform: translateX(4px);
+}
+
+.detail-item.highlight {
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    border: 2px solid #93c5fd;
+}
+
+.detail-icon {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.detail-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.detail-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.detail-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    word-break: break-all;
+}
+
+.credit-amount {
+    color: #1e40af;
+    font-size: 16px;
+}
+
+/* ==================== ALERTS SECTION ==================== */
+.alerts-section {
+    padding: 0 40px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.alert-modern {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 4px solid;
+}
+
+.alert-modern.alert-warning {
+    background: #fef3c7;
+    border-left-color: #f59e0b;
+}
+
+.alert-modern.alert-info {
+    background: #dbeafe;
+    border-left-color: #3b82f6;
+}
+
+.alert-modern.alert-neutral {
+    background: #f1f5f9;
+    border-left-color: #64748b;
+}
+
+.alert-modern .alert-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.alert-warning .alert-icon {
+    color: #f59e0b;
+}
+
+.alert-info .alert-icon {
+    color: #3b82f6;
+}
+
+.alert-neutral .alert-icon {
+    color: #64748b;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.alert-warning .alert-title {
+    color: #92400e;
+}
+
+.alert-info .alert-title {
+    color: #1e40af;
+}
+
+.alert-neutral .alert-title {
+    color: #475569;
+}
+
+.alert-text {
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.alert-warning .alert-text {
+    color: #78350f;
+}
+
+.alert-info .alert-text {
+    color: #1e3a8a;
+}
+
+.alert-neutral .alert-text {
+    color: #64748b;
+}
+
+/* ==================== IMPACTS SECTION ==================== */
+.impacts-section {
+    padding: 32px 40px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.impacts-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.impacts-title i {
+    color: #64748b;
+}
+
+.impacts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.impact-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+}
+
+.impact-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.impact-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.impact-negative .impact-icon {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.impact-positive .impact-icon {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.impact-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.impact-status {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.impact-negative .impact-status {
+    color: #dc2626;
+}
+
+.impact-positive .impact-status {
+    color: #16a34a;
+}
+
+.impact-description {
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+/* ==================== CHECKLIST SECTION ==================== */
+.checklist-section {
+    padding: 32px 40px;
+}
+
+.checklist-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.checklist-title i {
+    color: #10b981;
+}
+
+.checklist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: start;
+    gap: 12px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.checklist-item:hover {
+    background: white;
+    border-color: #10b981;
+}
+
+.checklist-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #10b981;
+}
+
+.checklist-content {
+    flex: 1;
+}
+
+.checklist-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.checklist-desc {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* ==================== CONFIRMATION FORM ==================== */
+.confirmation-form {
+    padding: 32px 40px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.btn-cancel, .btn-confirm-danger {
+    flex: 1;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-cancel {
+    background: white;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+}
+
+.btn-cancel:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+}
+
+.btn-confirm-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-confirm-danger:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+}
+
+.form-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.form-footer i {
+    color: #10b981;
+    font-size: 18px;
+}
+
+/* ==================== SPINNER ==================== */
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .confirmation-header {
+        padding: 32px 24px;
+    }
+    
+    .alert-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 36px;
+    }
+    
+    .confirmation-title {
+        font-size: 24px;
+    }
+    
+    .client-info-card,
+    .alerts-section,
+    .impacts-section,
+    .checklist-section,
+    .confirmation-form {
+        padding: 24px;
+    }
+    
+    .client-avatar-large {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+    
+    .client-name {
+        font-size: 20px;
+    }
+    
+    .client-details-grid,
+    .impacts-grid,
+    .checklist-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

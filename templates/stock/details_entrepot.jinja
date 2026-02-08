@@ -1,0 +1,1024 @@
+<!-- templates/stock/details_entrepot.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Détails de l'entrepôt - {{ entrepot.nom }}{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête de page -->
+    <div class="page-header-details">
+        <div class="header-back">
+            <a href="{{ url('stock:liste_entrepots') }}" class="btn-back-circle">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+        </div>
+        
+        <div class="header-content">
+            <div class="warehouse-main-info">
+                <div class="warehouse-icon-large">
+                    {{ entrepot.nom[0]|upper if entrepot.nom else 'E' }}
+                </div>
+                <div class="warehouse-details">
+                    <h2 class="warehouse-title">{{ entrepot.nom }}</h2>
+                    <div class="warehouse-meta">
+                        <span class="meta-code">
+                            <i class="bi bi-upc"></i>
+                            {{ entrepot.code }}
+                        </span>
+                        {% if entrepot.est_actif %}
+                        <span class="meta-status status-active">
+                            <span class="status-dot"></span>
+                            Actif
+                        </span>
+                        {% else %}
+                        <span class="meta-status status-inactive">
+                            <span class="status-dot"></span>
+                            Inactif
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <a href="{{ url('stock:modifier_entrepot', pk=entrepot.pk) }}" class="btn-action btn-edit">
+                    <i class="bi bi-pencil"></i>
+                    <span>Modifier</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cartes statistiques -->
+    <div class="info-cards-grid">
+        <div class="info-card info-card-location">
+            <div class="info-card-icon">
+                <i class="bi bi-geo-alt"></i>
+            </div>
+            <div class="info-card-content">
+                <div class="info-card-label">Localisation</div>
+                <div class="info-card-value">
+                    {{ entrepot.adresse if entrepot.adresse else "Non renseignée" }}
+                </div>
+                {% if entrepot.ville %}
+                <div class="info-card-extra">{{ entrepot.ville }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="info-card info-card-capacity">
+            <div class="info-card-icon">
+                <i class="bi bi-boxes"></i>
+            </div>
+            <div class="info-card-content">
+                <div class="info-card-label">Capacité</div>
+                <div class="info-card-value">
+                    {{ entrepot.capacite_totale if entrepot.capacite_totale else "Non définie" }}
+                </div>
+                {% if entrepot.capacite_totale and entrepot.capacite_utilisee %}
+                {% set taux = (entrepot.capacite_utilisee / entrepot.capacite_totale * 100)|round|int %}
+                <div class="capacity-bar">
+                    <div class="capacity-fill capacity-{{ 'danger' if taux > 90 else ('warning' if taux > 70 else 'success') }}" 
+                         style="width: {{ taux }}%"></div>
+                </div>
+                <div class="info-card-extra">{{ taux }}% utilisée</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="info-card info-card-manager">
+            <div class="info-card-icon">
+                <i class="bi bi-person-badge"></i>
+            </div>
+            <div class="info-card-content">
+                <div class="info-card-label">Responsable</div>
+                <div class="info-card-value">
+                    {% if entrepot.responsable %}
+                        {{ entrepot.responsable.get_full_name() if entrepot.responsable.get_full_name() else entrepot.responsable.username }}
+                    {% else %}
+                        Non assigné
+                    {% endif %}
+                </div>
+                {% if entrepot.telephone %}
+                <div class="info-card-extra">
+                    <i class="bi bi-telephone"></i>
+                    {{ entrepot.telephone }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="info-card info-card-products">
+            <div class="info-card-icon">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="info-card-content">
+                <div class="info-card-label">Produits stockés</div>
+                <div class="info-card-value info-card-big">{{ stock_produits|length }}</div>
+                <div class="info-card-extra">Produits différents</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock par produit -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <div class="header-left">
+                <div class="header-icon">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <div>
+                    <h5 class="header-title">Stock par produit</h5>
+                    <p class="header-subtitle">{{ stock_produits|length }} produit(s) en stock</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="btn-export">
+                    <i class="bi bi-download"></i>
+                    <span>Exporter</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="content-card-body">
+            {% if stock_produits %}
+            <div class="data-table">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 120px;">Code</th>
+                            <th>Produit</th>
+                            <th style="width: 180px;" class="text-end">Quantité en stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stock in stock_produits %}
+                        <tr>
+                            <td>
+                                <span class="table-code">{{ stock.produit__code }}</span>
+                            </td>
+                            <td>
+                                <div class="product-cell">
+                                    <div class="product-avatar">
+                                        {{ stock.produit__nom[0]|upper if stock.produit__nom else 'P' }}
+                                    </div>
+                                    <div class="product-name">{{ stock.produit__nom }}</div>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <span class="quantity-badge">{{ stock.quantite_totale }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state-simple">
+                <i class="bi bi-box-seam"></i>
+                <h5>Aucun produit en stock</h5>
+                <p>Cet entrepôt ne contient actuellement aucun produit</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Mouvements récents -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <div class="header-left">
+                <div class="header-icon header-icon-movements">
+                    <i class="bi bi-arrow-left-right"></i>
+                </div>
+                <div>
+                    <h5 class="header-title">Mouvements récents</h5>
+                    <p class="header-subtitle">50 derniers mouvements</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="tous">Tous</button>
+                    <button class="filter-btn" data-filter="entrees">Entrées</button>
+                    <button class="filter-btn" data-filter="sorties">Sorties</button>
+                </div>
+                <a href="{{ url('stock:liste_mouvements') }}?entrepot={{ entrepot.pk }}" class="btn-view-all">
+                    <i class="bi bi-eye"></i>
+                    <span>Voir tout</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="content-card-body">
+            {% if mouvements %}
+            <div class="data-table">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 160px;">Date</th>
+                            <th style="width: 140px;">Type</th>
+                            <th>Produit</th>
+                            <th style="width: 140px;" class="text-end">Quantité</th>
+                            <th style="width: 160px;">Utilisateur</th>
+                        </tr>
+                    </thead>
+                    <tbody id="movementsTable">
+                        {% for mouvement in mouvements %}
+                        <tr data-type="{{ mouvement.type_mouvement }}">
+                            <td>
+                                <div class="date-cell">
+                                    <div class="date-main">
+                                        <i class="bi bi-calendar3"></i>
+                                        {{ mouvement.date.strftime("%d/%m/%Y") }}
+                                    </div>
+                                    <div class="date-time">
+                                        <i class="bi bi-clock"></i>
+                                        {{ mouvement.date.strftime("%H:%M") }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if mouvement.type_mouvement == 'entree' %}
+                                <span class="type-badge type-entree">
+                                    <i class="bi bi-arrow-down-circle"></i>
+                                    Entrée
+                                </span>
+                                {% elif mouvement.type_mouvement == 'sortie' %}
+                                <span class="type-badge type-sortie">
+                                    <i class="bi bi-arrow-up-circle"></i>
+                                    Sortie
+                                </span>
+                                {% elif mouvement.type_mouvement == 'ajustement' %}
+                                <span class="type-badge type-ajustement">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                    Ajustement
+                                </span>
+                                {% else %}
+                                <span class="type-badge type-other">
+                                    {{ mouvement.get_type_mouvement_display() }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="product-cell">
+                                    <div class="product-avatar">
+                                        {{ mouvement.produit.nom[0]|upper if mouvement.produit.nom else 'P' }}
+                                    </div>
+                                    <div class="product-info">
+                                        <div class="product-name">{{ mouvement.produit.nom }}</div>
+                                        <div class="product-code-small">{{ mouvement.produit.code }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                {% if mouvement.quantite > 0 %}
+                                <span class="qty-badge qty-positive">
+                                    <i class="bi bi-plus-circle"></i>
+                                    {{ mouvement.quantite }}
+                                </span>
+                                {% else %}
+                                <span class="qty-badge qty-negative">
+                                    <i class="bi bi-dash-circle"></i>
+                                    {{ mouvement.quantite }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar">
+                                        {{ mouvement.utilisateur.username[0]|upper }}
+                                    </div>
+                                    <div class="user-name">{{ mouvement.utilisateur.username }}</div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state-simple">
+                <i class="bi bi-arrow-left-right"></i>
+                <h5>Aucun mouvement enregistré</h5>
+                <p>Aucun mouvement de stock n'a été enregistré pour cet entrepôt</p>
+                <a href="{{ url('stock:creer_mouvement_stock') }}" class="btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Créer un mouvement</span>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filtrage des mouvements
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const rows = document.querySelectorAll('#movementsTable tr');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filter = this.dataset.filter;
+            
+            rows.forEach(row => {
+                const type = row.dataset.type;
+                
+                if (filter === 'tous') {
+                    row.style.display = '';
+                } else if (filter === 'entrees' && type === 'entree') {
+                    row.style.display = '';
+                } else if (filter === 'sorties' && type === 'sortie') {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+
+<style>
+/* ==================== PAGE HEADER DETAILS ==================== */
+.page-header-details {
+    margin-bottom: 32px;
+}
+
+.header-back {
+    margin-bottom: 16px;
+}
+
+.btn-back-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-back-circle:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+.header-content {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.warehouse-main-info {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.warehouse-icon-large {
+    width: 96px;
+    height: 96px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: 700;
+    flex-shrink: 0;
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.2);
+}
+
+.warehouse-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 12px 0;
+}
+
+.warehouse-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.meta-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.meta-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-inactive {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-active .status-dot {
+    background: #10b981;
+}
+
+.status-inactive .status-dot {
+    background: #64748b;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-action {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-edit {
+    background: white;
+    border: 2px solid #6366f1;
+    color: #6366f1;
+}
+
+.btn-edit:hover {
+    background: #f8fafc;
+    transform: translateY(-2px);
+    color: #6366f1;
+}
+
+/* ==================== INFO CARDS GRID ==================== */
+.info-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.info-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    transition: all 0.3s;
+}
+
+.info-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.info-card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.info-card-location .info-card-icon {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #0ea5e9;
+}
+
+.info-card-capacity .info-card-icon {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #10b981;
+}
+
+.info-card-manager .info-card-icon {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #f59e0b;
+}
+
+.info-card-products .info-card-icon {
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+}
+
+.info-card-content {
+    flex: 1;
+}
+
+.info-card-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.info-card-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.info-card-big {
+    font-size: 32px;
+}
+
+.info-card-extra {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.capacity-bar {
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.capacity-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+
+.capacity-success {
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+.capacity-warning {
+    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.capacity-danger {
+    background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+}
+
+/* ==================== CONTENT CARD ==================== */
+.content-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    margin-bottom: 32px;
+}
+
+.content-card-header {
+    padding: 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.header-icon-movements {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.header-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px 0;
+}
+
+.header-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.header-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.btn-export,
+.btn-view-all {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-export {
+    background: white;
+    border: 2px solid #e2e8f0;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.btn-export:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+.btn-view-all {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    color: white;
+}
+
+.btn-view-all:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 6px;
+    background: white;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+}
+
+.filter-btn:hover:not(.active) {
+    background: #f8fafc;
+}
+
+.content-card-body {
+    padding: 0;
+}
+
+/* ==================== DATA TABLE ==================== */
+.data-table {
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.modern-table th {
+    padding: 16px 24px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s;
+}
+
+.modern-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.modern-table td {
+    padding: 16px 24px;
+    vertical-align: middle;
+}
+
+.table-code {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.product-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.product-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.product-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 14px;
+}
+
+.product-info {
+    flex: 1;
+}
+
+.product-code-small {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.quantity-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #166534;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.date-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.date-main,
+.date-time {
+    font-size: 13px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.type-entree {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.type-sortie {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.type-ajustement {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.type-other {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.qty-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.qty-positive {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.qty-negative {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #0ea5e9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 13px;
+}
+
+/* ==================== EMPTY STATE ==================== */
+.empty-state-simple {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.empty-state-simple i {
+    font-size: 64px;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+}
+
+.empty-state-simple h5 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.empty-state-simple p {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 24px;
+}
+
+.btn-primary {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 1200px) {
+    .info-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .info-cards-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 24px;
+    }
+    
+    .warehouse-main-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .btn-action {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .content-card-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .header-right {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .filter-buttons {
+        width: 100%;
+    }
+}
+</style>
+
+{% endblock %}

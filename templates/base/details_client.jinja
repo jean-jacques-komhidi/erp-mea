@@ -1,0 +1,1115 @@
+<!-- templates/base/details_client.jinja - Corrections finales -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}{{ client.nom }}{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb-modern">
+            <li class="breadcrumb-item">
+                <a href="/"><i class="bi bi-house-door"></i> Accueil</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="/clients/">Clients</a>
+            </li>
+            <li class="breadcrumb-item active">{{ client.nom }}</li>
+        </ol>
+    </nav>
+
+    <!-- En-tête du profil client - CORRIGÉ -->
+    <div class="profile-header-card">
+        <!-- CORRECTION 1: Pas de bannière qui déborde -->
+        <div class="profile-content-wrapper">
+            <div class="profile-main">
+                <div class="profile-avatar-wrapper">
+                    <div class="profile-avatar">
+                        {{ client.nom[0]|upper if client.nom else 'C' }}
+                    </div>
+                    <div class="profile-status {% if client.est_actif %}status-active{% else %}status-inactive{% endif %}">
+                        <i class="bi bi-circle-fill"></i>
+                    </div>
+                </div>
+                
+                <div class="profile-info">
+                    <h1 class="profile-name">{{ client.nom }}</h1>
+                    <div class="profile-meta">
+                        <span class="profile-code">
+                            <i class="bi bi-hash"></i>{{ client.code }}
+                        </span>
+                        {% if client.type_client == 'ENTREPRISE' %}
+                        <span class="profile-type type-enterprise">
+                            <i class="bi bi-building-fill"></i>Entreprise
+                        </span>
+                        {% else %}
+                        <span class="profile-type type-individual">
+                            <i class="bi bi-person-fill"></i>Particulier
+                        </span>
+                        {% endif %}
+                        <span class="profile-badge {% if client.est_actif %}badge-active{% else %}badge-inactive{% endif %}">
+                            {% if client.est_actif %}
+                                <i class="bi bi-check-circle-fill"></i> Actif
+                            {% else %}
+                                <i class="bi bi-x-circle-fill"></i> Inactif
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="profile-actions">
+                <a href="/ventes/commandes/nouvelle/?client={{ client.pk }}" class="btn-action btn-primary">
+                    <i class="bi bi-cart-plus"></i>
+                    <span>Nouvelle commande</span>
+                </a>
+                <a href="/clients/{{ client.pk }}/modifier/" class="btn-action btn-secondary">
+                    <i class="bi bi-pencil"></i>
+                    <span>Modifier</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations de contact -->
+    <div class="contact-grid">
+        <div class="contact-card">
+            <div class="contact-card-icon bg-primary">
+                <i class="bi bi-envelope-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">EMAIL</div>
+                {% if client.email %}
+                <a href="mailto:{{ client.email }}" class="contact-card-value">{{ client.email }}</a>
+                {% else %}
+                <div class="contact-card-value text-muted">Non renseigné</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="contact-card">
+            <div class="contact-card-icon bg-success">
+                <i class="bi bi-telephone-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">TÉLÉPHONE</div>
+                {% if client.telephone %}
+                <a href="tel:{{ client.telephone }}" class="contact-card-value">{{ client.telephone }}</a>
+                {% else %}
+                <div class="contact-card-value text-muted">Non renseigné</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="contact-card">
+            <div class="contact-card-icon bg-info">
+                <i class="bi bi-geo-alt-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">LOCALISATION</div>
+                <div class="contact-card-value">
+                    {{ client.ville or 'N/A' }}{% if client.pays %}, {{ client.pays }}{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deuxième ligne d'informations -->
+    <div class="contact-grid">
+        <div class="contact-card">
+            <div class="contact-card-icon bg-warning">
+                <i class="bi bi-credit-card-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">LIMITE DE CRÉDIT</div>
+                <div class="contact-card-value credit-amount">
+                    {{ "{:,.0f}".format(client.limite_credit) }} FCFA
+                </div>
+            </div>
+        </div>
+
+        {% if client.numero_fiscal %}
+        <div class="contact-card">
+            <div class="contact-card-icon bg-secondary">
+                <i class="bi bi-file-text-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">NINEA</div>
+                <div class="contact-card-value">{{ client.numero_fiscal }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="contact-card">
+            <div class="contact-card-icon bg-purple">
+                <i class="bi bi-calendar-check-fill"></i>
+            </div>
+            <div class="contact-card-content">
+                <div class="contact-card-label">CLIENT DEPUIS</div>
+                <div class="contact-card-value">
+                    {{ client.date_creation.strftime('%d/%m/%Y') if client.date_creation else 'N/A' }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Adresse complète -->
+    {% if client.adresse %}
+    <div class="address-card">
+        <div class="address-icon">
+            <i class="bi bi-map-fill"></i>
+        </div>
+        <div class="address-content">
+            <div class="address-label">Adresse complète</div>
+            <div class="address-text">{{ client.adresse }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Statistiques - CORRECTION 2: Solde au lieu de factures impayées -->
+    <div class="stats-grid">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon">
+                <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ "{:,.0f}".format(total_ventes|default(0)) }}</div>
+                <div class="stat-label">Ventes totales</div>
+                <div class="stat-currency">FCFA</div>
+            </div>
+        </div>
+
+        <!-- CORRECTION 2: Solde restant à payer -->
+        <div class="stat-card stat-danger">
+            <div class="stat-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ "{:,.0f}".format(solde_client|default(0)) }}</div>
+                <div class="stat-label">Solde à payer</div>
+                <div class="stat-currency">FCFA</div>
+            </div>
+        </div>
+
+        <div class="stat-card stat-success">
+            <div class="stat-icon">
+                <i class="bi bi-cart-check-fill"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ commandes|length }}</div>
+                <div class="stat-label">Commandes</div>
+            </div>
+        </div>
+
+        <div class="stat-card stat-warning">
+            <div class="stat-icon">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ delai_moyen_paiement|default(0) }}</div>
+                <div class="stat-label">Délai moyen</div>
+                <div class="stat-currency">jours</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onglets de contenu -->
+    <div class="tabs-container">
+        <div class="tabs-header">
+            <button class="tab-btn active" data-tab="commandes">
+                <i class="bi bi-cart-check"></i>
+                <span>Commandes</span>
+                <span class="tab-count">{{ commandes|length }}</span>
+            </button>
+            <button class="tab-btn" data-tab="factures">
+                <i class="bi bi-receipt"></i>
+                <span>Factures</span>
+                <span class="tab-count">{{ factures|length }}</span>
+            </button>
+        </div>
+
+        <!-- Onglet Commandes -->
+        <div class="tab-content active" id="tab-commandes">
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h3 class="table-card-title">
+                        <i class="bi bi-cart-check"></i>
+                        Commandes récentes
+                    </h3>
+                    <a href="/ventes/commandes/nouvelle/?client={{ client.pk }}" class="btn-add">
+                        <i class="bi bi-plus-circle"></i>
+                        Nouvelle commande
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>N° Commande</th>
+                                <th>Date</th>
+                                <th>Montant</th>
+                                <th>Statut</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for commande in commandes %}
+                            <tr>
+                                <td>
+                                    <span class="badge-code">{{ commande.numero_commande }}</span>
+                                </td>
+                                <td>{{ commande.date_commande.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <span class="amount">{{ "{:,.0f}".format(commande.total) }}</span>
+                                    <span class="currency">FCFA</span>
+                                </td>
+                                <td>
+                                    {% if commande.statut == 'CONFIRME' %}
+                                        <span class="status-badge status-success">
+                                            <span class="status-dot"></span>Confirmé
+                                        </span>
+                                    {% elif commande.statut == 'BROUILLON' %}
+                                        <span class="status-badge status-warning">
+                                            <span class="status-dot"></span>Brouillon
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge status-secondary">
+                                            <span class="status-dot"></span>{{ commande.get_statut_display() }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="action-buttons-inline">
+                                        <a href="/ventes/commandes/{{ commande.pk }}/" class="btn-icon-sm" title="Voir">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5">
+                                    <div class="empty-state-sm">
+                                        <i class="bi bi-cart-x"></i>
+                                        <p>Aucune commande</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onglet Factures -->
+        <div class="tab-content" id="tab-factures">
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h3 class="table-card-title">
+                        <i class="bi bi-receipt"></i>
+                        Factures récentes
+                    </h3>
+                    <a href="/ventes/factures/nouvelle/?client={{ client.pk }}" class="btn-add">
+                        <i class="bi bi-plus-circle"></i>
+                        Nouvelle facture
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>N° Facture</th>
+                                <th>Date</th>
+                                <th>Total</th>
+                                <th>Solde</th>
+                                <th>Statut</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for facture in factures %}
+                            <tr>
+                                <td>
+                                    <span class="badge-code badge-info">{{ facture.numero_facture }}</span>
+                                </td>
+                                <td>{{ facture.date_facture.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <span class="amount">{{ "{:,.0f}".format(facture.total) }}</span>
+                                    <span class="currency">FCFA</span>
+                                </td>
+                                <td>
+                                    <span class="amount {% if facture.solde > 0 %}text-warning{% else %}text-success{% endif %}">
+                                        {{ "{:,.0f}".format(facture.solde) }}
+                                    </span>
+                                    <span class="currency">FCFA</span>
+                                </td>
+                                <td>
+                                    {% if facture.statut == 'PAYEE' %}
+                                        <span class="status-badge status-success">
+                                            <span class="status-dot"></span>Payée
+                                        </span>
+                                    {% elif facture.statut == 'EN_RETARD' %}
+                                        <span class="status-badge status-danger">
+                                            <span class="status-dot"></span>En retard
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge status-secondary">
+                                            <span class="status-dot"></span>{{ facture.get_statut_display() }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="action-buttons-inline">
+                                        <a href="/ventes/factures/{{ facture.pk }}/" class="btn-icon-sm" title="Voir">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="/ventes/factures/{{ facture.pk }}/pdf/" class="btn-icon-sm" title="PDF" target="_blank">
+                                            <i class="bi bi-file-pdf"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state-sm">
+                                        <i class="bi bi-receipt-cutoff"></i>
+                                        <p>Aucune facture</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            this.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        });
+    });
+});
+</script>
+
+<style>
+/* ==================== BASE ==================== */
+.container-fluid {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ==================== BREADCRUMB ==================== */
+.breadcrumb-modern {
+    display: flex;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-size: 13px;
+}
+
+.breadcrumb-modern li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+}
+
+.breadcrumb-modern li::after {
+    content: '/';
+    color: #cbd5e1;
+}
+
+.breadcrumb-modern li:last-child::after {
+    display: none;
+}
+
+.breadcrumb-modern a {
+    color: #64748b;
+    text-decoration: none;
+}
+
+.breadcrumb-modern a:hover {
+    color: #1e40af;
+}
+
+.breadcrumb-item.active {
+    color: #1e40af;
+    font-weight: 600;
+}
+
+/* ==================== PROFILE HEADER - CORRIGÉ ==================== */
+.profile-header-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+/* CORRECTION 1: Pas de bannière qui déborde */
+.profile-content-wrapper {
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.profile-main {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-avatar-wrapper {
+    position: relative;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-status {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.profile-status i {
+    font-size: 10px;
+}
+
+.profile-status.status-active i {
+    color: #10b981;
+}
+
+.profile-status.status-inactive i {
+    color: #94a3b8;
+}
+
+.profile-info {
+}
+
+.profile-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 10px 0;
+}
+
+.profile-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.profile-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.profile-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.profile-type.type-enterprise {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.profile-type.type-individual {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.profile-badge.badge-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.profile-badge.badge-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-action {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-action.btn-primary {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: white;
+}
+
+.btn-action.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+}
+
+.btn-action.btn-secondary {
+    background: white;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+}
+
+.btn-action.btn-secondary:hover {
+    background: #f8fafc;
+}
+
+/* ==================== CONTACT GRID ==================== */
+.contact-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 1200px) {
+    .contact-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .contact-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.contact-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.2s;
+}
+
+.contact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.contact-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.contact-card-icon.bg-primary { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); }
+.contact-card-icon.bg-success { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
+.contact-card-icon.bg-info { background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%); }
+.contact-card-icon.bg-warning { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); }
+.contact-card-icon.bg-secondary { background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%); }
+.contact-card-icon.bg-purple { background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); }
+
+.contact-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.contact-card-label {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.contact-card-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    word-break: break-word;
+    text-decoration: none;
+    display: block;
+}
+
+.contact-card-value:hover {
+    color: #1e40af;
+}
+
+.credit-amount {
+    color: #1e40af;
+    font-size: 14px;
+}
+
+/* ==================== ADDRESS CARD ==================== */
+.address-card {
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 14px;
+}
+
+.address-icon {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #1e40af;
+    flex-shrink: 0;
+}
+
+.address-content {
+    flex: 1;
+}
+
+.address-label {
+    font-size: 10px;
+    color: #1e3a8a;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.address-text {
+    font-size: 13px;
+    color: #1e40af;
+    line-height: 1.5;
+}
+
+/* ==================== STATS GRID ==================== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+}
+
+.stat-card.stat-primary::before { background: linear-gradient(90deg, #1e40af 0%, #3b82f6 100%); }
+.stat-card.stat-danger::before { background: linear-gradient(90deg, #ef4444 0%, #f87171 100%); }
+.stat-card.stat-success::before { background: linear-gradient(90deg, #10b981 0%, #34d399 100%); }
+.stat-card.stat-warning::before { background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); }
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 16px;
+}
+
+.stat-primary .stat-icon {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.stat-danger .stat-icon {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.stat-success .stat-icon {
+    background: #dcfce7;
+    color: #10b981;
+}
+
+.stat-warning .stat-icon {
+    background: #fef3c7;
+    color: #f59e0b;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.stat-currency {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+/* ==================== TABS ==================== */
+.tabs-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.tabs-header {
+    display: flex;
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 6px;
+    gap: 6px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background: white;
+    color: #1e40af;
+}
+
+.tab-btn.active {
+    background: #1e40af;
+    color: white;
+}
+
+.tab-count {
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    font-size: 10px;
+}
+
+.tab-btn.active .tab-count {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.tab-content {
+    display: none;
+    padding: 24px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ==================== TABLE ==================== */
+.table-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.table-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.btn-add {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: white;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    color: white;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: #f8fafc;
+}
+
+.modern-table th {
+    padding: 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.modern-table td {
+    padding: 12px;
+    font-size: 13px;
+}
+
+.badge-code {
+    display: inline-block;
+    padding: 4px 10px;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-code.badge-info {
+    background: #e0e7ff;
+    color: #4f46e5;
+}
+
+.amount {
+    font-weight: 700;
+}
+
+.currency {
+    font-size: 10px;
+    color: #94a3b8;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.status-badge.status-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.status-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.status-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-badge.status-secondary {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.action-buttons-inline {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.btn-icon-sm {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-icon-sm:hover {
+    background: #1e40af;
+    color: white;
+}
+
+.empty-state-sm {
+    padding: 40px 20px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.empty-state-sm i {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.empty-state-sm p {
+    margin: 0;
+    font-size: 13px;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .profile-content-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .profile-actions {
+        width: 100%;
+    }
+    
+    .btn-action {
+        flex: 1;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}

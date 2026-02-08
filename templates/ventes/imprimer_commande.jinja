@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impression - Commande {{ commande.numero_commande }}</title>
+    <style>
+        /* ==================== STYLES GÉNÉRAUX ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            background: white;
+        }
+        
+        /* ==================== EN-TÊTE ==================== */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #6366f1;
+        }
+        
+        .header h1 {
+            font-size: 28pt;
+            color: #6366f1;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            font-size: 11pt;
+            color: #64748b;
+        }
+        
+        /* ==================== INFORMATIONS ==================== */
+        .info-section {
+            margin-bottom: 30px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .info-box {
+            padding: 15px;
+            background: #f8fafc;
+            border-left: 4px solid #6366f1;
+            border-radius: 4px;
+        }
+        
+        .info-label {
+            font-size: 10pt;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .info-value {
+            font-size: 12pt;
+            color: #1e293b;
+            font-weight: 600;
+        }
+        
+        /* ==================== TABLEAU ==================== */
+        .table-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 16pt;
+            color: #1e293b;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        thead {
+            background: #6366f1;
+            color: white;
+        }
+        
+        thead th {
+            padding: 12px 10px;
+            text-align: left;
+            font-size: 11pt;
+            font-weight: 600;
+        }
+        
+        tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        
+        tbody td {
+            padding: 10px;
+            font-size: 11pt;
+        }
+        
+        tfoot {
+            background: #f8fafc;
+        }
+        
+        tfoot td {
+            padding: 10px;
+            font-weight: 600;
+        }
+        
+        .total-row {
+            background: #e0e7ff !important;
+            color: #6366f1;
+            font-size: 13pt;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        /* ==================== NOTES ==================== */
+        .notes-section {
+            padding: 20px;
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            border-radius: 4px;
+            margin-bottom: 30px;
+        }
+        
+        .notes-title {
+            font-size: 12pt;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+        
+        .notes-content {
+            font-size: 11pt;
+            color: #78350f;
+            line-height: 1.8;
+        }
+        
+        /* ==================== FOOTER ==================== */
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 9pt;
+            color: #94a3b8;
+        }
+        
+        /* ==================== STATUS BADGE ==================== */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 10pt;
+            font-weight: 600;
+        }
+        
+        .status-draft { background: #f1f5f9; color: #475569; }
+        .status-confirmed { background: #dbeafe; color: #1e40af; }
+        .status-shipped { background: #e0e7ff; color: #4338ca; }
+        .status-delivered { background: #dcfce7; color: #166534; }
+        .status-invoiced { background: #d1fae5; color: #065f46; }
+        .status-cancelled { background: #fee2e2; color: #991b1b; }
+        
+        /* ==================== STYLES D'IMPRESSION ==================== */
+        @media print {
+            body {
+                padding: 0;
+                margin: 0;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .header {
+                page-break-after: avoid;
+            }
+            
+            .info-section {
+                page-break-inside: avoid;
+            }
+            
+            table {
+                page-break-inside: avoid;
+            }
+            
+            thead {
+                display: table-header-group;
+            }
+            
+            tfoot {
+                display: table-footer-group;
+            }
+            
+            tr {
+                page-break-inside: avoid;
+            }
+        }
+        
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+    </style>
+</head>
+<body>
+    <!-- Bouton d'impression (masqué à l'impression) -->
+    <div class="no-print" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <button onclick="window.print()" style="padding: 12px 24px; background: #6366f1; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
+            <span style="margin-right: 8px;">🖨️</span> Imprimer
+        </button>
+        <button onclick="window.close()" style="padding: 12px 24px; background: white; color: #64748b; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-left: 8px;">
+            Fermer
+        </button>
+    </div>
+    
+    <!-- EN-TÊTE -->
+    <div class="header">
+        <h1>Commande {{ commande.numero_commande }}</h1>
+        <p class="subtitle">Imprimé le {{ aujourdhui.strftime('%d/%m/%Y à %H:%M') }}</p>
+    </div>
+    
+    <!-- INFORMATIONS COMMANDE -->
+    <div class="info-section">
+        <div class="info-grid">
+            <div class="info-box">
+                <div class="info-label">Client</div>
+                <div class="info-value">{{ commande.client.nom }}</div>
+                <div style="font-size: 10pt; color: #64748b; margin-top: 4px;">
+                    {{ commande.client.code }}
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-label">Entrepôt</div>
+                <div class="info-value">{{ commande.entrepot.nom }}</div>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-label">Date de commande</div>
+                <div class="info-value">{{ commande.date_commande.strftime('%d/%m/%Y à %H:%M') }}</div>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-label">Date de livraison</div>
+                <div class="info-value">
+                    {{ commande.date_livraison.strftime('%d/%m/%Y') if commande.date_livraison else 'Non définie' }}
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-label">Statut</div>
+                <div class="info-value">
+                    {% if commande.statut == 'BROUILLON' %}
+                    <span class="status-badge status-draft">Brouillon</span>
+                    {% elif commande.statut == 'CONFIRME' %}
+                    <span class="status-badge status-confirmed">Confirmé</span>
+                    {% elif commande.statut == 'EXPEDIE' %}
+                    <span class="status-badge status-shipped">Expédié</span>
+                    {% elif commande.statut == 'LIVRE' %}
+                    <span class="status-badge status-delivered">Livré</span>
+                    {% elif commande.statut == 'FACTURE' %}
+                    <span class="status-badge status-invoiced">Facturé</span>
+                    {% elif commande.statut == 'ANNULE' %}
+                    <span class="status-badge status-cancelled">Annulé</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <div class="info-label">Créée par</div>
+                <div class="info-value">{{ commande.cree_par.username if commande.cree_par else 'Système' }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- LIGNES DE COMMANDE -->
+    <div class="table-section">
+        <h2 class="section-title">Lignes de commande</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Produit</th>
+                    <th class="text-center" style="width: 80px;">Qté</th>
+                    <th class="text-right" style="width: 120px;">Prix unit.</th>
+                    <th class="text-center" style="width: 70px;">Remise</th>
+                    <th class="text-center" style="width: 60px;">TVA</th>
+                    <th class="text-right" style="width: 130px;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ligne in lignes %}
+                <tr>
+                    <td>
+                        <strong>{{ ligne.produit.nom if ligne.produit else 'Produit supprimé' }}</strong>
+                        {% if ligne.produit and ligne.produit.code %}
+                        <br><small style="color: #64748b;">{{ ligne.produit.code }}</small>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">{{ ligne.quantite }}</td>
+                    <td class="text-right">{{ "{:,.0f}".format(ligne.prix_unitaire) }} FCFA</td>
+                    <td class="text-center">{{ ligne.remise if ligne.remise else 0 }}%</td>
+                    <td class="text-center">{{ ligne.taux_tva }}%</td>
+                    <td class="text-right"><strong>{{ "{:,.0f}".format(ligne.total) }} FCFA</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="5" class="text-right">Sous-total :</td>
+                    <td class="text-right"><strong>{{ "{:,.0f}".format(commande.sous_total) }} FCFA</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="5" class="text-right">TVA :</td>
+                    <td class="text-right"><strong>{{ "{:,.0f}".format(commande.montant_tva) }} FCFA</strong></td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="5" class="text-right"><strong>TOTAL :</strong></td>
+                    <td class="text-right"><strong>{{ "{:,.0f}".format(commande.total) }} FCFA</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    
+    <!-- NOTES -->
+    {% if commande.notes %}
+    <div class="notes-section">
+        <div class="notes-title">📝 Notes</div>
+        <div class="notes-content">{{ commande.notes }}</div>
+    </div>
+    {% endif %}
+    
+    <!-- FOOTER -->
+    <div class="footer">
+        <p>Document généré automatiquement - ERP MEA</p>
+        <p>Pour toute question, veuillez contacter notre service client</p>
+    </div>
+    
+    <script>
+        // Auto-print lorsque la page est chargée (optionnel)
+        // window.onload = function() { window.print(); }
+    </script>
+</body>
+</html>

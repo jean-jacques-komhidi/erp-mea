@@ -1,0 +1,1602 @@
+<!-- templates/stock/details_produit.jinja - DESIGN MODERNE VIOLET -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}{{ produit.nom }}{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête avec actions -->
+    <div class="page-header-detail">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/stock/produits/" class="btn-back-circle">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div class="header-info">
+                    {% if produit.image %}
+                    <img src="{{ produit.image.url }}" alt="{{ produit.nom }}" class="product-image-large">
+                    {% else %}
+                    <div class="product-image-placeholder">
+                        {{ produit.nom[0]|upper if produit.nom else 'P' }}
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h4 class="product-title">{{ produit.nom }}</h4>
+                        <div class="product-meta">
+                            <span class="meta-code">
+                                <i class="bi bi-tag"></i>
+                                {{ produit.code }}
+                            </span>
+                            {% if produit.categorie %}
+                            <span class="meta-category">
+                                <i class="bi bi-folder"></i>
+                                {{ produit.categorie.nom }}
+                            </span>
+                            {% endif %}
+                            {% if produit.est_actif %}
+                            <span class="meta-status status-active">
+                                <span class="status-dot"></span>
+                                Actif
+                            </span>
+                            {% else %}
+                            <span class="meta-status status-inactive">
+                                <span class="status-dot"></span>
+                                Inactif
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% if produit.description %}
+                        <p class="product-description">{{ produit.description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="/stock/mouvements/nouveau/" class="btn-action btn-action-primary">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>Mouvement stock</span>
+                </a>
+                <a href="/stock/produits/{{ produit.pk }}/modifier/" class="btn-action btn-action-secondary">
+                    <i class="bi bi-pencil"></i>
+                    <span>Modifier</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cartes de statistiques -->
+    <div class="stats-row">
+        <div class="stat-card-detail stat-primary">
+            <div class="stat-header">
+                <div class="stat-icon-wrapper">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <div>
+                    <div class="stat-label">Stock actuel</div>
+                    {% set stock_actuel = stock_actuel|default(0) %}
+                    <div class="stat-value {% if stock_actuel <= (produit.seuil_reapprovisionnement or 0) %}danger{% elif stock_actuel <= (produit.stock_min or 0) %}warning{% else %}success{% endif %}">
+                        {{ stock_actuel }}
+                    </div>
+                    <div class="stat-unit">{{ produit.unite }}</div>
+                </div>
+            </div>
+            <div class="stat-progress">
+                {% set max_stock = produit.stock_max if produit.stock_max and produit.stock_max > 0 else 100 %}
+                {% set pourcentage = (stock_actuel / max_stock * 100) if max_stock > 0 else 0 %}
+                <div class="progress-track">
+                    <div class="progress-fill 
+                        {% if stock_actuel <= (produit.seuil_reapprovisionnement or 0) %}fill-danger
+                        {% elif stock_actuel <= (produit.stock_min or 0) %}fill-warning
+                        {% else %}fill-success{% endif %}"
+                        style="width: {{ pourcentage|round(1) }}%">
+                    </div>
+                </div>
+                <div class="progress-label">{{ pourcentage|round(0)|int }}% de la capacité</div>
+            </div>
+        </div>
+
+        <div class="stat-card-detail stat-warning">
+            <div class="stat-header">
+                <div class="stat-icon-wrapper">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <div class="stat-label">Seuil réappro.</div>
+                    <div class="stat-value">{{ produit.seuil_reapprovisionnement or 0 }}</div>
+                    <div class="stat-unit">{{ produit.unite }}</div>
+                </div>
+            </div>
+            {% if stock_actuel <= (produit.seuil_reapprovisionnement or 0) %}
+            <div class="stat-alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i>
+                <span>Niveau critique - Commander maintenant</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="stat-card-detail stat-success">
+            <div class="stat-header">
+                <div class="stat-icon-wrapper">
+                    <i class="bi bi-currency-dollar"></i>
+                </div>
+                <div>
+                    <div class="stat-label">Prix de vente</div>
+                    <div class="stat-value">{{ "{:,.0f}".format(produit.prix_vente) }}</div>
+                    <div class="stat-unit">FCFA</div>
+                </div>
+            </div>
+            <div class="stat-info">
+                {% set marge = produit.prix_vente - produit.prix_achat %}
+                {% set marge_pct = (marge / produit.prix_achat * 100) if produit.prix_achat > 0 else 0 %}
+                <span class="info-badge badge-success">
+                    Marge: +{{ marge_pct|round(1) }}%
+                </span>
+            </div>
+        </div>
+
+        <div class="stat-card-detail stat-info">
+            <div class="stat-header">
+                <div class="stat-icon-wrapper">
+                    <i class="bi bi-clipboard-check"></i>
+                </div>
+                <div>
+                    <div class="stat-label">Statut stock</div>
+                    <div class="stat-status">
+                        {% if stock_actuel <= (produit.seuil_reapprovisionnement or 0) %}
+                        <span class="status-badge status-danger">
+                            <span class="status-dot-pulse"></span>
+                            Rupture
+                        </span>
+                        {% elif stock_actuel <= (produit.stock_min or 0) %}
+                        <span class="status-badge status-warning">
+                            <span class="status-dot-pulse"></span>
+                            Stock bas
+                        </span>
+                        {% else %}
+                        <span class="status-badge status-success">
+                            <span class="status-dot-pulse"></span>
+                            OK
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations et tarification -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="bi bi-info-circle"></i>
+                    <h6>Informations générales</h6>
+                </div>
+                <div class="info-card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Code produit</div>
+                            <div class="info-value">{{ produit.code }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Catégorie</div>
+                            <div class="info-value">
+                                {{ produit.categorie.nom if produit.categorie else 'Non catégorisé' }}
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Unité de mesure</div>
+                            <div class="info-value">{{ produit.unite }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Statut</div>
+                            <div class="info-value">
+                                {% if produit.est_actif %}
+                                <span class="badge-custom badge-success">✓ Actif</span>
+                                {% else %}
+                                <span class="badge-custom badge-secondary">⏸ Inactif</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% if produit.description %}
+                    <div class="description-section">
+                        <div class="description-label">Description</div>
+                        <p class="description-text">{{ produit.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="bi bi-currency-dollar"></i>
+                    <h6>Tarification</h6>
+                </div>
+                <div class="info-card-body">
+                    <div class="price-grid">
+                        <div class="price-box price-buy">
+                            <div class="price-label">Prix d'achat</div>
+                            <div class="price-amount">{{ "{:,.0f}".format(produit.prix_achat) }}</div>
+                            <div class="price-currency">FCFA</div>
+                        </div>
+                        <div class="price-box price-sell">
+                            <div class="price-label">Prix de vente</div>
+                            <div class="price-amount">{{ "{:,.0f}".format(produit.prix_vente) }}</div>
+                            <div class="price-currency">FCFA</div>
+                        </div>
+                    </div>
+
+                    <div class="tax-info">
+                        <div class="tax-item">
+                            <span class="tax-label">Taux TVA</span>
+                            <span class="tax-value">{{ produit.taux_tva }}%</span>
+                        </div>
+                        <div class="tax-item">
+                            <span class="tax-label">Prix TTC</span>
+                            {% set prix_ttc = produit.prix_vente * (1 + produit.taux_tva / 100) %}
+                            <span class="tax-value">{{ "{:,.0f}".format(prix_ttc) }} FCFA</span>
+                        </div>
+                    </div>
+
+                    <div class="margin-section">
+                        <div class="margin-item">
+                            <div class="margin-icon margin-success">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </div>
+                            <div>
+                                <div class="margin-label">Marge brute</div>
+                                <div class="margin-value">
+                                    {{ "{:,.0f}".format(produit.prix_vente - produit.prix_achat) }} FCFA
+                                </div>
+                            </div>
+                        </div>
+                        <div class="margin-item">
+                            <div class="margin-icon margin-primary">
+                                <i class="bi bi-percent"></i>
+                            </div>
+                            <div>
+                                <div class="margin-label">Marge %</div>
+                                <div class="margin-value">
+                                    {% if produit.prix_achat > 0 %}
+                                    {{ "%.1f"|format((produit.prix_vente - produit.prix_achat) / produit.prix_achat * 100) }}%
+                                    {% else %}
+                                    0%
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seuils de stock -->
+    <div class="threshold-section">
+        <div class="section-header-modern">
+            <i class="bi bi-clipboard-data"></i>
+            <h6>Seuils de stock</h6>
+        </div>
+        <div class="threshold-grid">
+            <div class="threshold-card threshold-min">
+                <div class="threshold-icon">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div class="threshold-content">
+                    <div class="threshold-label">Stock minimum</div>
+                    <div class="threshold-value">{{ produit.stock_min or 0 }}</div>
+                    <div class="threshold-unit">{{ produit.unite }}</div>
+                </div>
+                {% if stock_actuel <= (produit.stock_min or 0) %}
+                <div class="threshold-badge badge-warning">Niveau atteint</div>
+                {% endif %}
+            </div>
+
+            <div class="threshold-card threshold-max">
+                <div class="threshold-icon">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="threshold-content">
+                    <div class="threshold-label">Stock maximum</div>
+                    <div class="threshold-value">{{ produit.stock_max or 0 }}</div>
+                    <div class="threshold-unit">{{ produit.unite }}</div>
+                </div>
+                {% if stock_actuel >= (produit.stock_max or 0) %}
+                <div class="threshold-badge badge-info">Capacité max</div>
+                {% endif %}
+            </div>
+
+            <div class="threshold-card threshold-reappro">
+                <div class="threshold-icon">
+                    <i class="bi bi-bell"></i>
+                </div>
+                <div class="threshold-content">
+                    <div class="threshold-label">Seuil de réappro.</div>
+                    <div class="threshold-value">{{ produit.seuil_reapprovisionnement or 0 }}</div>
+                    <div class="threshold-unit">{{ produit.unite }}</div>
+                </div>
+                {% if stock_actuel <= (produit.seuil_reapprovisionnement or 0) %}
+                <div class="threshold-badge badge-danger">Commander urgent</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock par entrepôt -->
+    <div class="warehouse-section">
+        <div class="section-header-modern">
+            <div>
+                <i class="bi bi-building"></i>
+                <h6>Stock par entrepôt</h6>
+            </div>
+            <span class="count-badge">{{ stock_par_entrepot|length }} entrepôt(s)</span>
+        </div>
+        <div class="warehouse-table-container">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Entrepôt</th>
+                        <th class="text-center">Quantité</th>
+                        <th>Statut</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stock in stock_par_entrepot %}
+                    <tr>
+                        <td>
+                            <div class="warehouse-cell">
+                                <div class="warehouse-icon">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                                <div>
+                                    <div class="warehouse-name">{{ stock.entrepot__nom }}</div>
+                                    <div class="warehouse-label">Stock local</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="stock-quantity 
+                                {% if stock.stock <= (produit.seuil_reapprovisionnement or 0) %}qty-danger
+                                {% elif stock.stock <= (produit.stock_min or 0) %}qty-warning
+                                {% else %}qty-success{% endif %}">
+                                {{ stock.stock }}
+                            </div>
+                            <div class="stock-unit-small">{{ produit.unite }}</div>
+                        </td>
+                        <td>
+                            {% if stock.stock <= (produit.seuil_reapprovisionnement or 0) %}
+                            <span class="table-badge badge-danger">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Rupture
+                            </span>
+                            {% elif stock.stock <= (produit.stock_min or 0) %}
+                            <span class="table-badge badge-warning">
+                                <i class="bi bi-exclamation-circle"></i>
+                                Bas
+                            </span>
+                            {% else %}
+                            <span class="table-badge badge-success">
+                                <i class="bi bi-check-circle"></i>
+                                OK
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="/stock/entrepots/{{ stock.entrepot__id }}/" class="table-action-btn">
+                                <i class="bi bi-eye"></i>
+                                Voir
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4">
+                            <div class="empty-state-table">
+                                <i class="bi bi-inbox"></i>
+                                <h6>Aucun stock dans les entrepôts</h6>
+                                <p>Ce produit n'est stocké dans aucun entrepôt</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Mouvements récents -->
+    <div class="movements-section">
+        <div class="section-header-modern">
+            <div>
+                <i class="bi bi-clock-history"></i>
+                <h6>Mouvements récents</h6>
+            </div>
+            <a href="/stock/mouvements/?produit={{ produit.id }}" class="view-all-link">
+                <span>Voir tout</span>
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+        <div class="movements-table-container">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Entrepôt</th>
+                        <th class="text-center">Quantité</th>
+                        <th>Référence</th>
+                        <th>Utilisateur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mouvement in mouvements %}
+                    <tr>
+                        <td>
+                            <div class="date-cell">
+                                <div class="date-main">{{ mouvement.date.strftime('%d/%m/%Y') }}</div>
+                                <div class="date-time">{{ mouvement.date.strftime('%H:%M') }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if mouvement.type_mouvement == 'ENTREE' %}
+                            <span class="movement-badge badge-success">
+                                <i class="bi bi-arrow-down-circle"></i>
+                                Entrée
+                            </span>
+                            {% elif mouvement.type_mouvement == 'SORTIE' %}
+                            <span class="movement-badge badge-danger">
+                                <i class="bi bi-arrow-up-circle"></i>
+                                Sortie
+                            </span>
+                            {% elif mouvement.type_mouvement == 'AJUSTEMENT' %}
+                            <span class="movement-badge badge-warning">
+                                <i class="bi bi-arrow-repeat"></i>
+                                Ajustement
+                            </span>
+                            {% else %}
+                            <span class="movement-badge badge-info">
+                                <i class="bi bi-arrow-left-right"></i>
+                                Transfert
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="warehouse-mini">
+                                <i class="bi bi-building"></i>
+                                {{ mouvement.entrepot.nom }}
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="quantity-cell {% if mouvement.quantite > 0 %}qty-positive{% else %}qty-negative{% endif %}">
+                                {% if mouvement.quantite > 0 %}+{% endif %}{{ mouvement.quantite }}
+                            </div>
+                            <div class="stock-unit-small">{{ produit.unite }}</div>
+                        </td>
+                        <td>
+                            <code class="reference-code">{{ mouvement.reference }}</code>
+                        </td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">
+                                    <i class="bi bi-person"></i>
+                                </div>
+                                {{ mouvement.utilisateur.username if mouvement.utilisateur else 'Système' }}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state-table">
+                                <i class="bi bi-arrow-left-right"></i>
+                                <h6>Aucun mouvement de stock</h6>
+                                <p>Aucune activité enregistrée pour ce produit</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ========== STYLES DÉTAILS PRODUIT MODERNE ========== */
+
+/* Page Header Detail */
+.page-header-detail {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 32px;
+    margin-bottom: 32px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.header-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    flex: 1;
+}
+
+.btn-back-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-back-circle:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f1f5f9;
+}
+
+.header-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    flex: 1;
+}
+
+.product-image-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 16px;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.product-image-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    flex-shrink: 0;
+}
+
+.product-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 12px 0;
+}
+
+.product-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.meta-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.meta-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.meta-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-inactive {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-active .status-dot {
+    background: #10b981;
+}
+
+.status-inactive .status-dot {
+    background: #64748b;
+}
+
+.product-description {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0;
+    max-width: 600px;
+}
+
+.header-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-action {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-action-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+}
+
+.btn-action-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+.btn-action-secondary {
+    background: white;
+    border: 2px solid #e2e8f0;
+    color: #64748b;
+}
+
+.btn-action-secondary:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: #f8fafc;
+}
+
+/* Stats Row */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.stat-card-detail {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s;
+}
+
+.stat-card-detail:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.stat-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.stat-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.stat-primary .stat-icon-wrapper {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.stat-warning .stat-icon-wrapper {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.stat-success .stat-icon-wrapper {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.stat-info .stat-icon-wrapper {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.stat-value.success {
+    color: #10b981;
+}
+
+.stat-value.warning {
+    color: #f59e0b;
+}
+
+.stat-value.danger {
+    color: #dc2626;
+}
+
+.stat-unit {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.stat-progress {
+    margin-top: 16px;
+}
+
+.progress-track {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.fill-success {
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+.fill-warning {
+    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.fill-danger {
+    background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+}
+
+.progress-label {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.stat-alert {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.alert-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.stat-info {
+    margin-top: 12px;
+}
+
+.info-badge {
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.stat-status {
+    margin-top: 8px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.status-badge.status-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.status-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.status-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-dot-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-success .status-dot-pulse {
+    background: #10b981;
+}
+
+.status-warning .status-dot-pulse {
+    background: #f59e0b;
+}
+
+.status-danger .status-dot-pulse {
+    background: #dc2626;
+}
+
+/* Info Card */
+.info-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.info-card-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.info-card-header i {
+    font-size: 24px;
+    color: #6366f1;
+}
+
+.info-card-header h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.info-card-body {
+    padding: 24px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.info-item {
+    min-height: 60px;
+}
+
+.info-label {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+}
+
+.info-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.badge-custom {
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge-secondary {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.description-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.description-label {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 8px;
+}
+
+.description-text {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* Price Grid */
+.price-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.price-box {
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.price-buy {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 2px solid #e2e8f0;
+}
+
+.price-sell {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    border: 2px solid #86efac;
+}
+
+.price-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.price-amount {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.price-sell .price-amount {
+    color: #166534;
+}
+
+.price-currency {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.tax-info {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.tax-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tax-label {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.tax-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.margin-section {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding-top: 20px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.margin-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.margin-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.margin-success {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.margin-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.margin-label {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+}
+
+.margin-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Threshold Section */
+.threshold-section {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 24px;
+    margin-bottom: 32px;
+}
+
+.section-header-modern {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.section-header-modern > div,
+.section-header-modern {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.section-header-modern i {
+    font-size: 24px;
+    color: #6366f1;
+}
+
+.section-header-modern h6 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.count-badge {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%);
+    color: #6366f1;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.threshold-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.threshold-card {
+    padding: 24px;
+    border-radius: 12px;
+    border: 2px solid;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.threshold-min {
+    border-color: #fde68a;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.threshold-max {
+    border-color: #86efac;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.threshold-reappro {
+    border-color: #fca5a5;
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+.threshold-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.threshold-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 16px;
+}
+
+.threshold-min .threshold-icon {
+    color: #f59e0b;
+}
+
+.threshold-max .threshold-icon {
+    color: #10b981;
+}
+
+.threshold-reappro .threshold-icon {
+    color: #dc2626;
+}
+
+.threshold-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.threshold-value {
+    font-size: 48px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.threshold-unit {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-bottom: 12px;
+}
+
+.threshold-badge {
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+    margin-top: 8px;
+}
+
+.badge-warning {
+    background: rgba(251, 191, 36, 0.3);
+    color: #92400e;
+}
+
+.badge-info {
+    background: rgba(56, 189, 248, 0.3);
+    color: #075985;
+}
+
+.badge-danger {
+    background: rgba(239, 68, 68, 0.3);
+    color: #991b1b;
+}
+
+/* Warehouse & Movements Sections */
+.warehouse-section,
+.movements-section {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 32px;
+    overflow: hidden;
+}
+
+.warehouse-table-container,
+.movements-table-container {
+    overflow-x: auto;
+}
+
+.view-all-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6366f1;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.view-all-link:hover {
+    gap: 12px;
+    color: #5558e3;
+}
+
+/* Modern Table */
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.modern-table th {
+    padding: 16px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s;
+}
+
+.modern-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.modern-table td {
+    padding: 20px;
+    vertical-align: middle;
+}
+
+.warehouse-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.warehouse-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    color: #6366f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.warehouse-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.warehouse-label {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.stock-quantity {
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.qty-success {
+    color: #10b981;
+}
+
+.qty-warning {
+    color: #f59e0b;
+}
+
+.qty-danger {
+    color: #dc2626;
+}
+
+.stock-unit-small {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+.table-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.table-badge.badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.table-badge.badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.table-badge.badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.table-action-btn {
+    padding: 8px 16px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    color: #6366f1;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.table-action-btn:hover {
+    border-color: #6366f1;
+    background: #f8fafc;
+}
+
+.date-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.date-main {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.date-time {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.movement-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.warehouse-mini {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.quantity-cell {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.qty-positive {
+    color: #10b981;
+}
+
+.qty-negative {
+    color: #dc2626;
+}
+
+.reference-code {
+    padding: 4px 8px;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+}
+
+.empty-state-table {
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.empty-state-table i {
+    font-size: 64px;
+    color: #cbd5e1;
+    margin-bottom: 16px;
+}
+
+.empty-state-table h6 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.empty-state-table p {
+    font-size: 14px;
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .threshold-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 992px) {
+    .header-content {
+        flex-direction: column;
+    }
+    
+    .header-actions {
+        width: 100%;
+        flex-direction: row;
+    }
+    
+    .btn-action {
+        flex: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .header-info {
+        flex-direction: column;
+    }
+    
+    .product-image-large,
+    .product-image-placeholder {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .price-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .threshold-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .margin-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+</style>
+
+{% endblock %}

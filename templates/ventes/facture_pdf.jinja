@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facture {{ facture.numero_facture }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            color: #2c3e50;
+            line-height: 1.4;
+            background: white;
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+        }
+        
+        .facture-container {
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* En-tête avec logo centré */
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            padding: 20px 30px;
+            text-align: center;
+            color: white;
+        }
+        
+        .logo-container {
+            margin-bottom: 10px;
+        }
+        
+        .company-logo {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .company-name {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+        
+        .company-tagline {
+            font-size: 12px;
+            opacity: 0.9;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .company-contact {
+            font-size: 11px;
+            opacity: 0.85;
+        }
+        
+        /* Section facture info */
+        .facture-meta {
+            background: #f8fafc;
+            padding: 15px 30px;
+            border-bottom: 2px solid #1e40af;
+        }
+        
+        .facture-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .meta-item {
+            text-align: center;
+        }
+        
+        .meta-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+        
+        .meta-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e40af;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-payee {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-retard {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-envoyee {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-brouillon {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        /* Section client */
+        .content-section {
+            padding: 20px 30px;
+            flex: 1;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-box {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #1e40af;
+        }
+        
+        .info-box-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .client-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+        
+        .client-details {
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.6;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 11px;
+        }
+        
+        .detail-label {
+            color: #64748b;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        /* Tableau des articles */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 11px;
+        }
+        
+        .items-table thead {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+        }
+        
+        .items-table th {
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        
+        .items-table th.text-right,
+        .items-table td.text-right {
+            text-align: right;
+        }
+        
+        .items-table th.text-center,
+        .items-table td.text-center {
+            text-align: center;
+        }
+        
+        .items-table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .items-table tbody tr:last-child {
+            border-bottom: none;
+        }
+        
+        .items-table td {
+            padding: 8px;
+        }
+        
+        .item-description {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 2px;
+        }
+        
+        .item-details {
+            font-size: 9px;
+            color: #94a3b8;
+        }
+        
+        /* Totaux */
+        .totals-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+        
+        .totals-box {
+            width: 350px;
+            background: #f8fafc;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .totals-box table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .totals-box tr {
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .totals-box tr:last-child {
+            border-bottom: none;
+        }
+        
+        .totals-box td {
+            padding: 8px 15px;
+            font-size: 12px;
+        }
+        
+        .totals-box td:first-child {
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .totals-box td:last-child {
+            text-align: right;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        
+        .total-row {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+        }
+        
+        .total-row td {
+            padding: 12px 15px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        
+        .solde-row {
+            background: #fef3c7;
+        }
+        
+        .solde-row td {
+            color: #92400e;
+            font-weight: 700;
+            font-size: 13px;
+        }
+        
+        /* Remarques */
+        .remarques {
+            background: #fef3c7;
+            padding: 12px;
+            border-left: 3px solid #fbbf24;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .remarques-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #92400e;
+            font-size: 12px;
+        }
+        
+        .remarques-content {
+            font-size: 11px;
+            color: #78350f;
+            line-height: 1.5;
+        }
+        
+        /* Informations de paiement */
+        .payment-info {
+            background: #dbeafe;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #1e40af;
+            margin-bottom: 15px;
+        }
+        
+        .payment-info-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #1e3a8a;
+            font-size: 12px;
+        }
+        
+        .payment-info-content {
+            font-size: 10px;
+            color: #1e40af;
+            line-height: 1.6;
+        }
+        
+        /* Pied de page */
+        .footer {
+            padding: 15px 30px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            background: #f8fafc;
+        }
+        
+        .footer-thanks {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 5px;
+        }
+        
+        .footer-contact {
+            font-size: 10px;
+            color: #64748b;
+            line-height: 1.6;
+        }
+        
+        /* Impression */
+        @media print {
+            body {
+                width: 210mm;
+                height: 297mm;
+            }
+            
+            .facture-container {
+                box-shadow: none;
+                page-break-after: avoid;
+            }
+            
+            .items-table {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="facture-container">
+        <!-- En-tête avec logo centré -->
+        <div class="header">
+            <div class="logo-container">
+                <div class="company-logo">EM</div>
+                <div class="company-name">ERP MEA</div>
+                <div class="company-tagline">Middle East & Africa</div>
+            </div>
+            <div class="company-contact">
+                📍 Dakar, Sénégal &nbsp;|&nbsp; 📞 +221 78 482 32 96 &nbsp;|&nbsp; ✉ contact@erp-mea.com
+            </div>
+        </div>
+        
+        <!-- Métadonnées facture -->
+        <div class="facture-meta">
+            <div class="facture-meta-grid">
+                <div class="meta-item">
+                    <div class="meta-label">Facture N°</div>
+                    <div class="meta-value">{{ facture.numero_facture }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Date d'émission</div>
+                    <div class="meta-value">{{ facture.date_facture.strftime('%d/%m/%Y') if facture.date_facture else '-' }}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Statut</div>
+                    <div class="meta-value">
+                        {% if facture.statut == 'PAYEE' %}
+                            <span class="status-badge status-payee">✓ Payée</span>
+                        {% elif facture.statut == 'EN_RETARD' %}
+                            <span class="status-badge status-retard">⚠ En retard</span>
+                        {% elif facture.statut == 'ENVOYEE' %}
+                            <span class="status-badge status-envoyee">➤ Envoyée</span>
+                        {% elif facture.statut == 'BROUILLON' %}
+                            <span class="status-badge status-brouillon">◉ Brouillon</span>
+                        {% else %}
+                            <span class="status-badge status-brouillon">{{ facture.get_statut_display() }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenu principal -->
+        <div class="content-section">
+            <!-- Informations client et paiement -->
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="info-box-title">Facturé à</div>
+                    <div class="client-name">{{ facture.client.nom }}</div>
+                    <div class="client-details">
+                        {% if facture.client.code %}Code: {{ facture.client.code }}<br>{% endif %}
+                        {% if facture.client.adresse %}{{ facture.client.adresse }}<br>{% endif %}
+                        {% if facture.client.telephone %}📞 {{ facture.client.telephone }}<br>{% endif %}
+                        {% if facture.client.email %}✉ {{ facture.client.email }}{% endif %}
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-box-title">Informations de paiement</div>
+                    <div class="detail-row">
+                        <span class="detail-label">Échéance:</span>
+                        <span class="detail-value">{{ facture.date_echeance.strftime('%d/%m/%Y') if facture.date_echeance else '-' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Conditions:</span>
+                        <span class="detail-value">{{ facture.conditions_paiement if facture.conditions_paiement else 'À 30 jours' }}</span>
+                    </div>
+                    {% if facture.commande_vente %}
+                    <div class="detail-row">
+                        <span class="detail-label">Commande:</span>
+                        <span class="detail-value">{{ facture.commande_vente.numero_commande }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Tableau des articles -->
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 45%;">Description</th>
+                        <th class="text-center" style="width: 10%;">Qté</th>
+                        <th class="text-right" style="width: 20%;">Prix unitaire</th>
+                        <th class="text-right" style="width: 20%;">Total HT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ligne in lignes %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <div class="item-description">{{ ligne.produit.nom }}</div>
+                            {% if ligne.produit.code %}<div class="item-details">Réf: {{ ligne.produit.code }}</div>{% endif %}
+                        </td>
+                        <td class="text-center">{{ ligne.quantite }}</td>
+                        <td class="text-right">{{ "{:,.0f}".format(ligne.prix_unitaire) }} F</td>
+                        <td class="text-right">{{ "{:,.0f}".format(ligne.prix_unitaire * ligne.quantite) }} F</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- Totaux -->
+            <div class="totals-section">
+                <div class="totals-box">
+                    <table>
+                        <tr>
+                            <td>Sous-total HT</td>
+                            <td>{{ "{:,.0f}".format(facture.sous_total) if facture.sous_total else '0' }} FCFA</td>
+                        </tr>
+                        {% if facture.montant_tva and facture.montant_tva > 0 %}
+                        <tr>
+                            <td>TVA (18%)</td>
+                            <td>{{ "{:,.0f}".format(facture.montant_tva) }} FCFA</td>
+                        </tr>
+                        {% endif %}
+                        <tr class="total-row">
+                            <td>TOTAL TTC</td>
+                            <td>{{ "{:,.0f}".format(facture.total) if facture.total else '0' }} FCFA</td>
+                        </tr>
+                        {% set total_paye = facture.montant_paye if facture.montant_paye else 0 %}
+                        <tr>
+                            <td>Montant payé</td>
+                            <td style="color: #10b981;">{{ "{:,.0f}".format(total_paye) }} FCFA</td>
+                        </tr>
+                        {% set solde = facture.total - total_paye %}
+                        <tr class="solde-row">
+                            <td>SOLDE RESTANT</td>
+                            <td>{{ "{:,.0f}".format(solde) }} FCFA</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Remarques -->
+            {% if facture.remarques %}
+            <div class="remarques">
+                <div class="remarques-title">📝 Remarques</div>
+                <div class="remarques-content">{{ facture.remarques }}</div>
+            </div>
+            {% endif %}
+            
+            <!-- Informations de paiement -->
+            <div class="payment-info">
+                <div class="payment-info-title">💳 Coordonnées bancaires</div>
+                <div class="payment-info-content">
+                    Banque: <strong>[VOTRE BANQUE]</strong> | IBAN: <strong>[VOTRE IBAN]</strong> | Réf: <strong>{{ facture.numero_facture }}</strong>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pied de page -->
+        <div class="footer">
+            <div class="footer-thanks">Merci pour votre confiance !</div>
+            <div class="footer-contact">
+                ERP MEA | www.erp-mea.com | contact@erp-mea.com | +221 78 482 32 96
+            </div>
+        </div>
+    </div>
+</body>
+</html>

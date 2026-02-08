@@ -1,0 +1,302 @@
+<!-- templates/stock/details_mouvement.jinja -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Détails du mouvement{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Accueil</a></li>
+            <li class="breadcrumb-item"><a href="{{ url('stock:liste_mouvements') }}">Mouvements de stock</a></li>
+            <li class="breadcrumb-item active">Détails</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Carte principale du mouvement -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <h3 class="fw-bold mb-2">
+                                {% if mouvement.type_mouvement == 'entree' %}
+                                <i class="bi bi-arrow-down-circle text-success me-2"></i>
+                                {% elif mouvement.type_mouvement == 'sortie' %}
+                                <i class="bi bi-arrow-up-circle text-danger me-2"></i>
+                                {% else %}
+                                <i class="bi bi-arrow-repeat text-warning me-2"></i>
+                                {% endif %}
+                                {{ mouvement.get_type_mouvement_display() }}
+                            </h3>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-calendar3 me-2"></i>{{ mouvement.date.strftime("%d/%m/%Y à %H:%M") }}
+                            </p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url('stock:modifier_mouvement', pk=mouvement.pk) }}" 
+                               class="btn btn-outline-primary">
+                                <i class="bi bi-pencil me-2"></i>Modifier
+                            </a>
+                            <a href="{{ url('stock:supprimer_mouvement', pk=mouvement.pk) }}" 
+                               class="btn btn-outline-danger">
+                                <i class="bi bi-trash me-2"></i>Supprimer
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Informations du produit -->
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-box-seam me-2"></i>Produit
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between py-2 border-bottom">
+                                        <span class="text-muted">Nom</span>
+                                        <a href="{{ url('stock:details_produit', pk=mouvement.produit.pk) }}" 
+                                           class="fw-bold text-decoration-none">
+                                            {{ mouvement.produit.nom }}
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between py-2 border-bottom">
+                                        <span class="text-muted">Code</span>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary">
+                                            {{ mouvement.produit.code }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between py-2 border-bottom">
+                                        <span class="text-muted">Catégorie</span>
+                                        <span class="fw-medium">
+                                            {{ mouvement.produit.categorie.nom if mouvement.produit.categorie else '-' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between py-2 border-bottom">
+                                        <span class="text-muted">Unité</span>
+                                        <span class="fw-medium">{{ mouvement.produit.unite }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Détails du mouvement -->
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div class="{% if mouvement.quantite > 0 %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10 rounded p-3 me-3">
+                                            <i class="bi bi-box display-6 {% if mouvement.quantite > 0 %}text-success{% else %}text-danger{% endif %}"></i>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block">Quantité</small>
+                                            <h3 class="fw-bold mb-0 {% if mouvement.quantite > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {% if mouvement.quantite > 0 %}+{% endif %}{{ mouvement.quantite }}
+                                            </h3>
+                                            <small class="text-muted">{{ mouvement.produit.unite }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded p-3 me-3">
+                                            <i class="bi bi-building display-6 text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block">Entrepôt</small>
+                                            <h6 class="fw-bold mb-0">
+                                                <a href="{{ url('stock:details_entrepot', pk=mouvement.entrepot.pk) }}" 
+                                                   class="text-decoration-none">
+                                                    {{ mouvement.entrepot.nom }}
+                                                </a>
+                                            </h6>
+                                            <small class="text-muted">{{ mouvement.entrepot.code }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if mouvement.reference %}
+                        <div class="col-md-6">
+                            <div class="py-2 border-bottom">
+                                <span class="text-muted d-block mb-1">Référence</span>
+                                <span class="fw-medium">{{ mouvement.reference }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="col-md-6">
+                            <div class="py-2 border-bottom">
+                                <span class="text-muted d-block mb-1">Enregistré par</span>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-xs me-2">
+                                        <div class="avatar-title bg-info bg-opacity-10 text-info rounded-circle">
+                                            {{ mouvement.utilisateur.username[0]|upper }}
+                                        </div>
+                                    </div>
+                                    <span class="fw-medium">
+                                        {{ mouvement.utilisateur.get_full_name()|default(mouvement.utilisateur.username) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if mouvement.notes %}
+                        <div class="col-12">
+                            <div class="py-2">
+                                <span class="text-muted d-block mb-2">Notes</span>
+                                <p class="mb-0">{{ mouvement.notes }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mouvements connexes -->
+            {% if mouvements_connexes %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-arrow-left-right me-2"></i>Mouvements connexes (même produit)
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Entrepôt</th>
+                                    <th class="text-end">Quantité</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mv in mouvements_connexes %}
+                                <tr>
+                                    <td>
+                                        <small>{{ mv.date.strftime("%d/%m/%Y %H:%M") }}</small>
+                                    </td>
+                                    <td>
+                                        {% if mv.type_mouvement == 'entree' %}
+                                        <span class="badge bg-success">Entrée</span>
+                                        {% elif mv.type_mouvement == 'sortie' %}
+                                        <span class="badge bg-danger">Sortie</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Ajustement</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ mv.entrepot.nom }}</td>
+                                    <td class="text-end">
+                                        <span class="{% if mv.quantite > 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                            {% if mv.quantite > 0 %}+{% endif %}{{ mv.quantite }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Stock actuel -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body text-center p-4">
+                    <div class="bg-info bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 80px; height: 80px;">
+                        <i class="bi bi-box-seam display-6 text-info"></i>
+                    </div>
+                    <h6 class="text-muted mb-2">Stock actuel</h6>
+                    <h2 class="fw-bold mb-1">{{ stock_actuel }}</h2>
+                    <small class="text-muted">{{ mouvement.produit.unite }} dans {{ mouvement.entrepot.nom }}</small>
+                </div>
+            </div>
+
+            <!-- Actions rapides -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-lightning me-2"></i>Actions rapides
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url('stock:modifier_mouvement', pk=mouvement.pk) }}" 
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-2"></i>Modifier
+                        </a>
+                        <a href="{{ url('stock:details_produit', pk=mouvement.produit.pk) }}" 
+                           class="btn btn-outline-info">
+                            <i class="bi bi-box me-2"></i>Voir le produit
+                        </a>
+                        <a href="{{ url('stock:details_entrepot', pk=mouvement.entrepot.pk) }}" 
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-building me-2"></i>Voir l'entrepôt
+                        </a>
+                        <a href="{{ url('stock:liste_mouvements') }}" 
+                           class="btn btn-outline-dark">
+                            <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-xs {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.avatar-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "›";
+    color: #6c757d;
+}
+
+.breadcrumb-item a {
+    text-decoration: none;
+    color: #6c757d;
+}
+
+.breadcrumb-item a:hover {
+    color: #1e40af;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,259 @@
+<!-- templates/accounts/profil.jinja - PAGE DE PROFIL UTILISATEUR -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Mon profil{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid">
+    <!-- En-tête du profil -->
+    <div class="profile-header-card">
+        <div class="profile-banner"></div>
+        <div class="profile-info-container">
+            <div class="profile-avatar-wrapper">
+                <div class="profile-avatar">
+                    {% if profil.photo %}
+                        <img src="{{ profil.photo.url }}" alt="{{ user.get_full_name }}">
+                    {% else %}
+                        <div class="avatar-initials">{{ profil.get_initiales() }}</div>
+                    {% endif %}
+                </div>
+                <div class="profile-avatar-badge {{ 'badge-online' if user.is_active else 'badge-offline' }}">
+                    <i class="bi bi-circle-fill"></i>
+                </div>
+            </div>
+            
+            <div class="profile-header-info">
+                <h2 class="profile-name">{{ user.get_full_name() or user.username }}</h2>
+                <p class="profile-role">
+                    <i class="bi bi-shield-check"></i>
+                    {{ profil.get_role_display() }}
+                </p>
+                <p class="profile-email">
+                    <i class="bi bi-envelope"></i>
+                    {{ user.email }}
+                    {% if profil.email_verified %}
+                        <span class="verified-badge"><i class="bi bi-patch-check-fill"></i> Vérifié</span>
+                    {% endif %}
+                </p>
+            </div>
+            
+            <div class="profile-header-actions">
+                <a href="/accounts/profil/modifier/" class="btn-edit-profile">
+                    <i class="bi bi-pencil"></i>
+                    <span>Modifier le profil</span>
+                </a>
+                <a href="/accounts/profil/changer-mot-de-passe/" class="btn-change-password">
+                    <i class="bi bi-key"></i>
+                    <span>Changer le mot de passe</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-3">
+        <!-- Informations personnelles -->
+        <div class="col-lg-8">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-icon-box">
+                        <i class="bi bi-person-vcard"></i>
+                    </div>
+                    <h6 class="info-card-title">Informations personnelles</h6>
+                </div>
+                <div class="info-card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-person"></i>
+                                Nom complet
+                            </div>
+                            <div class="info-value">{{ user.get_full_name() or 'Non renseigné' }}</div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-person-badge"></i>
+                                Nom d'utilisateur
+                            </div>
+                            <div class="info-value">{{ user.username }}</div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-envelope"></i>
+                                Email
+                            </div>
+                            <div class="info-value">{{ user.email }}</div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-telephone"></i>
+                                Téléphone
+                            </div>
+                            <div class="info-value">{{ profil.telephone or 'Non renseigné' }}</div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-geo-alt"></i>
+                                Adresse
+                            </div>
+                            <div class="info-value">{{ profil.adresse or 'Non renseignée' }}</div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-building"></i>
+                                Ville
+                            </div>
+                            <div class="info-value">{{ profil.ville or 'Non renseignée' }}</div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-mailbox"></i>
+                                Code postal
+                            </div>
+                            <div class="info-value">{{ profil.code_postal or 'Non renseigné' }}</div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">
+                                <i class="bi bi-calendar-check"></i>
+                                Membre depuis
+                            </div>
+                            <div class="info-value">{{ user.date_joined.strftime('%d/%m/%Y') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historique des connexions -->
+            <div class="info-card mt-4">
+                <div class="info-card-header">
+                    <div class="info-icon-box bg-info">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <h6 class="info-card-title">Dernières connexions</h6>
+                </div>
+                <div class="info-card-body">
+                    {% if derniers_logs %}
+                    <div class="logs-list">
+                        {% for log in derniers_logs[:5] %}
+                        <div class="log-item">
+                            <div class="log-icon {{ 'log-success' if log.succes else 'log-error' }}">
+                                <i class="bi bi-{{ 'check-circle' if log.succes else 'x-circle' }}"></i>
+                            </div>
+                            <div class="log-content">
+                                <div class="log-date">{{ log.date_connexion.strftime('%d/%m/%Y à %H:%M') }}</div>
+                                <div class="log-ip">
+                                    <i class="bi bi-geo-alt"></i>
+                                    {{ log.ip_address }}
+                                </div>
+                            </div>
+                            <div class="log-status">
+                                {% if log.succes %}
+                                <span class="badge-success-mini">Réussie</span>
+                                {% else %}
+                                <span class="badge-error-mini">Échouée</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Aucune connexion enregistrée</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Panneau latéral -->
+        <div class="col-lg-4">
+            <!-- Sécurité du compte -->
+            <div class="security-card">
+                <div class="security-card-header">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Sécurité du compte</span>
+                </div>
+                <div class="security-card-body">
+                    <div class="security-item">
+                        <div class="security-icon {{ 'security-active' if profil.email_verified else 'security-inactive' }}">
+                            <i class="bi bi-envelope-check"></i>
+                        </div>
+                        <div class="security-info">
+                            <div class="security-title">Email vérifié</div>
+                            <div class="security-status">
+                                {{ 'Vérifié' if profil.email_verified else 'Non vérifié' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="security-item">
+                        <div class="security-icon {{ 'security-active' if profil.two_factor_enabled else 'security-inactive' }}">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="security-info">
+                            <div class="security-title">Authentification 2FA</div>
+                            <div class="security-status">
+                                {{ 'Activée' if profil.two_factor_enabled else 'Désactivée' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="security-item">
+                        <div class="security-icon {{ 'security-active' if user.is_active else 'security-inactive' }}">
+                            <i class="bi bi-person-check"></i>
+                        </div>
+                        <div class="security-info">
+                            <div class="security-title">Compte actif</div>
+                            <div class="security-status">
+                                {{ 'Actif' if user.is_active else 'Inactif' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats du compte -->
+            <div class="stats-mini-card mt-4">
+                <div class="stats-mini-header">
+                    <i class="bi bi-graph-up"></i>
+                    <span>Statistiques</span>
+                </div>
+                <div class="stats-mini-body">
+                    <div class="stat-mini-item">
+                        <div class="stat-mini-value">{{ derniers_logs|length }}</div>
+                        <div class="stat-mini-label">Connexions</div>
+                    </div>
+                    <div class="stat-mini-item">
+                        <div class="stat-mini-value">{{ (user.date_joined - profil.dernier_login).days if profil.dernier_login else 0 }}</div>
+                        <div class="stat-mini-label">Jours actif</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Profile Header */
+.profile-header-card{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden;margin-bottom:24px}.profile-banner{height:150px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)}.profile-info-container{padding:0 32px 32px;margin-top:-60px;display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap}.profile-avatar-wrapper{position:relative}.profile-avatar{width:120px;height:120px;border-radius:20px;border:4px solid #fff;background:#f1f5f9;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.15)}.profile-avatar img{width:100%;height:100%;object-fit:cover}.avatar-initials{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:700;color:#6366f1;background:linear-gradient(135deg,#dbeafe 0%,#e0e7ff 100%)}.profile-avatar-badge{position:absolute;bottom:8px;right:8px;width:24px;height:24px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.1)}.badge-online i{color:#10b981;font-size:16px}.badge-offline i{color:#94a3b8;font-size:16px}.profile-header-info{flex:1}.profile-name{font-size:28px;font-weight:700;color:#1e293b;margin:0 0 8px}.profile-role{font-size:14px;color:#64748b;margin:0 0 6px;display:flex;align-items:center;gap:6px}.profile-role i{color:#6366f1}.profile-email{font-size:14px;color:#64748b;margin:0;display:flex;align-items:center;gap:8px}.verified-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#dcfce7;color:#166534;border-radius:12px;font-size:12px;font-weight:600}.profile-header-actions{display:flex;gap:12px;flex-wrap:wrap}.btn-edit-profile,.btn-change-password{padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;text-decoration:none;transition:all .3s}.btn-edit-profile{background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);color:#fff}.btn-edit-profile:hover{transform:translateY(-2px);box-shadow:0 8px 16px rgba(99,102,241,.3);color:#fff}.btn-change-password{background:#f1f5f9;color:#64748b;border:2px solid #e2e8f0}.btn-change-password:hover{background:#fff;color:#6366f1;border-color:#6366f1}
+
+/* Info Card */
+.info-card{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}.info-card-header{padding:20px 24px;background:linear-gradient(135deg,#f8fafc 0%,#fff 100%);border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:12px}.info-icon-box{width:42px;height:42px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);border-radius:10px;display:flex;align-items:center;justify-content:center}.info-icon-box.bg-info{background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%)}.info-icon-box i{font-size:20px;color:#fff}.info-card-title{font-size:16px;font-weight:700;color:#1e293b;margin:0}.info-card-body{padding:24px}.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}.info-item{display:flex;flex-direction:column;gap:6px}.info-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:6px}.info-label i{color:#6366f1}.info-value{font-size:15px;color:#1e293b;font-weight:500}
+
+/* Logs */
+.logs-list{display:flex;flex-direction:column;gap:12px}.log-item{display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border-radius:10px;border-left:3px solid transparent}.log-item:hover{background:#fff;border-left-color:#6366f1}.log-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.log-success{background:#dcfce7}.log-success i{color:#166534;font-size:18px}.log-error{background:#fee2e2}.log-error i{color:#991b1b;font-size:18px}.log-content{flex:1}.log-date{font-size:13px;font-weight:600;color:#1e293b}.log-ip{font-size:12px;color:#64748b;margin-top:2px;display:flex;align-items:center;gap:4px}.badge-success-mini{padding:4px 8px;background:#dcfce7;color:#166534;border-radius:6px;font-size:11px;font-weight:600}.badge-error-mini{padding:4px 8px;background:#fee2e2;color:#991b1b;border-radius:6px;font-size:11px;font-weight:600}
+
+/* Security Card */
+.security-card{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}.security-card-header{padding:16px 20px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);color:#fff;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}.security-card-body{padding:20px}.security-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f1f5f9}.security-item:last-child{border-bottom:none}.security-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.security-active{background:#dcfce7}.security-active i{color:#166534;font-size:20px}.security-inactive{background:#f1f5f9}.security-inactive i{color:#94a3b8;font-size:20px}.security-info{flex:1}.security-title{font-size:13px;font-weight:600;color:#1e293b;margin-bottom:2px}.security-status{font-size:12px;color:#64748b}
+
+/* Stats Mini */
+.stats-mini-card{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}.stats-mini-header{padding:16px 20px;background:linear-gradient(135deg,#0ea5e9 0%,#38bdf8 100%);color:#fff;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}.stats-mini-body{padding:20px;display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.stat-mini-item{text-align:center}.stat-mini-value{font-size:28px;font-weight:700;color:#6366f1;margin-bottom:4px}.stat-mini-label{font-size:12px;color:#64748b}
+
+/* Responsive */
+@media(max-width:768px){.info-grid{grid-template-columns:1fr}.profile-info-container{flex-direction:column;align-items:center;text-align:center}.profile-header-actions{width:100%}.profile-header-actions a{flex:1;justify-content:center}}
+</style>
+{% endblock %}

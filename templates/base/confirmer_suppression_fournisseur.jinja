@@ -1,0 +1,897 @@
+<!-- templates/base/confirmer_suppression_fournisseur.jinja - Design Professionnel Cyan -->
+{% extends "base_principale.jinja" %}
+
+{% block titre_page %}Désactiver un fournisseur{% endblock %}
+
+{% block contenu %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-xl-6">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb-modern">
+                    <li class="breadcrumb-item">
+                        <a href="/"><i class="bi bi-house-door"></i> Accueil</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/fournisseurs/">Fournisseurs</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/fournisseurs/{{ fournisseur.pk }}/">{{ fournisseur.nom }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">Désactiver</li>
+                </ol>
+            </nav>
+
+            <!-- Carte principale de confirmation -->
+            <div class="confirmation-card">
+                <!-- En-tête avec animation -->
+                <div class="confirmation-header">
+                    <div class="warning-icon-wrapper">
+                        <div class="warning-icon">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div class="warning-pulse"></div>
+                    </div>
+                    <h1 class="confirmation-title">Confirmer la désactivation</h1>
+                    <p class="confirmation-subtitle">
+                        Vous êtes sur le point de désactiver ce fournisseur. Il ne sera plus disponible pour les nouvelles commandes d'achat.
+                    </p>
+                </div>
+
+                <!-- Informations du fournisseur -->
+                <div class="supplier-info-card">
+                    <div class="supplier-header">
+                        <div class="supplier-avatar-confirm">
+                            {{ fournisseur.nom[0]|upper if fournisseur.nom else 'F' }}
+                        </div>
+                        <div class="supplier-details">
+                            <h3 class="supplier-name">{{ fournisseur.nom }}</h3>
+                            <div class="supplier-code">
+                                <i class="bi bi-hash"></i>{{ fournisseur.code }}
+                            </div>
+                        </div>
+                        {% if fournisseur.est_actif %}
+                        <div class="supplier-status status-active">
+                            <i class="bi bi-circle-fill"></i> Actif
+                        </div>
+                        {% else %}
+                        <div class="supplier-status status-inactive">
+                            <i class="bi bi-circle-fill"></i> Inactif
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="supplier-data-grid">
+                        <div class="data-item">
+                            <div class="data-label">
+                                <i class="bi bi-envelope"></i>
+                                Email
+                            </div>
+                            <div class="data-value">{{ fournisseur.email or '-' }}</div>
+                        </div>
+
+                        <div class="data-item">
+                            <div class="data-label">
+                                <i class="bi bi-telephone"></i>
+                                Téléphone
+                            </div>
+                            <div class="data-value">{{ fournisseur.telephone or '-' }}</div>
+                        </div>
+
+                        {% if fournisseur.adresse %}
+                        <div class="data-item">
+                            <div class="data-label">
+                                <i class="bi bi-geo-alt"></i>
+                                Adresse
+                            </div>
+                            <div class="data-value">{{ fournisseur.adresse }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if fournisseur.ville or fournisseur.pays %}
+                        <div class="data-item">
+                            <div class="data-label">
+                                <i class="bi bi-flag"></i>
+                                Localisation
+                            </div>
+                            <div class="data-value">
+                                {{ fournisseur.ville or '' }}{% if fournisseur.ville and fournisseur.pays %}, {% endif %}{{ fournisseur.pays or '' }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if fournisseur.numero_fiscal %}
+                        <div class="data-item full-width">
+                            <div class="data-label">
+                                <i class="bi bi-file-text"></i>
+                                Numéro fiscal (NINEA)
+                            </div>
+                            <div class="data-value">{{ fournisseur.numero_fiscal }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Alertes conditionnelles -->
+                {% if commandes_actives %}
+                <div class="alert-card alert-warning">
+                    <div class="alert-icon">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h4 class="alert-title">Commandes en cours détectées !</h4>
+                        <p class="alert-text">
+                            Ce fournisseur a des commandes d'achat actives ou récentes. 
+                            Assurez-vous de clôturer ces commandes avant désactivation.
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if produits_associes %}
+                <div class="alert-card alert-info">
+                    <div class="alert-icon">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h4 class="alert-title">Produits associés détectés</h4>
+                        <p class="alert-text">
+                            Ce fournisseur est référencé pour <strong>{{ produits_associes }} produit(s)</strong>. 
+                            Ces produits devront être réaffectés à un autre fournisseur.
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Information sur la désactivation -->
+                <div class="info-card">
+                    <div class="info-icon">
+                        <i class="bi bi-info-circle-fill"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4 class="info-title">Qu'est-ce que la désactivation ?</h4>
+                        <p class="info-text">
+                            Le fournisseur sera désactivé mais <strong>toutes ses données seront conservées</strong>. 
+                            Vous pourrez le réactiver à tout moment depuis la liste des fournisseurs.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Impacts de la désactivation -->
+                <div class="impacts-section">
+                    <h3 class="impacts-title">
+                        <i class="bi bi-diagram-3"></i>
+                        Conséquences de la désactivation
+                    </h3>
+                    <div class="impacts-grid">
+                        <div class="impact-item impact-danger">
+                            <div class="impact-icon">
+                                <i class="bi bi-cart-x"></i>
+                            </div>
+                            <div class="impact-label">Nouvelles commandes</div>
+                            <div class="impact-status status-blocked">Bloquées</div>
+                        </div>
+
+                        <div class="impact-item impact-success">
+                            <div class="impact-icon">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="impact-label">Historique achats</div>
+                            <div class="impact-status status-saved">Conservé</div>
+                        </div>
+
+                        <div class="impact-item impact-primary">
+                            <div class="impact-icon">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </div>
+                            <div class="impact-label">Réactivation</div>
+                            <div class="impact-status status-possible">Possible</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulaire de confirmation -->
+                <form method="post" class="confirmation-form" id="deleteForm">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                    
+                    <div class="form-actions">
+                        <a href="/fournisseurs/{{ fournisseur.pk }}/" class="btn-cancel">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Annuler</span>
+                        </a>
+                        <button type="submit" class="btn-delete">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span>Oui, désactiver le fournisseur</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Checklist avant désactivation -->
+            <div class="checklist-card">
+                <div class="checklist-header">
+                    <i class="bi bi-clipboard-check-fill"></i>
+                    <h3>Checklist avant désactivation</h3>
+                </div>
+                <div class="checklist-grid">
+                    <div class="checklist-item">
+                        <div class="checklist-icon">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <div class="checklist-content">
+                            <div class="checklist-title">Commandes en cours</div>
+                            <div class="checklist-desc">Vérifier les commandes non livrées</div>
+                        </div>
+                    </div>
+
+                    <div class="checklist-item">
+                        <div class="checklist-icon">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <div class="checklist-content">
+                            <div class="checklist-title">Paiements en attente</div>
+                            <div class="checklist-desc">Solder les factures impayées</div>
+                        </div>
+                    </div>
+
+                    <div class="checklist-item">
+                        <div class="checklist-icon">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <div class="checklist-content">
+                            <div class="checklist-title">Produits associés</div>
+                            <div class="checklist-desc">Réaffecter à un autre fournisseur</div>
+                        </div>
+                    </div>
+
+                    <div class="checklist-item">
+                        <div class="checklist-icon">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <div class="checklist-content">
+                            <div class="checklist-title">Alternatives</div>
+                            <div class="checklist-desc">Identifier un fournisseur de remplacement</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('deleteForm');
+    
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Double confirmation
+            const confirmation = confirm(
+                'Êtes-vous vraiment sûr de vouloir désactiver ce fournisseur ?\n\n' +
+                'Cette action affectera :\n' +
+                '• Les nouvelles commandes d\'achat\n' +
+                '• La visibilité dans les listes\n\n' +
+                'Les données seront conservées et vous pourrez réactiver le fournisseur plus tard.'
+            );
+            
+            if (confirmation) {
+                form.submit();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* ==================== BASE ==================== */
+.container-fluid {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ==================== BREADCRUMB ==================== */
+.breadcrumb-modern {
+    display: flex;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-size: 13px;
+}
+
+.breadcrumb-modern li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+}
+
+.breadcrumb-modern li::after {
+    content: '/';
+    color: #cbd5e1;
+}
+
+.breadcrumb-modern li:last-child::after {
+    display: none;
+}
+
+.breadcrumb-modern a {
+    color: #64748b;
+    text-decoration: none;
+}
+
+.breadcrumb-modern a:hover {
+    color: #0ea5e9;
+}
+
+.breadcrumb-item.active {
+    color: #0ea5e9;
+    font-weight: 600;
+}
+
+/* ==================== CONFIRMATION CARD ==================== */
+.confirmation-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.confirmation-header {
+    padding: 48px 32px 32px;
+    text-align: center;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-bottom: 1px solid #fecaca;
+}
+
+.warning-icon-wrapper {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 24px;
+}
+
+.warning-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    color: white;
+    position: relative;
+    z-index: 2;
+    animation: pulseIcon 2s ease-in-out infinite;
+}
+
+@keyframes pulseIcon {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.warning-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100px;
+    height: 100px;
+    background: #ef4444;
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: pulse 2s ease-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+.confirmation-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #991b1b;
+    margin: 0 0 12px 0;
+}
+
+.confirmation-subtitle {
+    font-size: 15px;
+    color: #7f1d1d;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ==================== SUPPLIER INFO CARD ==================== */
+.supplier-info-card {
+    padding: 32px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.supplier-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.supplier-avatar-confirm {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+}
+
+.supplier-details {
+    flex: 1;
+}
+
+.supplier-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 6px 0;
+}
+
+.supplier-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: white;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #0ea5e9;
+}
+
+.supplier-status {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.supplier-status.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.supplier-status i {
+    font-size: 8px;
+}
+
+.supplier-status.status-inactive {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.supplier-data-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.data-item {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.data-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.data-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.data-label i {
+    font-size: 14px;
+}
+
+.data-value {
+    font-size: 14px;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+/* ==================== ALERT CARDS ==================== */
+.alert-card {
+    margin: 24px 32px;
+    padding: 20px;
+    border-radius: 14px;
+    display: flex;
+    gap: 16px;
+}
+
+.alert-card.alert-warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);
+    border: 2px solid #fde047;
+}
+
+.alert-card.alert-info {
+    background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+    border: 2px solid #93c5fd;
+}
+
+.alert-icon {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.alert-warning .alert-icon {
+    color: #ca8a04;
+}
+
+.alert-info .alert-icon {
+    color: #0284c7;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+
+.alert-warning .alert-title {
+    color: #854d0e;
+}
+
+.alert-info .alert-title {
+    color: #075985;
+}
+
+.alert-text {
+    font-size: 13px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.alert-warning .alert-text {
+    color: #a16207;
+}
+
+.alert-info .alert-text {
+    color: #0c4a6e;
+}
+
+/* ==================== INFO CARD ==================== */
+.info-card {
+    margin: 0 32px 32px;
+    padding: 20px;
+    background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%);
+    border-radius: 14px;
+    border: 2px solid #93c5fd;
+    display: flex;
+    gap: 16px;
+}
+
+.info-icon {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #0ea5e9;
+    flex-shrink: 0;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #075985;
+    margin: 0 0 8px 0;
+}
+
+.info-text {
+    font-size: 13px;
+    color: #0c4a6e;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ==================== IMPACTS SECTION ==================== */
+.impacts-section {
+    padding: 32px;
+    border-top: 1px solid #e2e8f0;
+    background: white;
+}
+
+.impacts-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.impacts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.impact-item {
+    text-align: center;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.impact-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.impact-item.impact-danger {
+    border-color: #fecaca;
+}
+
+.impact-item.impact-success {
+    border-color: #bbf7d0;
+}
+
+.impact-item.impact-primary {
+    border-color: #bfdbfe;
+}
+
+.impact-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.impact-danger .impact-icon {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #dc2626;
+}
+
+.impact-success .impact-icon {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #16a34a;
+}
+
+.impact-primary .impact-icon {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #0ea5e9;
+}
+
+.impact-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.impact-status {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.impact-status.status-blocked {
+    color: #dc2626;
+}
+
+.impact-status.status-saved {
+    color: #16a34a;
+}
+
+.impact-status.status-possible {
+    color: #0ea5e9;
+}
+
+/* ==================== FORM ACTIONS ==================== */
+.confirmation-form {
+    padding: 32px;
+    background: white;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-cancel, .btn-delete {
+    flex: 1;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+}
+
+.btn-cancel {
+    background: white;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+}
+
+.btn-cancel:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.btn-delete:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+}
+
+/* ==================== CHECKLIST CARD ==================== */
+.checklist-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.checklist-header {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    color: #166534;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.checklist-header i {
+    font-size: 24px;
+}
+
+.checklist-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.checklist-grid {
+    padding: 24px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.checklist-item {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.checklist-icon {
+    font-size: 20px;
+    color: #10b981;
+    flex-shrink: 0;
+}
+
+.checklist-content {
+    flex: 1;
+}
+
+.checklist-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.checklist-desc {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .confirmation-header {
+        padding: 32px 24px 24px;
+    }
+
+    .warning-icon-wrapper,
+    .warning-icon {
+        width: 80px;
+        height: 80px;
+    }
+
+    .warning-icon {
+        font-size: 36px;
+    }
+
+    .confirmation-title {
+        font-size: 24px;
+    }
+
+    .supplier-info-card {
+        padding: 24px;
+    }
+
+    .supplier-data-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .impacts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .checklist-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
