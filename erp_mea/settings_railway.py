@@ -6,7 +6,7 @@ Ce fichier gère automatiquement la connexion PostgreSQL de Railway
 
 import os
 from pathlib import Path
-import dj_database_url # pyright: ignore[reportMissingImports]
+import dj_database_url # type: ignore
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,8 +19,31 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key-change-in-pro
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # ALLOWED HOSTS
-# Railway injecte automatiquement RAILWAY_STATIC_URL
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+# Railway injecte automatiquement RAILWAY_STATIC_URL et RAILWAY_PUBLIC_DOMAIN
+railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '')
+railway_static_url = os.environ.get('RAILWAY_STATIC_URL', '')
+allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', '').split(',')
+
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.railway.app',  # Tous les domaines Railway
+    '.up.railway.app',  # Tous les sous-domaines Railway
+]
+
+# Ajouter le domaine Railway automatiquement
+if railway_domain:
+    ALLOWED_HOSTS.append(railway_domain)
+if railway_static_url:
+    ALLOWED_HOSTS.append(railway_static_url.replace('https://', '').replace('http://', ''))
+
+# Ajouter les hosts de la variable d'environnement
+ALLOWED_HOSTS.extend([host.strip() for host in allowed_hosts_env if host.strip()])
+
+# Nettoyer les doublons
+ALLOWED_HOSTS = list(set(ALLOWED_HOSTS))
+
+print(f"🌐 ALLOWED_HOSTS configurés : {ALLOWED_HOSTS}")
 
 # Application definition
 INSTALLED_APPS = [
