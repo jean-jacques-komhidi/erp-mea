@@ -35,6 +35,7 @@ RUN python manage.py collectstatic --noinput || true
 # Port exposé (Railway l'attribue automatiquement)
 EXPOSE 8000
 
-# Commande de démarrage
-CMD python manage.py migrate && \
-    gunicorn erp_mea.wsgi:application --bind 0.0.0.0:$PORT --workers 3
+# Commande de démarrage avec création du superuser
+CMD python manage.py migrate --noinput && \
+    python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@erp-mea.com', 'Admin2026!ERP'); print('✅ Superuser ready')" && \
+    gunicorn erp_mea.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 120
