@@ -1,6 +1,6 @@
 # requirements.txt - Production pour Railway
 Django==5.1.4
-psycopg2-binary==2.9.9
+psycopg2-binary
 gunicorn==21.2.0
 whitenoise==6.6.0
 python-decouple==3.8
