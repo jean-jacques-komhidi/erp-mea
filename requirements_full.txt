@@ -1,0 +1,15 @@
+asgiref==3.11.0
+charset-normalizer==3.4.4
+Django==6.0.1
+django-jinja==2.11.0
+djangorestframework==3.16.1
+et_xmlfile==2.0.0
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+openpyxl==3.1.5
+pillow==12.1.0
+psycopg2-binary==2.9.11
+PyMySQL==1.1.2
+reportlab==4.4.9
+sqlparse==0.5.5
+tzdata==2025.3
