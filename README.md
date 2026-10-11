@@ -1,5 +1,13 @@
 # ERP MEA — Système de gestion d'entreprise (MEA)
 
+## Démo vidéo
+
+[![Voir la démo vidéo (1 min 28)](docs/demo/erp-mea-demo-poster.jpg)](docs/demo/erp-mea-demo.mp4)
+
+Parcours filmé dans l'application : connexion, création d'un client, commande de vente, factures et alertes de stock. Cliquez sur l'image pour lancer la vidéo (1 min 28), ou regardez-la sur [mon portfolio](https://jean-jacques-komhidi.github.io/jean-jacques-komhidi/#realisations).
+
+---
+
 ## À propos
 ERP MEA est une solution ERP conçue pour les pays du Middle East & Africa (MEA). Développée avec Django et Jinja2, l'application couvre les besoins métier essentiels : gestion des clients et fournisseurs, stocks multi-entrepôts, ventes, achats, et un module comptabilité en cours de développement. L'ensemble des modèles, des variables et des interfaces est en français afin de faciliter l'adoption par les équipes locales.
 
